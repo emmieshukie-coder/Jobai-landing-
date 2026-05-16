@@ -122,8 +122,6 @@ app.get('/', (req, res) => {
   </script>
 </body>
 </html>
-  `);
-});
 
 app.get('/jobs', async (req, res) => {
   try {
