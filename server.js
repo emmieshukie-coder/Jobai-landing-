@@ -3,7 +3,6 @@ import express from 'express';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Adzuna keys hardcoded for now
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 
@@ -28,6 +27,7 @@ app.get('/', (req, res) => {
     '    .job-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }' +
     '    .job-card h3 { margin: 0 0 8px 0; color: #1a73e8; font-size: 20px; }' +
     '    .job-card p { margin: 0 0 16px 0; color: #666; font-size: 15px; }' +
+    '    .country-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }' +
     '    .loading { text-align: center; color: #666; padding: 40px; font-size: 16px; }' +
     '    .error { text-align: center; color: #d32f2f; padding: 40px; }' +
     '  </style>' +
@@ -38,7 +38,7 @@ app.get('/', (req, res) => {
     '    <p>AI-powered matching for Uganda, UAE, Canada, UK & Saudi Arabia</p>' +
     '  </div>' +
     '  <div class="container">' +
-    '    <h2>Latest Jobs in Uganda</h2>' +
+    '    <h2>Trending Jobs Across 5 Countries</h2>' +
     '    <div id="jobs" class="loading">Loading jobs...</div>' +
     '  </div>' +
     '  <script>' +
@@ -51,7 +51,7 @@ app.get('/', (req, res) => {
     '          return;' +
     '        }' +
     '        document.getElementById("jobs").innerHTML = jobs.map(function(j) {' +
-    '          return "<div class=\\"job-card\\"><h3>" + j.title + "</h3><p>" + j.location + " • " + j.company + "</p></div>";' +
+    '          return "<div class=\\"job-card\\"><span class=\\"country-tag\\">" + j.country + "</span><h3>" + j.title + "</h3><p>" + j.location + " • " + j.company + "</p></div>";' +
     '        }).join("");' +
     '      } catch (e) {' +
     '        document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs. Please refresh the page.</div>";' +
@@ -64,26 +64,36 @@ app.get('/', (req, res) => {
   );
 });
 
-app.get('/jobs', async (req, res) => {
+async function fetchJobsForCountry(country) {
   try {
-    const url = 'https://api.adzuna.com/v1/api/jobs/ug/search/1?app_id=' + ADZUNA_APP_ID + '&app_key=' + ADZUNA_API_KEY + '&results_per_page=20&content-type=application/json';
+    const url = 'https://api.adzuna.com/v1/api/jobs/' + country + '/search/1?app_id=' + ADZUNA_APP_ID + '&app_key=' + ADZUNA_API_KEY + '&results_per_page=5&content-type=application/json';
     const response = await fetch(url);
     
-    if (!response.ok) {
-      throw new Error('Adzuna API error: ' + response.status);
-    }
+    if (!response.ok) return [];
     
     const data = await response.json();
     
-    const jobs = (data.results || []).map(function(j) {
+    return (data.results || []).map(function(j) {
       return {
         title: j.title || 'Job Title',
         company: j.company?.display_name || 'Unknown Company',
-        location: j.location?.display_name || 'Uganda'
+        location: j.location?.display_name || country.toUpperCase(),
+        country: country.toUpperCase()
       };
     });
+  } catch (err) {
+    console.error('Error fetching ' + country + ':', err);
+    return [];
+  }
+}
+
+app.get('/jobs', async (req, res) => {
+  try {
+    const countries = ['ug', 'ae', 'ca', 'gb', 'sa'];
+    const results = await Promise.all(countries.map(fetchJobsForCountry));
     
-    res.json(jobs);
+    const allJobs = results.flat().slice(0, 15);
+    res.json(allJobs);
   } catch (err) {
     console.error('Jobs fetch error:', err);
     res.json([]);
