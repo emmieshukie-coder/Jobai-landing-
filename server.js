@@ -3,8 +3,9 @@ import express from 'express';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const ADZUNA_APP_ID = process.env.ADZUNA_APP_ID;
-const ADZUNA_API_KEY = process.env.ADZUNA_API_KEY;
+// Adzuna keys hardcoded for now
+const ADZUNA_APP_ID = 'cd82aca8';
+const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 
 app.use(express.static('public'));
 
@@ -46,14 +47,14 @@ app.get('/', (req, res) => {
     '        const res = await fetch("/jobs");' +
     '        const jobs = await res.json();' +
     '        if (!jobs.length) {' +
-    '          document.getElementById("jobs").innerHTML = "<div class=\"error\">No jobs found right now. Check back later.</div>";' +
+    '          document.getElementById("jobs").innerHTML = "<div class=\\"error\\">No jobs found right now. Check back later.</div>";' +
     '          return;' +
     '        }' +
     '        document.getElementById("jobs").innerHTML = jobs.map(function(j) {' +
-    '          return "<div class=\"job-card\"><h3>" + j.title + "</h3><p>" + j.location + " • " + j.company + "</p></div>";' +
+    '          return "<div class=\\"job-card\\"><h3>" + j.title + "</h3><p>" + j.location + " • " + j.company + "</p></div>";' +
     '        }).join("");' +
     '      } catch (e) {' +
-    '        document.getElementById("jobs").innerHTML = "<div class=\"error\">Failed to load jobs. Please refresh the page.</div>";' +
+    '        document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs. Please refresh the page.</div>";' +
     '      }' +
     '    }' +
     '    loadJobs();' +
@@ -65,11 +66,6 @@ app.get('/', (req, res) => {
 
 app.get('/jobs', async (req, res) => {
   try {
-    if (!ADZUNA_APP_ID || !ADZUNA_API_KEY) {
-      console.error('Missing Adzuna credentials');
-      return res.json([]);
-    }
-    
     const url = 'https://api.adzuna.com/v1/api/jobs/ug/search/1?app_id=' + ADZUNA_APP_ID + '&app_key=' + ADZUNA_API_KEY + '&results_per_page=20&content-type=application/json';
     const response = await fetch(url);
     
