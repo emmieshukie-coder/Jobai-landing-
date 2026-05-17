@@ -1,9 +1,5 @@
 import express from 'express';
-import dotenv from 'dotenv';
-import Flutterwave from 'flutterwave-node-v3';
-import crypto from 'crypto';
 
-dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -11,14 +7,11 @@ const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
 
-const flw = new Flutterwave(process.env.FLW_PUBLIC_KEY, process.env.FLW_SECRET_KEY);
-
+// In-memory storage for user ads
 let userAds = [];
-let pendingPayments = new Map();
 
 app.use(express.json());
 app.use(express.static('public'));
-app.use('/webhook', express.raw({type: 'application/json'}));
 
 app.get('/', (req, res) => {
   res.send(
@@ -28,7 +21,6 @@ app.get('/', (req, res) => {
     ' <meta charset="UTF-8">' +
     ' <meta name="viewport" content="width=device-width, initial-scale=1.0">' +
     ' <title>Jobai - Get Connected to Jobs & Workers</title>' +
-    ' <script src="https://checkout.flutterwave.com/v3.js"></script>' +
     ' <style>' +
     ' body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }' +
     '.hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 60px 20px; text-align: center; }' +
@@ -42,19 +34,15 @@ app.get('/', (req, res) => {
     '.section h2 { margin: 0 0 20px 0; font-size: 26px; color: #1a1a1a; }' +
     '.job-card { background: white; padding: 24px; margin-bottom: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; color: inherit; display: block; }' +
     '.job-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }' +
-    '.job-card.featured { border: 2px solid #ffc107; background: #fffdf5; }' +
     '.job-card h3 { margin: 0 0 8px 0; color: #1a73e8; font-size: 20px; }' +
     '.job-meta { margin: 0 0 12px 0; color: #666; font-size: 14px; }' +
     '.job-meta span { margin-right: 12px; }' +
     '.country-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }' +
     '.source-tag { display: inline-block; background: #f5f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }' +
-    '.featured-tag { background: #ffc107; color: #000; }' +
     '.user-ad-tag { background: #fff3e0; color: #f57c00; }' +
     '.btn-group { display: flex; gap: 10px; flex-wrap: wrap; }' +
     '.connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; border: none; cursor: pointer; }' +
     '.connect-btn:hover { background: #1557b0; }' +
-    '.feature-btn { background: #ffc107; color: #000; }' +
-    '.feature-btn:hover { background: #e0a800; }' +
     '.call-btn { background: #34a853; }' +
     '.call-btn:hover { background: #2d9147; }' +
     '.loading { text-align: center; color: #666; padding: 40px; font-size: 16px; }' +
@@ -92,10 +80,8 @@ app.get('/', (req, res) => {
     ' <input type="text" id="adCompany" placeholder="Company name" required>' +
     ' <input type="text" id="adLocation" placeholder="Location" required>' +
     ' <input type="tel" id="adPhone" placeholder="Phone number for applicants">' +
-    ' <input type="email" id="adEmail" placeholder="Your email for payment">' +
     ' <input type="url" id="adUrl" placeholder="Apply link (optional)">' +
     ' <textarea id="adDesc" placeholder="Short description" rows="3"></textarea>' +
-    ' <label><input type="checkbox" id="adFeatured"> Feature this job for 24h - $3</label>' +
     ' <button class="connect-btn" onclick="submitAd()">Post Job</button>' +
     ' <p id="adMsg" style="margin-top:10px; font-size:14px;"></p>' +
     ' </div>' +
@@ -114,6 +100,20 @@ app.get('/', (req, res) => {
     ' if (diff === 1) return "1 day ago";' +
     ' return diff + " days ago";' +
     ' }' +
+    ' function filterJobs(jobs, days) {' +
+    ' if (days === "all") return jobs;' +
+    ' const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;' +
+    ' return jobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);' +
+    ' }' +
+    ' function renderJobs(jobs) {' +
+    ' if (!jobs.length) {' +
+    ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">No jobs found.</div>";' +
+    ' return;' +
+    ' }' +
+    ' document.getElementById("jobs").innerHTML = jobs.map(function(j) {' +
+    ' return "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"job-card\\"><span class=\\"country-tag\\">" + j.country + "</span><span class=\\"source-tag\\">" + j.source + "</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span><span>•</span><span>" + timeAgo(j.date_posted) + "</span></p><span class=\\"connect-btn\\">Connect & Apply</span></a>";' +
+    ' }).join("");' +
+    ' }' +
     ' function renderUserAds(ads) {' +
     ' if (!ads.length) {' +
     ' document.getElementById("userAds").innerHTML = "<div class=\\"error\\">No community posts yet.</div>";' +
@@ -128,61 +128,8 @@ app.get('/', (req, res) => {
     ' buttons += "<a href=\\"tel:" + j.phone + "\\" class=\\"connect-btn call-btn\\">Call " + j.phone + "</a>";' +
     ' }' +
     ' buttons += "</div>";' +
-    ' let featuredBadge = j.featured? "<span class=\\"source-tag featured-tag\\">Featured</span>" : "";' +
-    ' return "<div class=\\"job-card ' + (j.featured? 'featured' : '') + '\\"><span class=\\"country-tag user-ad-tag\\">Community</span>' + featuredBadge + '<h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
+    ' return "<div class=\\"job-card\\"><span class=\\"country-tag user-ad-tag\\">Community</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
     ' }).join("");' +
-    ' }' +
-    ' async function submitAd() {' +
-    ' const data = {' +
-    ' title: document.getElementById("adTitle").value,' +
-    ' company: document.getElementById("adCompany").value,' +
-    ' location: document.getElementById("adLocation").value,' +
-    ' phone: document.getElementById("adPhone").value,' +
-    ' email: document.getElementById("adEmail").value,' +
-    ' url: document.getElementById("adUrl").value,' +
-    ' description: document.getElementById("adDesc").value,' +
-    ' featured: document.getElementById("adFeatured").checked' +
-    ' };' +
-    ' if (!data.title ||!data.company ||!data.location) {' +
-    ' document.getElementById("adMsg").textContent = "Please fill title, company and location.";' +
-    ' document.getElementById("adMsg").style.color = "red";' +
-    ' return;' +
-    ' }' +
-    ' if (data.featured &&!data.email) {' +
-    ' document.getElementById("adMsg").textContent = "Email required for featured posts.";' +
-    ' document.getElementById("adMsg").style.color = "red";' +
-    ' return;' +
-    ' }' +
-    ' const res = await fetch("/ads", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
-    ' const result = await res.json();' +
-    ' if (res.ok) {' +
-    ' if (result.paymentLink) {' +
-    ' FlutterwaveCheckout({' +
-    ' public_key: "' + process.env.FLW_PUBLIC_KEY + '",' +
-    ' tx_ref: result.tx_ref,' +
-    ' amount: 3,' +
-    ' currency: "USD",' +
-    ' payment_options: "mobilemoneyuganda,mobilemoneyrwanda,mobilemoneyzambia,card",' +
-    ' customer: {email: data.email, name: data.company},' +
-    ' callback: function(data) { window.location.reload(); }' +
-    ' });' +
-    ' } else {' +
-    ' document.getElementById("adMsg").textContent = "Job posted successfully!";' +
-    ' document.getElementById("adMsg").style.color = "green";' +
-    ' loadUserAds();' +
-    ' }' +
-    ' document.getElementById("adTitle").value = "";' +
-    ' document.getElementById("adCompany").value = "";' +
-    ' document.getElementById("adLocation").value = "";' +
-    ' document.getElementById("adPhone").value = "";' +
-    ' document.getElementById("adEmail").value = "";' +
-    ' document.getElementById("adUrl").value = "";' +
-    ' document.getElementById("adDesc").value = "";' +
-    ' document.getElementById("adFeatured").checked = false;' +
-    ' } else {' +
-    ' document.getElementById("adMsg").textContent = "Failed to post job.";' +
-    ' document.getElementById("adMsg").style.color = "red";' +
-    ' }' +
     ' }' +
     ' async function loadJobs() {' +
     ' const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant";' +
@@ -191,9 +138,7 @@ app.get('/', (req, res) => {
     ' try {' +
     ' const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);' +
     ' allJobs = await res.json();' +
-    ' document.getElementById("jobs").innerHTML = allJobs.map(function(j) {' +
-    ' return "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"job-card\\"><span class=\\"country-tag\\">" + j.country + "</span><span class=\\"source-tag\\">" + j.source + "</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span><span>•</span><span>" + timeAgo(j.date_posted) + "</span></p><span class=\\"connect-btn\\">Connect & Apply</span></a>";' +
-    ' }).join("");' +
+    ' renderJobs(allJobs);' +
     ' } catch (e) {' +
     ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs.</div>";' +
     ' }' +
@@ -202,6 +147,36 @@ app.get('/', (req, res) => {
     ' const res = await fetch("/ads");' +
     ' const ads = await res.json();' +
     ' renderUserAds(ads);' +
+    ' }' +
+    ' async function submitAd() {' +
+    ' const data = {' +
+    ' title: document.getElementById("adTitle").value,' +
+    ' company: document.getElementById("adCompany").value,' +
+    ' location: document.getElementById("adLocation").value,' +
+    ' phone: document.getElementById("adPhone").value,' +
+    ' url: document.getElementById("adUrl").value,' +
+    ' description: document.getElementById("adDesc").value' +
+    ' };' +
+    ' if (!data.title ||!data.company ||!data.location) {' +
+    ' document.getElementById("adMsg").textContent = "Please fill title, company and location.";' +
+    ' document.getElementById("adMsg").style.color = "red";' +
+    ' return;' +
+    ' }' +
+    ' const res = await fetch("/ads", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
+    ' if (res.ok) {' +
+    ' document.getElementById("adMsg").textContent = "Job posted successfully!";' +
+    ' document.getElementById("adMsg").style.color = "green";' +
+    ' document.getElementById("adTitle").value = "";' +
+    ' document.getElementById("adCompany").value = "";' +
+    ' document.getElementById("adLocation").value = "";' +
+    ' document.getElementById("adPhone").value = "";' +
+    ' document.getElementById("adUrl").value = "";' +
+    ' document.getElementById("adDesc").value = "";' +
+    ' loadUserAds();' +
+    ' } else {' +
+    ' document.getElementById("adMsg").textContent = "Failed to post job.";' +
+    ' document.getElementById("adMsg").style.color = "red";' +
+    ' }' +
     ' }' +
     ' document.getElementById("searchInput").addEventListener("input", loadJobs);' +
     ' document.getElementById("dateFilter").addEventListener("change", loadJobs);' +
@@ -213,7 +188,6 @@ app.get('/', (req, res) => {
   );
 });
 
-// All your existing fetch functions stay the same
 async function fetchJSearchJobs(query, location) {
   try {
     const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1&date_posted=week`;
@@ -423,69 +397,19 @@ app.get('/jobs', async (req, res) => {
 });
 
 app.get('/ads', (req, res) => {
-  const now = new Date();
-  const activeAds = userAds
-   .filter(ad =>!ad.expires_at || new Date(ad.expires_at) > now)
-   .sort((a, b) => (b.featured? 1 : 0) - (a.featured? 1 : 0));
-  res.json(activeAds);
+  res.json(userAds.slice().reverse());
 });
 
-app.post('/ads', async (req, res) => {
-  const { title, company, location, phone, email, url, description, featured } = req.body;
+app.post('/ads', (req, res) => {
+  const { title, company, location, phone, url, description } = req.body;
   if (!title ||!company ||!location) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
-
-  const adId = Date.now().toString();
-  const tx_ref = 'jobai_' + adId;
-
-  const newAd = {
-    id: adId,
-    title, company, location,
-    phone: phone || null,
-    url: url || null,
-    description,
-    featured: false,
-    expires_at: null,
+  userAds.push({
+    title, company, location, phone: phone || null, url: url || null, description,
     date_posted: new Date().toISOString()
-  };
-
-  userAds.push(newAd);
-
-  if (featured && email) {
-    pendingPayments.set(tx_ref, adId);
-    return res.json({ success: true, paymentLink: true, tx_ref });
-  }
-
+  });
   res.json({ success: true });
-});
-
-app.post('/webhook', async (req, res) => {
-  const hash = crypto.createHmac('sha256', process.env.FLW_SECRET_KEY)
-   .update(req.body)
-   .digest('hex');
-
-  if (hash!== req.headers['verif-hash']) {
-    return res.status(401).send('Unauthorized');
-  }
-
-  const payload = JSON.parse(req.body.toString());
-
-  if (payload.event === 'charge.completed' && payload.data.status === 'successful') {
-    const tx_ref = payload.data.tx_ref;
-    const adId = pendingPayments.get(tx_ref);
-
-    if (adId) {
-      const ad = userAds.find(a => a.id === adId);
-      if (ad) {
-        ad.featured = true;
-        ad.expires_at = new Date(Date.now() + 24*60*60*1000).toISOString();
-      }
-      pendingPayments.delete(tx_ref);
-    }
-  }
-
-  res.status(200).send('OK');
 });
 
 app.listen(PORT, function() {
