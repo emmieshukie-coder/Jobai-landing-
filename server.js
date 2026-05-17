@@ -172,6 +172,8 @@ app.get('/', (req, res) => {
  } catch (e) {
  document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs.</div>";
  }
+ } // <-- this closing brace was missing
+
  async function loadUserAds() {
  const res = await fetch("/ads");
  const ads = await res.json();
@@ -205,7 +207,6 @@ app.get('/', (req, res) => {
  } else {
  document.getElementById("adMsg").textContent = "Failed to post job.";
  document.getElementById("adMsg").style.color = "red";
- }
  }
  async function submitProof() {
  const data = {
@@ -443,6 +444,7 @@ app.get('/jobs', async (req, res) => {
 
     res.json(allJobs.slice(0, 50));
   } catch (err) {
+    console.error(err);
     res.json([]);
   }
 });
@@ -487,7 +489,7 @@ function checkAdmin(req, res, next) {
   next();
 }
 
-// Admin page - FIXED: using template literals
+// Admin page
 app.get('/admin', (req, res) => {
   res.send(`
 <!DOCTYPE html>
