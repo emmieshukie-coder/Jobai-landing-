@@ -10,11 +10,11 @@ const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
 const PRICE_UGX = 2000;
 const MTN_NUMBER = '0707880128';
 const AIRTEL_NUMBER = '0776686096';
-const WHATSAPP_NUMBER = '256707880128'; // Use 256 country code for WhatsApp links
+const WHATSAPP_NUMBER = '256707880128'; // 256 = Uganda country code
 
 // In-memory storage
 let userAds = [];
-let monthlyPosts = {}; // { "IP-YYYY-MM": { count: 1, paid: 0 } }
+let monthlyPosts = {}; // { "IP-YYYY-MM": { count: 1, paid: 0 }
 
 app.use(express.json());
 app.use(express.static('public'));
@@ -103,7 +103,7 @@ app.get('/', (req, res) => {
     ' <input type="tel" id="adPhone" placeholder="Phone number for applicants">' +
     ' <input type="url" id="adUrl" placeholder="Apply link (optional)">' +
     ' <textarea id="adDesc" placeholder="Short description" rows="3"></textarea>' +
-    ' <button class="connect-btn" id="postBtn" onclick="submitAd()">Post Job</button>' +
+    ' <button class="connect-btn" onclick="submitAd()">Post Job</button>' +
     ' <div id="paymentBox" class="payment-box">' +
     ' <p><strong>Payment required: 2000 UGX per post</strong></p>' +
     ' <p>Send to MTN: ' + MTN_NUMBER + ' or Airtel: ' + AIRTEL_NUMBER + '</p>' +
@@ -338,7 +338,7 @@ app.get('/jobs', async (req, res) => {
       }
     }
 
-    if (recentDays > 0) {
+    if (recentDays > 0 && recentDays!== 'all') {
       const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
@@ -389,7 +389,7 @@ app.post('/ads/pay', (req, res) => {
   monthlyPosts[key].paid += 1;
 
   userAds.push({
-...ad,
+   ...ad,
     date_posted: new Date().toISOString(),
     approved: true,
     paid: true,
@@ -400,6 +400,8 @@ app.post('/ads/pay', (req, res) => {
   res.json({ success: true });
 });
 
-app.listen(PORT, function() {
+app.get('/health', (req, res) => res.send('ok'));
+
+app.listen(PORT, () => {
   console.log('Server running on port ' + PORT);
 });
