@@ -56,7 +56,7 @@ app.get('/', (req, res) => {
     '<body>' +
     ' <div class="hero">' +
     ' <h1>Get Connected to Jobs & Workers</h1>' +
-    ' <p>AI-powered matching for Uganda, UAE, Canada, UK & Saudi Arabia</p>' +
+    ' <p>AI-powered matching for Uganda, India, UAE, Canada, UK & Saudi Arabia</p>' +
     ' </div>' +
     ' <div class="container">' +
     ' <div class="controls">' +
@@ -281,6 +281,60 @@ async function fetchIndeedJobs(query, location) {
   }
 }
 
+// NEW: Naukri - covers India, huge population
+async function fetchNaukriJobs(query) {
+  try {
+    const url = `https://naukri-jobs-postings.p.rapidapi.com/api/jobs/search?keywords=${encodeURIComponent(query)}&location=India&page=1&limit=5`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-RapidAPI-Key': RAPIDAPI_KEY,
+        'X-RapidAPI-Host': 'naukri-jobs-postings.p.rapidapi.com'
+      }
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return (data.jobs || []).map(j => ({
+      title: j.title || 'Job Title',
+      company: j.company || 'Unknown Company',
+      location: j.location || 'India',
+      country: 'India',
+      url: j.link || '#',
+      date_posted: j.posted_at,
+      source: 'Naukri'
+    }));
+  } catch (err) {
+    return [];
+  }
+}
+
+// NEW: Bayt - covers Middle East and North Africa
+async function fetchBaytJobs(query) {
+  try {
+    const url = `https://bayt-jobs-postings.p.rapidapi.com/api/jobs/search?keywords=${encodeURIComponent(query)}&location=UAE&page=1&limit=5`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-RapidAPI-Key': RAPIDAPI_KEY,
+        'X-RapidAPI-Host': 'bayt-jobs-postings.p.rapidapi.com'
+      }
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return (data.jobs || []).map(j => ({
+      title: j.title || 'Job Title',
+      company: j.company || 'Unknown Company',
+      location: j.location || 'UAE',
+      country: 'UAE',
+      url: j.link || '#',
+      date_posted: j.posted_at,
+      source: 'Bayt'
+    }));
+  } catch (err) {
+    return [];
+  }
+}
+
 app.get('/jobs', async (req, res) => {
   try {
     const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
@@ -315,12 +369,20 @@ app.get('/jobs', async (req, res) => {
     );
     indeedResults.forEach(arr => allJobs.push(...arr));
 
+    // NEW: Add Naukri for India
+    const naukriJobs = await fetchNaukriJobs(query);
+    allJobs.push(...naukriJobs);
+
+    // NEW: Add Bayt for UAE/Middle East
+    const baytJobs = await fetchBaytJobs(query);
+    allJobs.push(...baytJobs);
+
     if (recentDays > 0) {
       const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
 
-    res.json(allJobs.slice(0, 30));
+    res.json(allJobs.slice(0, 40));
   } catch (err) {
     res.json([]);
   }
