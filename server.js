@@ -89,9 +89,8 @@ app.get('/', (req, res) => {
     ' <div id="paymentStep" style="display:none;">' +
     ' <div class="payment-box">' +
     ' <h4>Pay 200 KES using:</h4>' +
-    ' <p><strong>Bank:</strong> YOUR_BANK_DETAILS</p>' +
-    ' <p><strong>MTN Mobile Money:</strong> YOUR_MTN_NUMBER</p>' +
-    ' <p><strong>Airtel Money:</strong> YOUR_AIRTEL_NUMBER</p>' +
+    ' <p><strong>MTN Mobile Money:</strong> 0776 686096</p>' +
+    ' <p><strong>Airtel Money:</strong> 0707 880128</p>' +
     ' <p>After paying, enter the transaction ID or phone number used below:</p>' +
     ' </div>' +
     ' <input type="text" id="paymentRef" placeholder="Transaction ID or phone number" required>' +
