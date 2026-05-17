@@ -7,6 +7,7 @@ const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
 
+// In-memory storage for user ads
 let userAds = [];
 
 app.use(express.json());
@@ -31,7 +32,7 @@ app.get('/', (req, res) => {
     '.controls input { flex: 1; min-width: 200px; }' +
     '.section { margin-bottom: 48px; }' +
     '.section h2 { margin: 0 0 20px 0; font-size: 26px; color: #1a1a1a; }' +
-    '.job-card { background: white; padding: 24px; margin-bottom: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; }' +
+    '.job-card { background: white; padding: 24px; margin-bottom: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; color: inherit; display: block; }' +
     '.job-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }' +
     '.job-card h3 { margin: 0 0 8px 0; color: #1a73e8; font-size: 20px; }' +
     '.job-meta { margin: 0 0 12px 0; color: #666; font-size: 14px; }' +
@@ -39,19 +40,17 @@ app.get('/', (req, res) => {
     '.country-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }' +
     '.source-tag { display: inline-block; background: #f5f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }' +
     '.user-ad-tag { background: #fff3e0; color: #f57c00; }' +
-    '.btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }' +
+    '.btn-group { display: flex; gap: 10px; flex-wrap: wrap; }' +
     '.connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; border: none; cursor: pointer; }' +
     '.connect-btn:hover { background: #1557b0; }' +
     '.call-btn { background: #34a853; }' +
     '.call-btn:hover { background: #2d9147; }' +
-    '.show-contact { background: #f57c00; }' +
-    '.show-contact:hover { background: #e65100; }' +
-    '.phone-display { color: #34a853; font-weight: 600; margin-top: 8px; display: none; }' +
     '.loading { text-align: center; color: #666; padding: 40px; font-size: 16px; }' +
     '.error { text-align: center; color: #d32f2f; padding: 40px; }' +
     '.ad-form { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 32px; }' +
     '.ad-form input,.ad-form textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; }' +
     '.ad-form h3 { margin-top: 0; }' +
+    '.phone-display { color: #34a853; font-weight: 600; }' +
     ' </style>' +
     '</head>' +
     '<body>' +
@@ -120,22 +119,17 @@ app.get('/', (req, res) => {
     ' document.getElementById("userAds").innerHTML = "<div class=\\"error\\">No community posts yet.</div>";' +
     ' return;' +
     ' }' +
-    ' document.getElementById("userAds").innerHTML = ads.map(function(j, idx) {' +
+    ' document.getElementById("userAds").innerHTML = ads.map(function(j) {' +
     ' let buttons = "<div class=\\"btn-group\\">";' +
     ' if (j.url && j.url!== "#") {' +
     ' buttons += "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"connect-btn\\">Apply Now</a>";' +
     ' }' +
     ' if (j.phone) {' +
-    ' buttons += "<button class=\\"connect-btn show-contact\\" onclick=\\"showPhone(' + idx + ')\\">Show Contact</button>";' +
+    ' buttons += "<a href=\\"tel:" + j.phone + "\\" class=\\"connect-btn call-btn\\">Call " + j.phone + "</a>";' +
     ' }' +
     ' buttons += "</div>";' +
-    ' let phoneHtml = j.phone? "<p class=\\"phone-display\\" id=\\"phone-' + idx + '\\">Phone: <a href=\\"tel:' + j.phone + '\\" class=\\"call-btn connect-btn\\">Call " + j.phone + "</a></p>" : "";' +
-    ' return "<div class=\\"job-card\\"><span class=\\"country-tag user-ad-tag\\">Community</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p>" + phoneHtml + buttons + "</div>";' +
+    ' return "<div class=\\"job-card\\"><span class=\\"country-tag user-ad-tag\\">Community</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
     ' }).join("");' +
-    ' }' +
-    ' function showPhone(idx) {' +
-    ' document.getElementById("phone-" + idx).style.display = "block";' +
-    ' event.target.style.display = "none";' +
     ' }' +
     ' async function loadJobs() {' +
     ' const query = document.getElementById("searchInput").value || "developer";' +
