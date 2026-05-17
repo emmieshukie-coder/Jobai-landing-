@@ -27,8 +27,10 @@ app.get('/', (req, res) => {
     '.job-card { background: white; padding: 24px; margin-bottom: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; color: inherit; display: block; }' +
     '.job-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }' +
     '.job-card h3 { margin: 0 0 8px 0; color: #1a73e8; font-size: 20px; }' +
-    '.job-card p { margin: 0 0 16px 0; color: #666; font-size: 15px; }' +
+    '.job-meta { margin: 0 0 12px 0; color: #666; font-size: 14px; }' +
+    '.job-meta span { margin-right: 12px; }' +
     '.country-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }' +
+    '.source-tag { display: inline-block; background: #f5f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }' +
     '.connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; }' +
     '.connect-btn:hover { background: #1557b0; }' +
     '.loading { text-align: center; color: #666; padding: 40px; font-size: 16px; }' +
@@ -45,6 +47,15 @@ app.get('/', (req, res) => {
     ' <div id="jobs" class="loading">Loading jobs...</div>' +
     ' </div>' +
     ' <script>' +
+    ' function timeAgo(dateStr) {' +
+    ' if (!dateStr) return "";' +
+    ' const date = new Date(dateStr);' +
+    ' const now = new Date();' +
+    ' const diff = Math.floor((now - date) / 1000 / 60 / 60 / 24);' +
+    ' if (diff === 0) return "Today";' +
+    ' if (diff === 1) return "1 day ago";' +
+    ' return diff + " days ago";' +
+    ' }' +
     ' async function loadJobs() {' +
     ' try {' +
     ' const res = await fetch("/jobs");' +
@@ -54,7 +65,7 @@ app.get('/', (req, res) => {
     ' return;' +
     ' }' +
     ' document.getElementById("jobs").innerHTML = jobs.map(function(j) {' +
-    ' return "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"job-card\\"><span class=\\"country-tag\\">" + j.country + "</span><h3>" + j.title + "</h3><p>" + j.location + " • " + j.company + "</p><span class=\\"connect-btn\\">Connect & Apply</span></a>";' +
+    ' return "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"job-card\\"><span class=\\"country-tag\\">" + j.country + "</span><span class=\\"source-tag\\">" + j.source + "</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span><span>•</span><span>" + timeAgo(j.date_posted) + "</span></p><span class=\\"connect-btn\\">Connect & Apply</span></a>";' +
     ' }).join("");' +
     ' } catch (e) {' +
     ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs. Please refresh the page.</div>";' +
@@ -67,7 +78,6 @@ app.get('/', (req, res) => {
   );
 });
 
-// JSearch via RapidAPI
 async function fetchJSearchJobs(query, location) {
   try {
     const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1`;
@@ -79,47 +89,42 @@ async function fetchJSearchJobs(query, location) {
       }
     });
 
-    if (!response.ok) {
-      console.log(`JSearch error for ${location}:`, response.status);
-      return [];
-    }
+    if (!response.ok) return [];
 
     const data = await response.json();
-    console.log(`JSearch results for ${location}:`, data.data?.length || 0);
 
     return (data.data || []).map(j => ({
       title: j.job_title || 'Job Title',
       company: j.employer_name || 'Unknown Company',
       location: j.job_city || location,
       country: location,
-      url: j.job_apply_link || '#'
+      url: j.job_apply_link || '#',
+      date_posted: j.job_posted_at_datetime_utc,
+      source: j.job_publisher || 'JSearch'
     }));
   } catch (err) {
-    console.error(`JSearch error for ${location}:`, err);
     return [];
   }
 }
 
-// Adzuna fallback
 async function fetchAdzunaJobs(countryCode, countryName) {
   try {
     const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=5&content-type=application/json`;
     const response = await fetch(url);
-
     if (!response.ok) return [];
 
     const data = await response.json();
-    console.log(`Adzuna results for ${countryName}:`, data.results?.length || 0);
 
     return (data.results || []).map(j => ({
       title: j.title || 'Job Title',
       company: j.company?.display_name || 'Unknown Company',
       location: j.location?.display_name || countryName,
       country: countryName,
-      url: j.redirect_url || '#'
+      url: j.redirect_url || '#',
+      date_posted: j.created,
+      source: 'Adzuna'
     }));
   } catch (err) {
-    console.error(`Adzuna error for ${countryName}:`, err);
     return [];
   }
 }
@@ -134,21 +139,18 @@ app.get('/jobs', async (req, res) => {
       { code: 'sa', name: 'Saudi Arabia' }
     ];
 
-    const query = 'developer'; // Change this to change job type
+    const query = 'developer';
 
-    // Try JSearch for all countries
     const jsearchResults = await Promise.all(
       countries.map(c => fetchJSearchJobs(query, c.name))
     );
 
     let allJobs = [];
 
-    // For each country, use JSearch if it has results, else fallback to Adzuna
     for (let i = 0; i < countries.length; i++) {
       if (jsearchResults[i].length > 0) {
         allJobs.push(...jsearchResults[i]);
       } else {
-        console.log(`Falling back to Adzuna for ${countries[i].name}`);
         const adzunaJobs = await fetchAdzunaJobs(countries[i].code, countries[i].name);
         allJobs.push(...adzunaJobs);
       }
@@ -156,7 +158,6 @@ app.get('/jobs', async (req, res) => {
 
     res.json(allJobs.slice(0, 15));
   } catch (err) {
-    console.error('Jobs fetch error:', err);
     res.json([]);
   }
 });
