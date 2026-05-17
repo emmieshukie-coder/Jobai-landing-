@@ -1,4 +1,5 @@
 import express from 'express';
+import Flutterwave from 'flutterwave-node-v3';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -6,6 +7,11 @@ const PORT = process.env.PORT || 3000;
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
+
+// Flutterwave setup - put these in Render Environment variables
+const FLW_PUBLIC_KEY = process.env.FLW_PUBLIC_KEY;
+const FLW_SECRET_KEY = process.env.FLW_SECRET_KEY;
+const flw = new Flutterwave(FLW_PUBLIC_KEY, FLW_SECRET_KEY);
 
 // In-memory storage for user ads
 let userAds = [];
@@ -188,6 +194,7 @@ app.get('/', (req, res) => {
   );
 });
 
+//... all your existing fetch functions stay here unchanged...
 async function fetchJSearchJobs(query, location) {
   try {
     const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1&date_posted=week`;
@@ -410,6 +417,47 @@ app.post('/ads', (req, res) => {
     date_posted: new Date().toISOString()
   });
   res.json({ success: true });
+});
+
+// --- FLUTTERWAVE PAYMENT ROUTES ---
+
+// Create payment link
+app.post('/pay', async (req, res) => {
+  try {
+    const { amount, email, name, phone } = req.body;
+    
+    const payload = {
+      tx_ref: 'jobai_' + Date.now(),
+      amount: amount,
+      currency: 'USD',
+      redirect_url: 'https://jobai-landing.onrender.com',
+      customer: {
+        email: email,
+        name: name,
+        phonenumber: phone
+      },
+      customizations: {
+        title: 'Jobai Payment',
+        description: 'Job posting payment'
+      }
+    };
+
+    const response = await flw.Payment.link(payload);
+    res.json(response);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Verify payment
+app.get('/verify/:tx_ref', async (req, res) => {
+  try {
+    const { tx_ref } = req.params;
+    const response = await flw.Transaction.verify({ tx_ref });
+    res.json(response);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.listen(PORT, function() {
