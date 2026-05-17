@@ -336,7 +336,7 @@ app.post('/ads/pay', (req, res) => {
   monthlyPosts[key].paid += 1;
 
   userAds.push({
-  ...ad,
+ ...ad,
     date_posted: new Date().toISOString(),
     approved: true,
     paid: true,
