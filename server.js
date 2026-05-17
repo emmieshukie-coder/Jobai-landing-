@@ -1,5 +1,7 @@
 import express from 'express';
-import Flutterwave from 'flutterwave-node-v3';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const Flutterwave = require('flutterwave-node-v3');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
