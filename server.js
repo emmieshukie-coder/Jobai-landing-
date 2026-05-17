@@ -147,7 +147,7 @@ app.get('/', (req, res) => {
     ' document.getElementById("userAds").innerHTML = "<div class=\\"error\\">No community posts yet.</div>";' +
     ' return;' +
     ' }' +
-    ' document.getElementById("userAds").innerHTML = ads.map(function(j, idx) {' +
+  document.getElementById("userAds").innerHTML = ads.map(function(j, idx) {
     ' let buttons = "<div class=\\"btn-group\\">";' +
     ' if (j.url && j.url!== "#") {' +
     ' buttons += "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"connect-btn\\">Apply Now</a>";' +
