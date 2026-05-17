@@ -187,11 +187,10 @@ app.get('/jobs', async (req, res) => {
     const recentDays = parseInt(req.query.recent) || 7;
 
     const countries = [
-      { code: 'ug', name: 'Uganda' },
-      { code: 'ke', name: 'Kenya' },
-      { code: 'tz', name: 'Tanzania' },
-      { code: 'rw', name: 'Rwanda' }
-    ];
+  { code: 'gb', name: 'UK' },
+  { code: 'us', name: 'US' },
+  { code: 'in', name: 'India' }
+];
 
     let allJobs = [];
     for (let i = 0; i < countries.length; i++) {
