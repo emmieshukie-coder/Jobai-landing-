@@ -6,7 +6,7 @@ const PORT = process.env.PORT || 3000;
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
-const ADMIN_PASSWORD = 'anding123'; // CHANGE THIS NOW
+const ADMIN_PASSWORD = 'anding123'; // CHANGE THIS
 
 let userAds = [];
 
@@ -118,7 +118,7 @@ return diff + " days ago";
 }
 function renderJobs(jobs) {
 if (!jobs.length) {
-document.getElementById("jobs").innerHTML = "<div class=\\"error\\">No jobs found.</div>";
+document.getElementById("jobs").innerHTML = '<div class="error">No jobs found.</div>';
 return;
 }
 document.getElementById("jobs").innerHTML = jobs.map(j =>
@@ -127,7 +127,7 @@ document.getElementById("jobs").innerHTML = jobs.map(j =>
 }
 function renderUserAds(ads) {
 if (!ads.length) {
-document.getElementById("userAds").innerHTML = "<div class=\\"error\\">No community posts yet.</div>";
+document.getElementById("userAds").innerHTML = '<div class="error">No community posts yet.</div>';
 return;
 }
 document.getElementById("userAds").innerHTML = ads.map(j => {
@@ -145,13 +145,13 @@ return `<div class="job-card"><span class="country-tag user-ad-tag">Community</s
 async function loadJobs() {
 const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant";
 const days = document.getElementById("dateFilter").value;
-document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading jobs...</div>";
+document.getElementById("jobs").innerHTML = '<div class="loading">Loading jobs...</div>';
 try {
 const res = await fetch(`/jobs?query=${encodeURIComponent(query)}&recent=${days}`);
 allJobs = await res.json();
 renderJobs(allJobs);
 } catch (e) {
-document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs.</div>";
+document.getElementById("jobs").innerHTML = '<div class="error">Failed to load jobs.</div>';
 }
 async function loadUserAds() {
 const res = await fetch("/ads");
@@ -204,41 +204,6 @@ loadUserAds();
   `);
 });
 
-app.get('/jobs', async (req, res) => {
-  try {
-    const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
-    const recentDays = parseInt(req.query.recent) || 7;
-
-    const countries = [
-      { code: 'ug', name: 'Uganda' },
-      { code: 'ke', name: 'Kenya' },
-      { code: 'tz', name: 'Tanzania' },
-      { code: 'gb', name: 'United Kingdom' },
-      { code: 'in', name: 'India' }
-    ];
-
-    let allJobs = [];
-    for (let i = 0; i < countries.length; i++) {
-      const jsearchJobs = await fetchJSearchJobs(query, countries[i].name);
-      if (jsearchJobs.length > 0) {
-        allJobs.push(...jsearchJobs);
-      } else {
-        const adzunaJobs = await fetchAdzunaJobs(countries[i].code, countries[i].name, query);
-        allJobs.push(...adzunaJobs);
-      }
-    }
-
-    if (recentDays > 0) {
-      const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
-      allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
-    }
-
-    res.json(allJobs.slice(0, 50));
-  } catch (err) {
-    res.json([]);
-  }
-});
-
 async function fetchJSearchJobs(query, location) {
   try {
     const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1&date_posted=week`;
@@ -284,6 +249,41 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
     return [];
   }
 }
+
+app.get('/jobs', async (req, res) => {
+  try {
+    const query = req.query.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
+    const recentDays = parseInt(req.query.recent) || 7;
+
+    const countries = [
+      { code: 'ug', name: 'Uganda' },
+      { code: 'ke', name: 'Kenya' },
+      { code: 'tz', name: 'Tanzania' },
+      { code: 'gb', name: 'United Kingdom' },
+      { code: 'in', name: 'India' }
+    ];
+
+    let allJobs = [];
+    for (let i = 0; i < countries.length; i++) {
+      const jsearchJobs = await fetchJSearchJobs(query, countries[i].name);
+      if (jsearchJobs.length > 0) {
+        allJobs.push(...jsearchJobs);
+      } else {
+        const adzunaJobs = await fetchAdzunaJobs(countries[i].code, countries[i].name, query);
+        allJobs.push(...adzunaJobs);
+      }
+    }
+
+    if (recentDays > 0) {
+      const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
+      allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
+    }
+
+    res.json(allJobs.slice(0, 50));
+  } catch (err) {
+    res.json([]);
+  }
+});
 
 app.get('/ads', (req, res) => {
   res.json(userAds.filter(ad => ad.status === 'approved').slice().reverse());
@@ -334,10 +334,10 @@ async function login(){
   }else{alert("Wrong password");}
 }
 async function loadPending(){
-  const res=await fetch(`/admin-pending?password=${token}`);
+  const res=await fetch(\`/admin-pending?password=\${token}\`);
   if(res.status===401){localStorage.removeItem("admin_token");showLogin();return;}
   const ads=await res.json();
-  document.getElementById("app").innerHTML='<h2>Pending Payments</h2>'+ads.map(a=>`<div class="pending"><h3>${a.title}</h3><p><b>Company:</b> ${a.company}</p><p><b>Payment Ref:</b> ${a.paymentRef}</p><button class="approve-btn" onclick="approve('${a.paymentRef}')">Approve</button></div>`).join("");
+  document.getElementById("app").innerHTML='<h2>Pending Payments</h2>'+ads.map(a=>\`<div class="pending"><h3>\${a.title}</h3><p><b>Company:</b> \${a.company}</p><p><b>Payment Ref:</b> \${a.paymentRef}</p><button class="approve-btn" onclick="approve('\${a.paymentRef}')">Approve</button></div>\`).join("");
 }
 async function approve(ref){
   await fetch("/approve-payment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paymentRef:ref,password:token})});
