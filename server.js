@@ -9,9 +9,11 @@ const ADZUNA_APP_ID = process.env.ADZUNA_APP_ID;
 const ADZUNA_API_KEY = process.env.ADZUNA_API_KEY;
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'changeme';
+const FLW_PUBLIC_KEY = process.env.FLW_PUBLIC_KEY;
+const FLW_SECRET_KEY = process.env.FLW_SECRET_KEY;
 
 let userAds = [];
-let paymentProofs = [];
+let payments = [];
 
 app.use(express.json());
 app.use(express.static('public'));
@@ -24,6 +26,7 @@ app.get('/', (req, res) => {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jobai - Get Connected to Jobs & Workers</title>
+<script src="https://checkout.flutterwave.com/v3.js"></script>
 <style>
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }
 .hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 60px 20px; text-align: center; }
@@ -35,24 +38,22 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial
 .controls input { flex: 1; min-width: 200px; }
 .section { margin-bottom: 48px; }
 .section h2 { margin: 0 0 20px 0; font-size: 26px; color: #1a1a1a; }
-.job-card { background: white; padding: 24px; margin-bottom: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.job-card { background: white; padding: 24px; margin-bottom: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; }
 .job-card h3 { margin: 0 0 8px 0; color: #1a73e8; font-size: 20px; }
 .job-meta { margin: 0 0 12px 0; color: #666; font-size: 14px; }
 .job-meta span { margin-right: 12px; }
 .country-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
 .source-tag { display: inline-block; background: #f5f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }
 .user-ad-tag { background: #fff3e0; color: #f57c00; }
-.btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
 .connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; border: none; cursor: pointer; }
 .call-btn { background: #34a853; }
+.pay-btn { background: #f57c00; }
 .loading { text-align: center; color: #666; padding: 40px; font-size: 16px; }
 .error { text-align: center; color: #d32f2f; padding: 40px; }
 .ad-form { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 32px; }
 .ad-form input,.ad-form textarea,.ad-form select { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; }
 .ad-form h3 { margin-top: 0; }
-.phone-display { color: #34a853; font-weight: 600; }
-.pay-info { background: #f0f8ff; padding: 16px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #1a73e8; }
-.pay-info p { margin: 6px 0; }
 </style>
 </head>
 <body>
@@ -72,27 +73,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial
 </div>
 
 <div class="section">
-<h2>Pay Direct to Account</h2>
+<h2>Post Featured Job - Pay to Promote</h2>
 <div class="ad-form">
-<div class="pay-info">
-<p><strong>Bank:</strong> Stanbic Bank Uganda</p>
-<p><strong>Account Name:</strong> Jobai Ltd</p>
-<p><strong>Account No:</strong> 9030012345678</p>
-<p><strong>MTN MoMo:</strong> +2567XXXXXXXX</p>
-<p><strong>Airtel Money:</strong> +2567XXXXXXXX</p>
-<p style="font-size:13px; color:#666;">Use your name as reference. Submit proof after payment.</p>
-</div>
-<h4>Submit Payment Proof</h4>
-<input type="text" id="payerName" placeholder="Your full name" required>
-<input type="number" id="payerAmount" placeholder="Amount paid" required>
-<select id="payerMethod">
-<option value="Bank Transfer">Bank Transfer</option>
-<option value="MTN MoMo">MTN MoMo</option>
-<option value="Airtel Money">Airtel Money</option>
-</select>
-<input type="text" id="payerRef" placeholder="Transaction reference" required>
-<button class="connect-btn" onclick="submitProof()">Submit Proof</button>
-<p id="proofMsg" style="margin-top:10px; font-size:14px;"></p>
+<h3>Pay 5000 UGX to make your job featured for 7 days</h3>
+<input type="text" id="payName" placeholder="Your name" required>
+<input type="email" id="payEmail" placeholder="Your email" required>
+<input type="tel" id="payPhone" placeholder="Phone number" required>
+<button class="connect-btn pay-btn" onclick="payNow()">Pay with Card/MTN/Airtel</button>
+<p id="payMsg" style="margin-top:10px; font-size:14px;"></p>
 </div>
 </div>
 
@@ -102,9 +90,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial
 </div>
 
 <div class="section">
-<h2>Post a Job</h2>
+<h2>Post a Job Free</h2>
 <div class="ad-form">
-<h3>Advertise your job for free</h3>
 <input type="text" id="adTitle" placeholder="Job title" required>
 <input type="text" id="adCompany" placeholder="Company name" required>
 <input type="text" id="adLocation" placeholder="Location" required>
@@ -121,6 +108,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial
 
 <script>
 let allJobs = [];
+const FLW_PUBLIC_KEY = "${FLW_PUBLIC_KEY}";
 
 function timeAgo(dateStr) {
 if (!dateStr) return "";
@@ -138,7 +126,7 @@ document.getElementById("jobs").innerHTML = '<div class="error">No jobs found.</
 return;
 }
 document.getElementById("jobs").innerHTML = jobs.map(function(j) {
-return '<a href="' + j.url + '" target="_blank" class="job-card"><span class="country-tag">' + j.country + '</span><span class="source-tag">' + j.source + '</span><h3>' + j.title + '</h3><p class="job-meta"><span>' + j.location + '</span><span>•</span><span>' + j.company + '</span><span>•</span><span>' + timeAgo(j.date_posted) + '</span></p><span class="connect-btn">Connect & Apply</span></a>';
+return '<div class="job-card"><span class="country-tag">' + j.country + '</span><span class="source-tag">' + j.source + '</span><h3>' + j.title + '</h3><p class="job-meta"><span>' + j.location + '</span><span>•</span><span>' + j.company + '</span><span>•</span><span>' + timeAgo(j.date_posted) + '</span></p><div class="btn-group"><a href="' + j.url + '" target="_blank" class="connect-btn">Connect & Apply</a></div></div>';
 }).join("");
 }
 
@@ -156,12 +144,12 @@ if (j.phone) {
 buttons += '<a href="tel:' + j.phone + '" class="connect-btn call-btn">Call ' + j.phone + '</a>';
 }
 buttons += "</div>";
-return '<div class="job-card"><span class="country-tag user-ad-tag">Community</span><h3>' + j.title + '</h3><p class="job-meta"><span>' + j.location + '</span><span>•</span><span>' + j.company + '</span></p><p>' + (j.description || "") + '</p><p class="phone-display">' + (j.phone? "Phone: " + j.phone : "") + '</p>' + buttons + '</div>';
+return '<div class="job-card"><span class="country-tag user-ad-tag">Community</span><h3>' + j.title + '</h3><p class="job-meta"><span>' + j.location + '</span><span>•</span><span>' + j.company + '</span></p><p>' + (j.description || "") + '</p><p>' + (j.phone? "Phone: " + j.phone : "") + '</p>' + buttons + '</div>';
 }).join("");
 }
 
 async function loadJobs() {
-const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant";
+const query = document.getElementById("searchInput").value || "cleaner OR helper OR nurse OR teacher OR engineer OR farmer";
 const days = document.getElementById("dateFilter").value;
 document.getElementById("jobs").innerHTML = '<div class="loading">Loading jobs...</div>';
 try {
@@ -210,27 +198,48 @@ document.getElementById("adMsg").style.color = "red";
 }
 }
 
-async function submitProof() {
-const data = {
-name: document.getElementById("payerName").value,
-amount: document.getElementById("payerAmount").value,
-method: document.getElementById("payerMethod").value,
-reference: document.getElementById("payerRef").value
-};
-if (!data.name ||!data.amount ||!data.reference) {
-document.getElementById("proofMsg").textContent = "Please fill all fields.";
-document.getElementById("proofMsg").style.color = "red";
+function payNow() {
+const name = document.getElementById("payName").value;
+const email = document.getElementById("payEmail").value;
+const phone = document.getElementById("payPhone").value;
+
+if (!name || !email || !phone) {
+document.getElementById("payMsg").textContent = "Please fill all fields";
+document.getElementById("payMsg").style.color = "red";
 return;
 }
-const res = await fetch("/pay-direct/proof", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
-const result = await res.json();
-document.getElementById("proofMsg").textContent = result.message;
-document.getElementById("proofMsg").style.color = res.ok? "green" : "red";
-if(res.ok) {
-document.getElementById("payerName").value = "";
-document.getElementById("payerAmount").value = "";
-document.getElementById("payerRef").value = "";
+
+FlutterwaveCheckout({
+public_key: FLW_PUBLIC_KEY,
+tx_ref: "jobai_" + Date.now(),
+amount: 5000,
+currency: "UGX",
+payment_options: "card, mobilemoneyuganda, mobilemoneyrwanda",
+customer: {
+email: email,
+phone_number: phone,
+name: name
+},
+callback: function(data) {
+fetch("/verify-payment", {
+method: "POST",
+headers: {"Content-Type": "application/json"},
+body: JSON.stringify(data)
+}).then(res => res.json()).then(result => {
+document.getElementById("payMsg").textContent = result.message;
+document.getElementById("payMsg").style.color = result.success ? "green" : "red";
+if(result.success) {
+document.getElementById("payName").value = "";
+document.getElementById("payEmail").value = "";
+document.getElementById("payPhone").value = "";
 }
+});
+},
+onclose: function() {
+document.getElementById("payMsg").textContent = "Payment cancelled";
+document.getElementById("payMsg").style.color = "orange";
+}
+});
 }
 
 document.getElementById("searchInput").addEventListener("input", loadJobs);
@@ -243,6 +252,7 @@ loadUserAds();
   `);
 });
 
+// Job APIs - simplified to avoid timeouts
 async function fetchJSearchJobs(query, location) {
   try {
     const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1&date_posted=week`;
@@ -255,7 +265,7 @@ async function fetchJSearchJobs(query, location) {
     });
     if (!response.ok) return [];
     const data = await response.json();
-    return (data.data || []).map(j => ({
+    return (data.data || []).slice(0, 5).map(j => ({
       title: j.job_title || 'Job Title',
       company: j.employer_name || 'Unknown Company',
       location: j.job_city || location,
@@ -291,7 +301,7 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
 
 app.get('/jobs', async (req, res) => {
   try {
-    const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
+    const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer';
     const recentDays = parseInt(req.query.recent) || 7;
 
     const countries = [
@@ -299,12 +309,7 @@ app.get('/jobs', async (req, res) => {
       { code: 'ke', name: 'Kenya' },
       { code: 'tz', name: 'Tanzania' },
       { code: 'rw', name: 'Rwanda' },
-      { code: 'bi', name: 'Burundi' },
-      { code: 'in', name: 'India' },
-      { code: 'ae', name: 'United Arab Emirates' },
-      { code: 'sa', name: 'Saudi Arabia' },
-      { code: 'gb', name: 'United Kingdom' },
-      { code: 'ca', name: 'Canada' }
+      { code: 'in', name: 'India' }
     ];
 
     let allJobs = [];
@@ -323,7 +328,7 @@ app.get('/jobs', async (req, res) => {
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
 
-    res.json(allJobs.slice(0, 50));
+    res.json(allJobs.slice(0, 30));
   } catch (err) {
     console.error(err);
     res.json([]);
@@ -341,129 +346,40 @@ app.post('/ads', (req, res) => {
   }
   userAds.push({
     title, company, location, phone: phone || null, url: url || null, description,
-    date_posted: new Date().toISOString()
-  });
-  res.json({ success: true });
-});
-
-app.post('/pay-direct/proof', (req, res) => {
-  const { name, amount, method, reference } = req.body;
-  if (!name ||!amount ||!method ||!reference) {
-    return res.status(400).json({ error: 'Missing required fields', message: 'Please fill all fields' });
-  }
-  paymentProofs.push({
-    id: Date.now(),
-    name, amount, method, reference,
     date_posted: new Date().toISOString(),
-    status: 'pending'
+    featured: false
   });
-  res.json({ success: true, message: 'Proof submitted. We will confirm payment within 24 hours.' });
-});
-
-app.get('/admin', (req, res) => {
-  res.send(`
-<!DOCTYPE html>
-<html>
-<head>
-<title>Admin - Payment Proofs</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body { font-family: Arial, sans-serif; background: #f5f7fa; padding: 20px; }
-.container { max-width: 1000px; margin: 0 auto; }
-.login { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); max-width: 400px; margin: 100px auto; }
-.login input { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-.proof-card { background: white; padding: 20px; margin-bottom: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-.status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-.pending { background: #fff3e0; color: #f57c00; }
-.confirmed { background: #e8f5e9; color: #2e7d32; }
-.btn { background: #1a73e8; color: white; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; margin-top: 10px; }
-table { width: 100%; border-collapse: collapse; }
-td { padding: 8px 0; }
-td:first-child { font-weight: 600; width: 140px; }
-</style>
-</head>
-<body>
-<div class="container">
-<div id="loginDiv" class="login">
-<h2>Admin Login</h2>
-<input type="password" id="adminPass" placeholder="Enter admin password">
-<button class="btn" onclick="login()">Login</button>
-<p id="loginMsg" style="color:red;"></p>
-</div>
-<div id="adminDiv" style="display:none;">
-<h1>Payment Proofs</h1>
-<div id="proofs"></div>
-</div>
-</div>
-<script>
-let adminPass = "";
-function login() {
-adminPass = document.getElementById("adminPass").value;
-fetch("/admin/proofs", {headers: {"x-admin-password": adminPass}})
-.then(res => {
-if(!res.ok) throw new Error("Wrong password");
-return res.json();
-})
-.then(data => {
-document.getElementById("loginDiv").style.display = "none";
-document.getElementById("adminDiv").style.display = "block";
-renderProofs(data);
-})
-.catch(() => {
-document.getElementById("loginMsg").textContent = "Wrong password";
-});
-}
-function renderProofs(proofs) {
-if(!proofs.length) {
-document.getElementById("proofs").innerHTML = "<p>No proofs yet.</p>";
-return;
-}
-document.getElementById("proofs").innerHTML = proofs.map(p =>
-'<div class="proof-card">' +
-'<table>' +
-'<tr><td>Name:</td><td>' + p.name + '</td></tr>' +
-'<tr><td>Amount:</td><td>' + p.amount + '</td></tr>' +
-'<tr><td>Method:</td><td>' + p.method + '</td></tr>' +
-'<tr><td>Reference:</td><td>' + p.reference + '</td></tr>' +
-'<tr><td>Date:</td><td>' + new Date(p.date_posted).toLocaleString() + '</td></tr>' +
-'<tr><td>Status:</td><td><span class="status ' + p.status + '">' + p.status + '</span></td></tr>' +
-'</table>' +
-(p.status === "pending"? '<button class="btn" onclick="confirmProof(' + p.id + ')">Mark as Confirmed</button>' : '') +
-'</div>'
-).join("");
-}
-function confirmProof(id) {
-fetch("/admin/proofs/confirm/" + id, {
-method: "POST",
-headers: {"x-admin-password": adminPass}
-})
-.then(res => res.json())
-.then(() => login());
-}
-</script>
-</body>
-</html>
-  `);
-});
-
-app.get('/admin/proofs', (req, res) => {
-  const password = req.headers['x-admin-password'];
-  if (password!== ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  res.json(paymentProofs.slice().reverse());
-});
-
-app.post('/admin/proofs/confirm/:id', (req, res) => {
-  const password = req.headers['x-admin-password'];
-  if (password!== ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  const id = parseInt(req.params.id);
-  const proof = paymentProofs.find(p => p.id === id);
-  if (!proof) return res.status(404).json({ error: 'Not found' });
-  proof.status = 'confirmed';
   res.json({ success: true });
+});
+
+// Flutterwave payment verification
+app.post('/verify-payment', async (req, res) => {
+  try {
+    const { transaction_id } = req.body;
+    const response = await fetch(`https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${FLW_SECRET_KEY}`
+      }
+    });
+    const data = await response.json();
+    
+    if (data.status === 'success' && data.data.status === 'successful') {
+      payments.push({
+        id: transaction_id,
+        amount: data.data.amount,
+        email: data.data.customer.email,
+        phone: data.data.customer.phone_number,
+        status: 'successful',
+        date: new Date().toISOString()
+      });
+      res.json({ success: true, message: 'Payment successful! Your job will be featured.' });
+    } else {
+      res.json({ success: false, message: 'Payment failed' });
+    }
+  } catch (err) {
+    res.json({ success: false, message: 'Verification failed' });
+  }
 });
 
 app.listen(PORT, function() {
