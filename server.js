@@ -1,5 +1,8 @@
 import express from 'express';
 import { createRequire } from 'module';
+import dotenv from 'dotenv';
+dotenv.config();
+
 const require = createRequire(import.meta.url);
 const Flutterwave = require('flutterwave-node-v3');
 
