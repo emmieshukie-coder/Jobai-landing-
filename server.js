@@ -6,7 +6,7 @@ const PORT = process.env.PORT || 3000;
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
-const ADMIN_PASSWORD = 'anding123'; // CHANGE THIS
+const ADMIN_PASSWORD = '@1122EMM'; 
 
 let userAds = [];
 
@@ -153,6 +153,7 @@ renderJobs(allJobs);
 } catch (e) {
 document.getElementById("jobs").innerHTML = '<div class="error">Failed to load jobs.</div>';
 }
+}
 async function loadUserAds() {
 const res = await fetch("/ads");
 const ads = await res.json();
@@ -252,7 +253,7 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
 
 app.get('/jobs', async (req, res) => {
   try {
-    const query = req.query.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
+    const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
     const recentDays = parseInt(req.query.recent) || 7;
 
     const countries = [
