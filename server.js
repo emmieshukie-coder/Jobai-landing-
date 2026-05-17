@@ -6,6 +6,7 @@ const PORT = process.env.PORT || 3000;
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
+const ADMIN_PASSWORD = 'anding123'; // CHANGE THIS
 
 // In-memory storage
 let userAds = [];
@@ -45,6 +46,8 @@ app.get('/', (req, res) => {
     '.connect-btn:hover { background: #1557b0; }' +
     '.call-btn { background: #34a853; }' +
     '.call-btn:hover { background: #2d9147; }' +
+    '.approve-btn { background: #ff6b00; }' +
+    '.approve-btn:hover { background: #e05f00; }' +
     '.loading { text-align: center; color: #666; padding: 40px; font-size: 16px; }' +
     '.error { text-align: center; color: #d32f2f; padding: 40px; }' +
     '.ad-form { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 32px; }' +
@@ -54,6 +57,7 @@ app.get('/', (req, res) => {
     '.payment-box { background: #e8f5e9; padding: 16px; border-radius: 8px; margin: 16px 0; border: 1px solid #c8e6c9; }' +
     '.payment-box h4 { margin: 0 0 8px 0; color: #2e7d32; }' +
     '.payment-box p { margin: 4px 0; font-size: 14px; }' +
+    '.admin-login { max-width: 400px; margin: 100px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }' +
     ' </style>' +
     '</head>' +
     '<body>' +
@@ -307,9 +311,45 @@ app.post('/ads', (req, res) => {
   res.json({ success: true });
 });
 
+// ADMIN PAGE
+app.get('/admin', (req, res) => {
+  res.send(
+    '<!DOCTYPE html>' +
+    '<html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Admin</title>' +
+    '<style>body{font-family:Arial;padding:20px;background:#f5f7fa;}.login{background:white;padding:30px;border-radius:12px;max-width:400px;margin:100px auto;box-shadow:0 2px 8px rgba(0,0,0,0.08);} input{width:100%;padding:10px;margin:10px 0;border:1px solid #ddd;border-radius:8px;} button{background:#1a73e8;color:white;padding:10px 20px;border:none;border-radius:8px;cursor:pointer;}.pending{background:white;padding:20px;margin:10px 0;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08);} </style>' +
+    '</head><body>' +
+    '<div id="app"></div>' +
+    '<script>' +
+    'let token = localStorage.getItem("admin_token");' +
+    'if(!token){showLogin();}else{loadPending();}' +
+    'function showLogin(){document.getElementById("app").innerHTML=\'<div class="login"><h2>Admin Login</h2><input type="password" id="pass" placeholder="Password"><button onclick="login()">Login</button></div>\';}' +
+    'async function login(){const pass=document.getElementById("pass").value;const res=await fetch("/admin-login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:pass})});if(res.ok){token=pass;localStorage.setItem("admin_token",pass);loadPending();}else{alert("Wrong password");}}' +
+    'async function loadPending(){const res=await fetch("/admin-pending?password="+token);if(res.status===401){localStorage.removeItem("admin_token");showLogin();return;}const ads=await res.json();document.getElementById("app").innerHTML=\'<h2>Pending Payments</h2>\'+ads.map(a=>\'<div class="pending"><h3>\'+a.title+\'</h3><p><b>Company:</b> \'+a.company+\'</p><p><b>Payment Ref:</b> \'+a.paymentRef+\'</p><button class="approve-btn" onclick="approve(\\"\'+a.paymentRef+\'\\')">Approve</button></div>\').join("");}' +
+    'async function approve(ref){await fetch("/approve-payment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paymentRef:ref,password:token})});alert("Approved!");loadPending();}' +
+    '</script></body></html>'
+  );
+});
+
+app.post('/admin-login', (req, res) => {
+  if(req.body.password === ADMIN_PASSWORD){
+    res.json({success:true});
+  }else{
+    res.status(401).json({error:'Unauthorized'});
+  }
+});
+
+app.get('/admin-pending', (req, res) => {
+  if(req.query.password!== ADMIN_PASSWORD){
+    return res.status(401).json({error:'Unauthorized'});
+  }
+  res.json(userAds.filter(ad => ad.status === 'pending'));
+});
+
 app.post('/approve-payment', (req, res) => {
-  const { paymentRef } = req.body;
-  const ad = userAds.find(a => a.paymentRef === paymentRef);
+  if(req.body.password!== ADMIN_PASSWORD){
+    return res.status(401).json({error:'Unauthorized'});
+  }
+  const ad = userAds.find(a => a.paymentRef === req.body.paymentRef);
   if (!ad) return res.status(404).json({ error: 'Payment not found' });
   ad.status = 'approved';
   res.json({ success: true });
