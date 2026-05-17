@@ -1,27 +1,17 @@
-import dotenv from 'dotenv';
-dotenv.config();
 import express from 'express';
-import { createRequire } from 'module';
 import dotenv from 'dotenv';
 dotenv.config();
-
-const require = createRequire(import.meta.url);
-const Flutterwave = require('flutterwave-node-v3');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const ADZUNA_APP_ID = 'cd82aca8';
-const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
-const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
+const ADZUNA_APP_ID = process.env.ADZUNA_APP_ID;
+const ADZUNA_API_KEY = process.env.ADZUNA_API_KEY;
+const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
 
-// Flutterwave setup - put these in Render Environment variables
-const FLW_PUBLIC_KEY = process.env.FLW_PUBLIC_KEY;
-const FLW_SECRET_KEY = process.env.FLW_SECRET_KEY;
-const flw = new Flutterwave(FLW_PUBLIC_KEY, FLW_SECRET_KEY);
-
-// In-memory storage for user ads
+// In-memory storage
 let userAds = [];
+let paymentProofs = [];
 
 app.use(express.json());
 app.use(express.static('public'));
@@ -61,9 +51,11 @@ app.get('/', (req, res) => {
     '.loading { text-align: center; color: #666; padding: 40px; font-size: 16px; }' +
     '.error { text-align: center; color: #d32f2f; padding: 40px; }' +
     '.ad-form { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 32px; }' +
-    '.ad-form input,.ad-form textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; }' +
+    '.ad-form input,.ad-form textarea,.ad-form select { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; }' +
     '.ad-form h3 { margin-top: 0; }' +
     '.phone-display { color: #34a853; font-weight: 600; }' +
+    '.pay-info { background: #f0f8ff; padding: 16px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #1a73e8; }' +
+    '.pay-info p { margin: 6px 0; }' +
     ' </style>' +
     '</head>' +
     '<body>' +
@@ -81,10 +73,37 @@ app.get('/', (req, res) => {
     ' <option value="1">Last 24 hours</option>' +
     ' </select>' +
     ' </div>' +
+
+    ' <div class="section">' +
+    ' <h2>Pay Direct to Account</h2>' +
+    ' <div class="ad-form">' +
+    ' <div class="pay-info">' +
+    ' <p><strong>Bank:</strong> Stanbic Bank Uganda</p>' +
+    ' <p><strong>Account Name:</strong> Jobai Ltd</p>' +
+    ' <p><strong>Account No:</strong> 9030012345678</p>' +
+    ' <p><strong>MTN MoMo:</strong> +2567XXXXXXXX</p>' +
+    ' <p><strong>Airtel Money:</strong> +2567XXXXXXXX</p>' +
+    ' <p style="font-size:13px; color:#666;">Use your name as reference. Submit proof after payment.</p>' +
+    ' </div>' +
+    ' <h4>Submit Payment Proof</h4>' +
+    ' <input type="text" id="payerName" placeholder="Your full name" required>' +
+    ' <input type="number" id="payerAmount" placeholder="Amount paid" required>' +
+    ' <select id="payerMethod">' +
+    ' <option value="Bank Transfer">Bank Transfer</option>' +
+    ' <option value="MTN MoMo">MTN MoMo</option>' +
+    ' <option value="Airtel Money">Airtel Money</option>' +
+    ' </select>' +
+    ' <input type="text" id="payerRef" placeholder="Transaction reference" required>' +
+    ' <button class="connect-btn" onclick="submitProof()">Submit Proof</button>' +
+    ' <p id="proofMsg" style="margin-top:10px; font-size:14px;"></p>' +
+    ' </div>' +
+    ' </div>' +
+
     ' <div class="section">' +
     ' <h2>Trending Jobs</h2>' +
     ' <div id="jobs" class="loading">Loading jobs...</div>' +
     ' </div>' +
+
     ' <div class="section">' +
     ' <h2>Post a Job</h2>' +
     ' <div class="ad-form">' +
@@ -102,6 +121,7 @@ app.get('/', (req, res) => {
     ' <div id="userAds" class="loading">Loading...</div>' +
     ' </div>' +
     ' </div>' +
+
     ' <script>' +
     ' let allJobs = [];' +
     ' function timeAgo(dateStr) {' +
@@ -112,11 +132,6 @@ app.get('/', (req, res) => {
     ' if (diff === 0) return "Today";' +
     ' if (diff === 1) return "1 day ago";' +
     ' return diff + " days ago";' +
-    ' }' +
-    ' function filterJobs(jobs, days) {' +
-    ' if (days === "all") return jobs;' +
-    ' const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;' +
-    ' return jobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);' +
     ' }' +
     ' function renderJobs(jobs) {' +
     ' if (!jobs.length) {' +
@@ -191,6 +206,28 @@ app.get('/', (req, res) => {
     ' document.getElementById("adMsg").style.color = "red";' +
     ' }' +
     ' }' +
+    ' async function submitProof() {' +
+    ' const data = {' +
+    ' name: document.getElementById("payerName").value,' +
+    ' amount: document.getElementById("payerAmount").value,' +
+    ' method: document.getElementById("payerMethod").value,' +
+    ' reference: document.getElementById("payerRef").value' +
+    ' };' +
+    ' if (!data.name ||!data.amount ||!data.reference) {' +
+    ' document.getElementById("proofMsg").textContent = "Please fill all fields.";' +
+    ' document.getElementById("proofMsg").style.color = "red";' +
+    ' return;' +
+    ' }' +
+    ' const res = await fetch("/pay-direct/proof", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
+    ' const result = await res.json();' +
+    ' document.getElementById("proofMsg").textContent = result.message;' +
+    ' document.getElementById("proofMsg").style.color = res.ok? "green" : "red";' +
+    ' if(res.ok) {' +
+    ' document.getElementById("payerName").value = "";' +
+    ' document.getElementById("payerAmount").value = "";' +
+    ' document.getElementById("payerRef").value = "";' +
+    ' }' +
+    ' }' +
     ' document.getElementById("searchInput").addEventListener("input", loadJobs);' +
     ' document.getElementById("dateFilter").addEventListener("change", loadJobs);' +
     ' loadJobs();' +
@@ -201,7 +238,7 @@ app.get('/', (req, res) => {
   );
 });
 
-//... all your existing fetch functions stay here unchanged...
+// Job APIs - unchanged logic, just using env vars
 async function fetchJSearchJobs(query, location) {
   try {
     const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1&date_posted=week`;
@@ -426,45 +463,18 @@ app.post('/ads', (req, res) => {
   res.json({ success: true });
 });
 
-// --- FLUTTERWAVE PAYMENT ROUTES ---
-
-// Create payment link
-app.post('/pay', async (req, res) => {
-  try {
-    const { amount, email, name, phone } = req.body;
-    
-    const payload = {
-      tx_ref: 'jobai_' + Date.now(),
-      amount: amount,
-      currency: 'USD',
-      redirect_url: 'https://jobai-landing.onrender.com',
-      customer: {
-        email: email,
-        name: name,
-        phonenumber: phone
-      },
-      customizations: {
-        title: 'Jobai Payment',
-        description: 'Job posting payment'
-      }
-    };
-
-    const response = await flw.Payment.link(payload);
-    res.json(response);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+// Pay Direct Routes
+app.post('/pay-direct/proof', (req, res) => {
+  const { name, amount, method, reference } = req.body;
+  if (!name ||!amount ||!method ||!reference) {
+    return res.status(400).json({ error: 'Missing required fields', message: 'Please fill all fields' });
   }
-});
-
-// Verify payment
-app.get('/verify/:tx_ref', async (req, res) => {
-  try {
-    const { tx_ref } = req.params;
-    const response = await flw.Transaction.verify({ tx_ref });
-    res.json(response);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  paymentProofs.push({
+    name, amount, method, reference,
+    date_posted: new Date().toISOString(),
+    status: 'pending'
+  });
+  res.json({ success: true, message: 'Proof submitted. We will confirm payment within 24 hours.' });
 });
 
 app.listen(PORT, function() {
