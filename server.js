@@ -14,63 +14,63 @@ app.get('/', (req, res) => {
     '<!DOCTYPE html>' +
     '<html lang="en">' +
     '<head>' +
-    '  <meta charset="UTF-8">' +
-    '  <meta name="viewport" content="width=device-width, initial-scale=1.0">' +
-    '  <title>Jobai - Get Connected to Jobs & Workers</title>' +
-    '  <style>' +
-    '    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }' +
-    '    .hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 60px 20px; text-align: center; }' +
-    '    .hero h1 { font-size: 36px; margin-bottom: 10px; font-weight: 700; }' +
-    '    .hero p { font-size: 18px; opacity: 0.95; }' +
-    '    .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }' +
-    '    .container h2 { margin-bottom: 20px; font-size: 28px; color: #1a1a1a; }' +
-    '    .job-card { background: white; padding: 24px; margin-bottom: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; color: inherit; display: block; }' +
-    '    .job-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }' +
-    '    .job-card h3 { margin: 0 0 8px 0; color: #1a73e8; font-size: 20px; }' +
-    '    .job-card p { margin: 0 0 16px 0; color: #666; font-size: 15px; }' +
-    '    .country-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }' +
-    '    .connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; }' +
-    '    .connect-btn:hover { background: #1557b0; }' +
-    '    .loading { text-align: center; color: #666; padding: 40px; font-size: 16px; }' +
-    '    .error { text-align: center; color: #d32f2f; padding: 40px; }' +
-    '  </style>' +
+    ' <meta charset="UTF-8">' +
+    ' <meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+    ' <title>Jobai - Get Connected to Jobs & Workers</title>' +
+    ' <style>' +
+    ' body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }' +
+    '.hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 60px 20px; text-align: center; }' +
+    '.hero h1 { font-size: 36px; margin-bottom: 10px; font-weight: 700; }' +
+    '.hero p { font-size: 18px; opacity: 0.95; }' +
+    '.container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }' +
+    '.container h2 { margin-bottom: 20px; font-size: 28px; color: #1a1a1a; }' +
+    '.job-card { background: white; padding: 24px; margin-bottom: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; color: inherit; display: block; }' +
+    '.job-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }' +
+    '.job-card h3 { margin: 0 0 8px 0; color: #1a73e8; font-size: 20px; }' +
+    '.job-card p { margin: 0 0 16px 0; color: #666; font-size: 15px; }' +
+    '.country-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }' +
+    '.connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; }' +
+    '.connect-btn:hover { background: #1557b0; }' +
+    '.loading { text-align: center; color: #666; padding: 40px; font-size: 16px; }' +
+    '.error { text-align: center; color: #d32f2f; padding: 40px; }' +
+    ' </style>' +
     '</head>' +
     '<body>' +
-    '  <div class="hero">' +
-    '    <h1>Get Connected to Jobs & Workers</h1>' +
-    '    <p>AI-powered matching for Uganda, UAE, Canada, UK & Saudi Arabia</p>' +
-    '  </div>' +
-    '  <div class="container">' +
-    '    <h2>Trending Jobs Across 5 Countries</h2>' +
-    '    <div id="jobs" class="loading">Loading jobs...</div>' +
-    '  </div>' +
-    '  <script>' +
-    '    async function loadJobs() {' +
-    '      try {' +
-    '        const res = await fetch("/jobs");' +
-    '        const jobs = await res.json();' +
-    '        if (!jobs.length) {' +
-    '          document.getElementById("jobs").innerHTML = "<div class=\\"error\\">No jobs found right now. Check back later.</div>";' +
-    '          return;' +
-    '        }' +
-    '        document.getElementById("jobs").innerHTML = jobs.map(function(j) {' +
-    '          return "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"job-card\\"><span class=\\"country-tag\\">" + j.country + "</span><h3>" + j.title + "</h3><p>" + j.location + " • " + j.company + "</p><span class=\\"connect-btn\\">Connect & Apply</span></a>";' +
-    '        }).join("");' +
-    '      } catch (e) {' +
-    '        document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs. Please refresh the page.</div>";' +
-    '      }' +
-    '    }' +
-    '    loadJobs();' +
-    '  </script>' +
+    ' <div class="hero">' +
+    ' <h1>Get Connected to Jobs & Workers</h1>' +
+    ' <p>AI-powered matching for Uganda, UAE, Canada, UK & Saudi Arabia</p>' +
+    ' </div>' +
+    ' <div class="container">' +
+    ' <h2>Trending Jobs Across 5 Countries</h2>' +
+    ' <div id="jobs" class="loading">Loading jobs...</div>' +
+    ' </div>' +
+    ' <script>' +
+    ' async function loadJobs() {' +
+    ' try {' +
+    ' const res = await fetch("/jobs");' +
+    ' const jobs = await res.json();' +
+    ' if (!jobs.length) {' +
+    ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">No jobs found right now. Check back later.</div>";' +
+    ' return;' +
+    ' }' +
+    ' document.getElementById("jobs").innerHTML = jobs.map(function(j) {' +
+    ' return "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"job-card\\"><span class=\\"country-tag\\">" + j.country + "</span><h3>" + j.title + "</h3><p>" + j.location + " • " + j.company + "</p><span class=\\"connect-btn\\">Connect & Apply</span></a>";' +
+    ' }).join("");' +
+    ' } catch (e) {' +
+    ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs. Please refresh the page.</div>";' +
+    ' }' +
+    ' }' +
+    ' loadJobs();' +
+    ' </script>' +
     '</body>' +
     '</html>'
   );
 });
 
-// Fetch from JSearch / RapidAPI
-async function fetchJSearchJobs(query) {
+// JSearch via RapidAPI
+async function fetchJSearchJobs(query, location) {
   try {
-    const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&num_pages=1`;
+    const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1`;
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -80,63 +80,81 @@ async function fetchJSearchJobs(query) {
     });
 
     if (!response.ok) {
-      console.log('JSearch error:', response.status, response.statusText);
+      console.log(`JSearch error for ${location}:`, response.status);
       return [];
     }
 
     const data = await response.json();
-    console.log('JSearch results:', data.data?.length || 0);
+    console.log(`JSearch results for ${location}:`, data.data?.length || 0);
 
     return (data.data || []).map(j => ({
       title: j.job_title || 'Job Title',
       company: j.employer_name || 'Unknown Company',
-      location: j.job_city || j.job_country || 'Remote',
-      country: j.job_country || 'Global',
+      location: j.job_city || location,
+      country: location,
       url: j.job_apply_link || '#'
     }));
   } catch (err) {
-    console.error('JSearch fetch error:', err);
+    console.error(`JSearch error for ${location}:`, err);
     return [];
   }
 }
 
-// Fetch from Adzuna - fallback
-async function fetchAdzunaJobs(country) {
+// Adzuna fallback
+async function fetchAdzunaJobs(countryCode, countryName) {
   try {
-    const url = `https://api.adzuna.com/v1/api/jobs/${country}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=5&content-type=application/json`;
+    const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=5&content-type=application/json`;
     const response = await fetch(url);
-    
+
     if (!response.ok) return [];
-    
+
     const data = await response.json();
-    
+    console.log(`Adzuna results for ${countryName}:`, data.results?.length || 0);
+
     return (data.results || []).map(j => ({
       title: j.title || 'Job Title',
       company: j.company?.display_name || 'Unknown Company',
-      location: j.location?.display_name || country.toUpperCase(),
-      country: country.toUpperCase(),
+      location: j.location?.display_name || countryName,
+      country: countryName,
       url: j.redirect_url || '#'
     }));
   } catch (err) {
-    console.error('Adzuna error fetching ' + country + ':', err);
+    console.error(`Adzuna error for ${countryName}:`, err);
     return [];
   }
 }
 
 app.get('/jobs', async (req, res) => {
   try {
-    // Try JSearch first
-    let jobs = await fetchJSearchJobs('developer');
-    
-    // If JSearch fails or returns empty, use Adzuna
-    if (!jobs.length) {
-      console.log('Falling back to Adzuna');
-      const countries = ['ug', 'ae', 'ca', 'gb', 'sa'];
-      const results = await Promise.all(countries.map(fetchAdzunaJobs));
-      jobs = results.flat().slice(0, 15);
+    const countries = [
+      { code: 'ug', name: 'Uganda' },
+      { code: 'ae', name: 'United Arab Emirates' },
+      { code: 'ca', name: 'Canada' },
+      { code: 'gb', name: 'United Kingdom' },
+      { code: 'sa', name: 'Saudi Arabia' }
+    ];
+
+    const query = 'developer'; // Change this to change job type
+
+    // Try JSearch for all countries
+    const jsearchResults = await Promise.all(
+      countries.map(c => fetchJSearchJobs(query, c.name))
+    );
+
+    let allJobs = [];
+
+    // For each country, use JSearch if it has results, else fallback to Adzuna
+    for (let i = 0; i < countries.length; i++) {
+      if (jsearchResults[i].length > 0) {
+        allJobs.push(...jsearchResults[i]);
+      } else {
+        console.log(`Falling back to Adzuna for ${countries[i].name}`);
+        const adzunaJobs = await fetchAdzunaJobs(countries[i].code, countries[i].name);
+        allJobs.push(...adzunaJobs);
+      }
     }
-    
-    res.json(jobs);
+
+    res.json(allJobs.slice(0, 15));
   } catch (err) {
     console.error('Jobs fetch error:', err);
     res.json([]);
