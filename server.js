@@ -1,4 +1,3 @@
-
 import express from 'express';
 
 const app = express();
@@ -68,37 +67,76 @@ app.get('/', (req, res) => {
   );
 });
 
-async function fetchJobsForCountry(country) {
+// Fetch from JSearch / RapidAPI
+async function fetchJSearchJobs(query) {
   try {
-    const url = 'https://api.adzuna.com/v1/api/jobs/' + country + '/search/1?app_id=' + ADZUNA_APP_ID + '&app_key=' + ADZUNA_API_KEY + '&results_per_page=5&content-type=application/json';
+    const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&num_pages=1`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-RapidAPI-Key': RAPIDAPI_KEY,
+        'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
+      }
+    });
+
+    if (!response.ok) {
+      console.log('JSearch error:', response.status, response.statusText);
+      return [];
+    }
+
+    const data = await response.json();
+    console.log('JSearch results:', data.data?.length || 0);
+
+    return (data.data || []).map(j => ({
+      title: j.job_title || 'Job Title',
+      company: j.employer_name || 'Unknown Company',
+      location: j.job_city || j.job_country || 'Remote',
+      country: j.job_country || 'Global',
+      url: j.job_apply_link || '#'
+    }));
+  } catch (err) {
+    console.error('JSearch fetch error:', err);
+    return [];
+  }
+}
+
+// Fetch from Adzuna - fallback
+async function fetchAdzunaJobs(country) {
+  try {
+    const url = `https://api.adzuna.com/v1/api/jobs/${country}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=5&content-type=application/json`;
     const response = await fetch(url);
     
     if (!response.ok) return [];
     
     const data = await response.json();
     
-    return (data.results || []).map(function(j) {
-      return {
-        title: j.title || 'Job Title',
-        company: j.company?.display_name || 'Unknown Company',
-        location: j.location?.display_name || country.toUpperCase(),
-        country: country.toUpperCase(),
-        url: j.redirect_url || '#'
-      };
-    });
+    return (data.results || []).map(j => ({
+      title: j.title || 'Job Title',
+      company: j.company?.display_name || 'Unknown Company',
+      location: j.location?.display_name || country.toUpperCase(),
+      country: country.toUpperCase(),
+      url: j.redirect_url || '#'
+    }));
   } catch (err) {
-    console.error('Error fetching ' + country + ':', err);
+    console.error('Adzuna error fetching ' + country + ':', err);
     return [];
   }
 }
 
 app.get('/jobs', async (req, res) => {
   try {
-    const countries = ['ug', 'ae', 'ca', 'gb', 'sa'];
-    const results = await Promise.all(countries.map(fetchJobsForCountry));
+    // Try JSearch first
+    let jobs = await fetchJSearchJobs('developer');
     
-    const allJobs = results.flat().slice(0, 15);
-    res.json(allJobs);
+    // If JSearch fails or returns empty, use Adzuna
+    if (!jobs.length) {
+      console.log('Falling back to Adzuna');
+      const countries = ['ug', 'ae', 'ca', 'gb', 'sa'];
+      const results = await Promise.all(countries.map(fetchAdzunaJobs));
+      jobs = results.flat().slice(0, 15);
+    }
+    
+    res.json(jobs);
   } catch (err) {
     console.error('Jobs fetch error:', err);
     res.json([]);
