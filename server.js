@@ -56,7 +56,7 @@ app.get('/', (req, res) => {
     '<body>' +
     ' <div class="hero">' +
     ' <h1>Get Connected to Jobs & Workers</h1>' +
-    ' <p>AI-powered matching for Uganda, India, UAE, Canada, UK & Saudi Arabia</p>' +
+    ' <p>AI-powered matching for Uganda, Kenya, Tanzania, Rwanda, Burundi, India, UAE, Saudi Arabia, France, UK, Canada, China, Taiwan, Thailand</p>' +
     ' </div>' +
     ' <div class="container">' +
     ' <div class="controls">' +
@@ -281,7 +281,6 @@ async function fetchIndeedJobs(query, location) {
   }
 }
 
-// NEW: Naukri - covers India, huge population
 async function fetchNaukriJobs(query) {
   try {
     const url = `https://naukri-jobs-postings.p.rapidapi.com/api/jobs/search?keywords=${encodeURIComponent(query)}&location=India&page=1&limit=5`;
@@ -308,7 +307,6 @@ async function fetchNaukriJobs(query) {
   }
 }
 
-// NEW: Bayt - covers Middle East and North Africa
 async function fetchBaytJobs(query) {
   try {
     const url = `https://bayt-jobs-postings.p.rapidapi.com/api/jobs/search?keywords=${encodeURIComponent(query)}&location=UAE&page=1&limit=5`;
@@ -339,12 +337,24 @@ app.get('/jobs', async (req, res) => {
   try {
     const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
     const recentDays = parseInt(req.query.recent) || 7;
+
     const countries = [
       { code: 'ug', name: 'Uganda' },
+      { code: 'ke', name: 'Kenya' },
+      { code: 'tz', name: 'Tanzania' },
+      { code: 'rw', name: 'Rwanda' },
+      { code: 'bi', name: 'Burundi' },
+      { code: 'sd', name: 'Sudan' },
+      { code: 'in', name: 'India' },
       { code: 'ae', name: 'United Arab Emirates' },
-      { code: 'ca', name: 'Canada' },
+      { code: 'sa', name: 'Saudi Arabia' },
+      { code: 'fr', name: 'France' },
+      { code: 'bg', name: 'Bulgaria' },
       { code: 'gb', name: 'United Kingdom' },
-      { code: 'sa', name: 'Saudi Arabia' }
+      { code: 'ca', name: 'Canada' },
+      { code: 'cn', name: 'China' },
+      { code: 'tw', name: 'Taiwan' },
+      { code: 'th', name: 'Thailand' }
     ];
 
     const jsearchResults = await Promise.all(
@@ -369,11 +379,9 @@ app.get('/jobs', async (req, res) => {
     );
     indeedResults.forEach(arr => allJobs.push(...arr));
 
-    // NEW: Add Naukri for India
     const naukriJobs = await fetchNaukriJobs(query);
     allJobs.push(...naukriJobs);
 
-    // NEW: Add Bayt for UAE/Middle East
     const baytJobs = await fetchBaytJobs(query);
     allJobs.push(...baytJobs);
 
@@ -382,7 +390,7 @@ app.get('/jobs', async (req, res) => {
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
 
-    res.json(allJobs.slice(0, 40));
+    res.json(allJobs.slice(0, 50));
   } catch (err) {
     res.json([]);
   }
