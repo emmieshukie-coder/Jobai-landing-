@@ -234,6 +234,28 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
   }
 }
 
+// NEW: Fetch Brighter Monday jobs via Adzuna search
+async function fetchBrighterMondayJobs(query) {
+  try {
+    const searchQuery = query + ' brighter monday';
+    const url = `https://api.adzuna.com/v1/api/jobs/ug/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=5&content-type=application/json&max_days_old=7&what=${encodeURIComponent(searchQuery)}`;
+    const response = await fetch(url);
+    if (!response.ok) return [];
+    const data = await response.json();
+    return (data.results || []).map(j => ({
+      title: j.title || 'Job Title',
+      company: j.company?.display_name || 'Unknown Company',
+      location: j.location?.display_name || 'Uganda',
+      country: 'Uganda',
+      url: j.redirect_url || '#',
+      date_posted: j.created,
+      source: 'Brighter Monday'
+    }));
+  } catch (err) {
+    return [];
+  }
+}
+
 app.get('/jobs', async (req, res) => {
   try {
     const query = req.query || 'developer';
@@ -260,12 +282,16 @@ app.get('/jobs', async (req, res) => {
       }
     }
 
+    // NEW: Add Brighter Monday jobs for Uganda
+    const brighterMondayJobs = await fetchBrighterMondayJobs(query);
+    allJobs.push(...brighterMondayJobs);
+
     if (recentDays > 0) {
       const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
 
-    res.json(allJobs.slice(0, 15));
+    res.json(allJobs.slice(0, 20));
   } catch (err) {
     res.json([]);
   }
