@@ -8,6 +8,9 @@ const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
 
 const PRICE_UGX = 2000;
+const MTN_NUMBER = '0707880128';
+const AIRTEL_NUMBER = '0776686096';
+const WHATSAPP_NUMBER = '256707880128'; // Use 256 country code for WhatsApp links
 
 let userAds = [];
 let monthlyPosts = {}; // { "IP-month": { count: 1, paid: 0 } }
@@ -59,6 +62,8 @@ app.get('/', (req, res) => {
     '.show-contact:hover { background: #e65100; }' +
     '.pay-btn { background: #9c27b0; }' +
     '.pay-btn:hover { background: #7b1fa2; }' +
+    '.whatsapp-btn { background: #25D366; }' +
+    '.whatsapp-btn:hover { background: #1ebe5a; }' +
     '.phone-display { color: #34a853; font-weight: 600; margin-top: 8px; display: none; }' +
     '.loading { text-align: center; color: #666; padding: 40px; font-size: 16px; }' +
     '.error { text-align: center; color: #d32f2f; padding: 40px; }' +
@@ -102,8 +107,11 @@ app.get('/', (req, res) => {
     ' <button class="connect-btn" id="postBtn" onclick="submitAd()">Post Job</button>' +
     ' <div id="paymentBox" class="payment-box">' +
     ' <p><strong>Payment required: 2000 UGX</strong></p>' +
-    ' <p>Send to MTN: 07XXXXXXXX or Airtel: 07XXXXXXXX</p>' +
+    ' <p>Send to MTN: ' + MTN_NUMBER + ' or Airtel: ' + AIRTEL_NUMBER + '</p>' +
     ' <p>Use reference: <strong id="payRef"></strong></p>' +
+    ' <div class="btn-group">' +
+    ' <a href="https://wa.me/' + WHATSAPP_NUMBER + '" target="_blank" class="connect-btn whatsapp-btn">Send on WhatsApp</a>' +
+    ' </div>' +
     ' <input type="text" id="txId" placeholder="Enter transaction ID after payment">' +
     ' <button class="connect-btn pay-btn" onclick="confirmPayment()">I Paid</button>' +
     ' </div>' +
@@ -336,7 +344,7 @@ app.post('/ads/pay', (req, res) => {
   monthlyPosts[key].paid += 1;
 
   userAds.push({
- ...ad,
+...ad,
     date_posted: new Date().toISOString(),
     approved: true,
     paid: true,
