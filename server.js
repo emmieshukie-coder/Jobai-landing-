@@ -13,11 +13,23 @@ const FLW_PUBLIC_KEY = process.env.FLW_PUBLIC_KEY;
 const FLW_SECRET_KEY = process.env.FLW_SECRET_KEY;
 
 let userAds = [];
-let payments = [];
+let payments = []; // stores successful payments
 
 app.use(express.json());
 app.use(express.static('public'));
 
+// Debug route - delete after testing
+app.get('/debug', (req, res) => {
+  res.json({
+    hasPublicKey: !!FLW_PUBLIC_KEY,
+    hasSecretKey: !!FLW_SECRET_KEY,
+    hasAdzunaAppId: !!ADZUNA_APP_ID,
+    hasAdzunaApiKey: !!ADZUNA_API_KEY,
+    publicKeyValue: FLW_PUBLIC_KEY ? FLW_PUBLIC_KEY.substring(0, 10) + '...' : null
+  });
+});
+
+// Public site
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -81,8 +93,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial
 <script>
 const FLW_PUBLIC_KEY = "${FLW_PUBLIC_KEY}";
 
-if (!FLW_PUBLIC_KEY || FLW_PUBLIC_KEY === "undefined") {
-document.getElementById("payMsg").textContent = "Payment not configured. Contact admin.";
+console.log('FLW_PUBLIC_KEY loaded:', FLW_PUBLIC_KEY ? 'YES' : 'NO');
+
+if (!FLW_PUBLIC_KEY || FLW_PUBLIC_KEY === "undefined" || FLW_PUBLIC_KEY === "") {
+document.getElementById("payMsg").textContent = "Payment not configured. Set FLW_PUBLIC_KEY in Render.";
 document.getElementById("payMsg").style.color = "red";
 }
 
@@ -97,7 +111,7 @@ document.getElementById("payMsg").style.color = "red";
 return;
 }
 
-if (!FLW_PUBLIC_KEY || FLW_PUBLIC_KEY === "undefined") {
+if (!FLW_PUBLIC_KEY || FLW_PUBLIC_KEY === "undefined" || FLW_PUBLIC_KEY === "") {
 document.getElementById("payMsg").textContent = "Payment key missing. Set FLW_PUBLIC_KEY in Render.";
 document.getElementById("payMsg").style.color = "red";
 return;
@@ -115,6 +129,7 @@ phone_number: phone,
 name: name
 },
 callback: function(data) {
+console.log('Flutterwave callback:', data);
 document.getElementById("payMsg").textContent = "Verifying payment...";
 fetch("/verify-payment", {
 method: "POST",
@@ -129,6 +144,7 @@ document.getElementById("payEmail").value = "";
 document.getElementById("payPhone").value = "";
 }
 }).catch(err => {
+console.error(err);
 document.getElementById("payMsg").textContent = "Verification failed. Try again.";
 document.getElementById("payMsg").style.color = "red";
 });
@@ -141,7 +157,7 @@ document.getElementById("payMsg").style.color = "orange";
 }
 
 async function loadJobs() {
-const query = document.getElementById("searchInput").value || "cleaner OR nurse OR teacher OR engineer";
+const query = document.getElementById("searchInput").value || "job";
 const days = document.getElementById("dateFilter").value;
 try {
 const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);
@@ -150,6 +166,7 @@ document.getElementById("jobs").innerHTML = jobs.length ? jobs.map(j =>
 '<div class="job-card"><span class="country-tag">' + j.country + '</span><h3>' + j.title + '</h3><p class="job-meta">' + j.location + ' • ' + j.company + '</p><div class="btn-group"><a href="' + j.url + '" target="_blank" class="connect-btn">Apply</a></div></div>'
 ).join("") : '<div class="error">No jobs found.</div>';
 } catch (e) {
+console.error(e);
 document.getElementById("jobs").innerHTML = '<div class="error">Failed to load jobs.</div>';
 }
 }
@@ -163,9 +180,10 @@ loadJobs();
   `);
 });
 
+// Jobs API
 app.get('/jobs', async (req, res) => {
   try {
-    const query = req.query || 'cleaner OR nurse OR teacher OR engineer';
+    const query = req.query || 'job';
     const recentDays = parseInt(req.query.recent) || 7;
 
     const countries = [
@@ -191,6 +209,8 @@ app.get('/jobs', async (req, res) => {
           source: 'Adzuna'
         }));
         allJobs.push(...jobs);
+      } else {
+        console.error('Adzuna error for', countries[i].name, response.status);
       }
     }
 
@@ -201,11 +221,12 @@ app.get('/jobs', async (req, res) => {
 
     res.json(allJobs.slice(0, 20));
   } catch (err) {
-    console.error(err);
+    console.error('Jobs API error:', err);
     res.json([]);
   }
 });
 
+// Verify payment with Flutterwave
 app.post('/verify-payment', async (req, res) => {
   try {
     const { transaction_id } = req.body;
@@ -220,23 +241,127 @@ app.post('/verify-payment', async (req, res) => {
       }
     });
     const data = await response.json();
+    console.log('Flutterwave verify response:', data);
     
     if (data.status === 'success' && data.data.status === 'successful') {
       payments.push({
         id: transaction_id,
         amount: data.data.amount,
+        currency: data.data.currency,
         email: data.data.customer.email,
+        phone: data.data.customer.phone_number,
+        name: data.data.customer.name,
         status: 'successful',
         date: new Date().toISOString()
       });
       res.json({ success: true, message: 'Payment successful! Your job will be featured.' });
     } else {
-      res.json({ success: false, message: 'Payment failed or pending' });
+      res.json({ success: false, message: data.message || 'Payment failed or pending' });
     }
   } catch (err) {
-    console.error(err);
+    console.error('Verify payment error:', err);
     res.json({ success: false, message: 'Verification error' });
   }
+});
+
+// Admin middleware
+function checkAdmin(req, res, next) {
+  const password = req.headers['x-admin-password'];
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
+
+// Admin page to view payments
+app.get('/admin/payments', (req, res) => {
+  res.send(`
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin - Payments</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { font-family: Arial, sans-serif; background: #f5f7fa; padding: 20px; }
+.container { max-width: 1000px; margin: 0 auto; }
+.login { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); max-width: 400px; margin: 100px auto; }
+.login input { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+.payment-card { background: white; padding: 20px; margin-bottom: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: #e8f5e9; color: #2e7d32; }
+.btn { background: #1a73e8; color: white; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; margin-top: 10px; }
+table { width: 100%; border-collapse: collapse; }
+td { padding: 8px 0; border-bottom: 1px solid #eee; }
+td:first-child { font-weight: 600; width: 140px; }
+.total { font-size: 24px; font-weight: 700; color: #1a73e8; margin-bottom: 20px; }
+</style>
+</head>
+<body>
+<div class="container">
+<div id="loginDiv" class="login">
+<h2>Admin Login</h2>
+<input type="password" id="adminPass" placeholder="Enter admin password">
+<button class="btn" onclick="login()">Login</button>
+<p id="loginMsg" style="color:red;"></p>
+</div>
+<div id="adminDiv" style="display:none;">
+<h1>Payment Records</h1>
+<div class="total" id="totalAmount"></div>
+<div id="payments"></div>
+</div>
+</div>
+<script>
+let adminPass = "";
+
+function login() {
+adminPass = document.getElementById("adminPass").value;
+fetch("/api/admin/payments", {headers: {"x-admin-password": adminPass}})
+.then(res => {
+if(!res.ok) throw new Error("Wrong password");
+return res.json();
+})
+.then(data => {
+document.getElementById("loginDiv").style.display = "none";
+document.getElementById("adminDiv").style.display = "block";
+renderPayments(data);
+})
+.catch(() => {
+document.getElementById("loginMsg").textContent = "Wrong password";
+});
+}
+
+function renderPayments(payments) {
+if(!payments.length) {
+document.getElementById("payments").innerHTML = "<p>No payments yet.</p>";
+document.getElementById("totalAmount").textContent = "Total: 0 UGX";
+return;
+}
+
+const total = payments.reduce((sum, p) => sum + p.amount, 0);
+document.getElementById("totalAmount").textContent = "Total: " + total.toLocaleString() + " UGX";
+
+document.getElementById("payments").innerHTML = payments.map(p =>
+'<div class="payment-card">' +
+'<table>' +
+'<tr><td>Name:</td><td>' + p.name + '</td></tr>' +
+'<tr><td>Email:</td><td>' + p.email + '</td></tr>' +
+'<tr><td>Phone:</td><td>' + p.phone + '</td></tr>' +
+'<tr><td>Amount:</td><td>' + p.amount.toLocaleString() + ' ' + p.currency + '</td></tr>' +
+'<tr><td>Transaction ID:</td><td>' + p.id + '</td></tr>' +
+'<tr><td>Date:</td><td>' + new Date(p.date).toLocaleString() + '</td></tr>' +
+'<tr><td>Status:</td><td><span class="status">' + p.status + '</span></td></tr>' +
+'</table>' +
+'</div>'
+).join("");
+}
+</script>
+</body>
+</html>
+  `);
+});
+
+// API route for admin to get payments
+app.get('/api/admin/payments', checkAdmin, (req, res) => {
+  res.json(payments.slice().reverse());
 });
 
 app.listen(PORT, () => {
