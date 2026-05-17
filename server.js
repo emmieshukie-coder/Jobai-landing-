@@ -60,7 +60,7 @@ app.get('/', (req, res) => {
     ' </div>' +
     ' <div class="container">' +
     ' <div class="controls">' +
-    ' <input type="text" id="searchInput" placeholder="Search jobs: developer, nurse, driver..." />' +
+    ' <input type="text" id="searchInput" placeholder="Search: cleaner, nurse, teacher, engineer, farmer..." />' +
     ' <select id="dateFilter">' +
     ' <option value="7">Last 7 days</option>' +
     ' <option value="all">All time</option>' +
@@ -132,7 +132,7 @@ app.get('/', (req, res) => {
     ' }).join("");' +
     ' }' +
     ' async function loadJobs() {' +
-    ' const query = document.getElementById("searchInput").value || "developer";' +
+    ' const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant";' +
     ' const days = document.getElementById("dateFilter").value;' +
     ' document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading jobs...</div>";' +
     ' try {' +
@@ -255,7 +255,6 @@ async function fetchBrighterMondayJobs(query) {
   }
 }
 
-// NEW: Fetch Indeed jobs via RapidAPI
 async function fetchIndeedJobs(query, location) {
   try {
     const url = `https://indeed12.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&page=1&limit=5`;
@@ -284,7 +283,7 @@ async function fetchIndeedJobs(query, location) {
 
 app.get('/jobs', async (req, res) => {
   try {
-    const query = req.query || 'developer';
+    const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
     const recentDays = parseInt(req.query.recent) || 7;
     const countries = [
       { code: 'ug', name: 'Uganda' },
@@ -308,11 +307,9 @@ app.get('/jobs', async (req, res) => {
       }
     }
 
-    // Add Brighter Monday jobs for Uganda
     const brighterMondayJobs = await fetchBrighterMondayJobs(query);
     allJobs.push(...brighterMondayJobs);
 
-    // NEW: Add Indeed jobs for all countries
     const indeedResults = await Promise.all(
       countries.map(c => fetchIndeedJobs(query, c.name))
     );
@@ -323,7 +320,7 @@ app.get('/jobs', async (req, res) => {
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
 
-    res.json(allJobs.slice(0, 25));
+    res.json(allJobs.slice(0, 30));
   } catch (err) {
     res.json([]);
   }
