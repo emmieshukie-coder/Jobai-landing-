@@ -61,7 +61,7 @@ app.get('/', (req, res) => {
     '.controls input { flex: 1; min-width: 200px; }' +
     '.section { margin-bottom: 32px; }' +
     '.section h2 { margin: 0 0 16px 0; font-size: 24px; color: #1a1a1a; }' +
-    '.job-card { background: white; padding: 20px; margin-bottom: 14px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; }' +
+    '.job-card { background: white; padding: 20px; margin-bottom: 14px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; transition: transform 0.2s, box-shadow 0.2s; }' +
     '.job-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }' +
     '.job-card h3 { margin: 0 0 8px 0; color: #1a73e8; font-size: 18px; }' +
     '.job-meta { margin: 0 0 10px 0; color: #666; font-size: 14px; }' +
@@ -99,12 +99,10 @@ app.get('/', (req, res) => {
     ' <h1>Get Connected to Jobs & Workers</h1>' +
     ' <p>AI-powered matching for Uganda, Kenya, Tanzania, Rwanda, Burundi, India, UAE, Saudi Arabia, France, UK, Canada, China, Taiwan, Thailand</p>' +
     ' </div>' +
-
     ' <div class="ad-unit">' +
     ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-app-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
     ' <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>' +
     ' </div>' +
-
     ' <div class="container">' +
     ' <div class="controls">' +
     ' <input type="text" id="searchInput" placeholder="Search: cleaner, nurse, teacher, engineer, farmer..." />' +
@@ -115,17 +113,14 @@ app.get('/', (req, res) => {
     ' <option value="1">Last 24 hours</option>' +
     ' </select>' +
     ' </div>' +
-
     ' <div class="section">' +
     ' <h2>Trending Jobs</h2>' +
     ' <div id="jobs" class="loading">Loading jobs...</div>' +
     ' </div>' +
-
     ' <div class="ad-unit">' +
     ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-app-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
     ' <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>' +
     ' </div>' +
-
     ' <div class="section">' +
     ' <h2>Post a Job</h2>' +
     ' <div class="ad-form" id="adForm">' +
@@ -142,7 +137,6 @@ app.get('/', (req, res) => {
     ' <h2>Community Job Posts</h2>' +
     ' <div id="userAds" class="loading">Loading...</div>' +
     ' </div>' +
-
     ' <div class="section">' +
     ' <h2>Sponsored Ads</h2>' +
     ' <div class="ad-form">' +
@@ -158,9 +152,7 @@ app.get('/', (req, res) => {
     ' </div>' +
     ' <div id="paidAds" class="loading">Loading ads...</div>' +
     ' </div>' +
-
     ' </div>' +
-
     ' <div id="editModal" class="modal">' +
     ' <div class="modal-content">' +
     ' <h3>Edit Ad</h3>' +
@@ -177,7 +169,6 @@ app.get('/', (req, res) => {
     ' </div>' +
     ' </div>' +
     ' </div>' +
-
     ' <script>' +
     ' let allJobs = [];' +
     ' document.getElementById("adImgFile").addEventListener("change", async function(e) {' +
@@ -238,8 +229,8 @@ app.get('/', (req, res) => {
     ' }' +
     ' buttons += "</div>";' +
     ' let actions = "<div class=\\"card-actions\\">";' +
-    ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\\'user\\',\\'"+j.id+"\\',\\'"+j.token+"\\')\\">✏️</button>";' +
-    ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\\'user\\',\\'"+j.id+"\\',\\'"+j.token+"\\')\\">🗑️</button>";' +
+    ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">✏️</button>";' +
+    ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">🗑️</button>";' +
     ' actions += "</div>";' +
     ' return "<div class=\\"job-card\\" style=\\"position:relative\\">"+actions+"<span class=\\"country-tag user-ad-tag\\">Community</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
     ' }).join("");' +
@@ -252,8 +243,8 @@ app.get('/', (req, res) => {
     ' document.getElementById("paidAds").innerHTML = ads.map(function(ad) {' +
     ' let img = ad.image? \'<img src="\' + ad.image + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
     ' let actions = "<div class=\\"card-actions\\">";' +
-    ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\\'paid\\',\\'"+ad.id+"\\',\\'"+ad.token+"\\')\\">✏️</button>";' +
-    ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\\'paid\\',\\'"+ad.id+"\\',\\'"+ad.token+"\\')\\">🗑️</button>";' +
+    ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">✏️</button>";' +
+    ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">🗑️</button>";' +
     ' actions += "</div>";' +
     ' return \'<div class="job-card" style="border:2px solid #f57c00;position:relative;">\' +' +
     ' actions +' +
@@ -562,8 +553,23 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
         tx_ref,
         amount: AD_PRICE,
         currency: 'KES',
-        redirect_url: `https://jobai-landing.onrender.com/
-            }))
+        redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
+        customer: {
+          email: 'advertiser@jobai.com',
+          name: business
+        },
+        customizations: {
+          title: 'Sponsored Ad Payment',
+          description: 'Pay ' + AD_PRICE + ' KES for 7 days ad'
+        }
+      })
+    });
+        const data = await response.json();
+    if (data.status === 'success') {
+      res.json({ payment_link: data.data.link });
+    } else {
+      res.status(400).json({ error: 'Failed to create payment' });
+    }
   } catch (err) {
     res.status(500).json({ error: 'Payment error' });
   }
