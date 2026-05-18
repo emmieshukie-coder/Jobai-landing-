@@ -1,4 +1,7 @@
 import express from 'express';
+import multer from 'multer'; // NEW
+import path from 'path'; // NEW
+import fs from 'fs'; // NEW
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,6 +16,26 @@ let paidAds = [];
 let pendingPayments = {};
 const AD_PRICE = 500;
 const AD_DURATION_DAYS = 7;
+
+// NEW: Setup multer for image uploads
+const uploadDir = 'public/uploads';
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: uploadDir,
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
+    cb(null, uniqueName);
+  }
+});
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Only images allowed'));
+  }
+});
 
 app.use(express.json());
 app.use(express.static('public'));
@@ -58,6 +81,7 @@ app.get('/', (req, res) => {
     '.phone-display { color: #34a853; font-weight: 600; }' +
     '.ad-unit { margin: 0; padding: 0; min-height: 0; }' +
     '.ad-unit ins.adsbygoogle[data-ad-status="unfilled"] { display: none!important; }' +
+    '.img-preview { max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 10px; display: none; }' + // NEW
     ' </style>' +
     '</head>' +
     '<body>' +
@@ -116,7 +140,10 @@ app.get('/', (req, res) => {
     ' <input type="text" id="adBizName" placeholder="Business name" required>' +
     ' <input type="url" id="adLink" placeholder="Website or WhatsApp link" required>' +
     ' <input type="text" id="adText" placeholder="Short ad text" required>' +
-    ' <input type="url" id="adImg" placeholder="Image URL (optional)">' +
+    // NEW: Replace Image URL with file input
+    ' <input type="file" id="adImgFile" accept="image/*" capture="environment">' +
+    ' <img id="imgPreview" class="img-preview" />' +
+    ' <input type="hidden" id="adImgUrl">' + // Hidden field to store uploaded URL
     ' <button class="connect-btn" style="background:#f57c00;" onclick="submitPaidAd()">Pay ' + AD_PRICE + ' KES & Run Ad</button>' +
     ' <p id="adPayMsg" style="margin-top:10px; font-size:14px;"></p>' +
     ' </div>' +
@@ -126,6 +153,32 @@ app.get('/', (req, res) => {
     ' </div>' +
     ' <script>' +
     ' let allJobs = [];' +
+    // NEW: Handle file selection and upload
+    ' document.getElementById("adImgFile").addEventListener("change", async function(e) {' +
+    ' const file = e.target.files[0];' +
+    ' if (!file) return;' +
+    ' const formData = new FormData();' +
+    ' formData.append("image", file);' +
+    ' document.getElementById("adPayMsg").textContent = "Uploading image...";' +
+    ' document.getElementById("adPayMsg").style.color = "blue";' +
+    ' try {' +
+    ' const res = await fetch("/upload-ad-image", { method: "POST", body: formData });' +
+    ' const data = await res.json();' +
+    ' if (data.url) {' +
+    ' document.getElementById("adImgUrl").value = data.url;' +
+    ' document.getElementById("imgPreview").src = data.url;' +
+    ' document.getElementById("imgPreview").style.display = "block";' +
+    ' document.getElementById("adPayMsg").textContent = "Image uploaded!";' +
+    ' document.getElementById("adPayMsg").style.color = "green";' +
+    ' } else {' +
+    ' document.getElementById("adPayMsg").textContent = "Upload failed";' +
+    ' document.getElementById("adPayMsg").style.color = "red";' +
+    ' }' +
+    ' } catch (err) {' +
+    ' document.getElementById("adPayMsg").textContent = "Upload error";' +
+    ' document.getElementById("adPayMsg").style.color = "red";' +
+    ' }' +
+    ' });' +
     ' function timeAgo(dateStr) {' +
     ' if (!dateStr) return "";' +
     ' const date = new Date(dateStr);' +
@@ -229,7 +282,7 @@ app.get('/', (req, res) => {
     ' business: document.getElementById("adBizName").value,' +
     ' link: document.getElementById("adLink").value,' +
     ' text: document.getElementById("adText").value,' +
-    ' image: document.getElementById("adImg").value' +
+    ' image: document.getElementById("adImgUrl").value' + // Use uploaded URL
     ' };' +
     ' if (!data.business ||!data.link ||!data.text) {' +
     ' document.getElementById("adPayMsg").textContent = "Fill business, link and text.";' +
@@ -269,6 +322,14 @@ app.get('/', (req, res) => {
   );
 });
 
+// NEW: Upload endpoint
+app.post('/upload-ad-image', upload.single('image'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+  const url = '/uploads/' + req.file.filename;
+  res.json({ url });
+});
+
+//... rest of your backend code stays the same
 async function fetchJSearchJobs(query, location) {
   try {
     const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1&date_posted=week`;
@@ -461,7 +522,7 @@ app.get('/payment-callback', async (req, res) => {
           const expires = new Date();
           expires.setDate(expires.getDate() + AD_DURATION_DAYS);
           paidAds.push({
-         ...jobData,
+        ...jobData,
             status: 'approved',
             paymentRef: transaction_id,
             created_at: new Date().toISOString(),
@@ -469,7 +530,7 @@ app.get('/payment-callback', async (req, res) => {
           });
         } else {
           userAds.push({
-         ...jobData,
+        ...jobData,
             status: 'approved',
             paymentRef: transaction_id,
             date_posted: new Date().toISOString()
@@ -506,7 +567,7 @@ app.get('/manual-approve/:txid', (req, res) => {
     const expires = new Date();
     expires.setDate(expires.getDate() + AD_DURATION_DAYS);
     paidAds.push({
-   ...jobData,
+  ...jobData,
       status: 'approved',
       paymentRef: txid,
       created_at: new Date().toISOString(),
@@ -514,7 +575,7 @@ app.get('/manual-approve/:txid', (req, res) => {
     });
   } else {
     userAds.push({
-   ...jobData,
+  ...jobData,
       status: 'approved',
       paymentRef: txid,
       date_posted: new Date().toISOString()
