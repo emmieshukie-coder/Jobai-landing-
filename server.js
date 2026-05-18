@@ -1,4 +1,5 @@
 import express from 'express';
+import fetch from 'node-fetch';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -6,9 +7,10 @@ const PORT = process.env.PORT || 3000;
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
-const ADMIN_PASSWORD = '@1122EMM'; 
+const FLW_SECRET_KEY = 'FLWSECK_TEST-xxxxxxxxxx'; // REPLACE THIS with your Flutterwave secret key
 
 let userAds = [];
+let pendingPayments = {};
 
 app.use(express.json());
 app.use(express.static('public'));
@@ -85,17 +87,7 @@ app.get('/', (req, res) => {
     ' <input type="tel" id="adPhone" placeholder="Phone number for applicants">' +
     ' <input type="url" id="adUrl" placeholder="Apply link (optional)">' +
     ' <textarea id="adDesc" placeholder="Short description" rows="3"></textarea>' +
-    ' <button class="connect-btn" onclick="showPayment()">Post Job</button>' +
-    ' <div id="paymentStep" style="display:none;">' +
-    ' <div class="payment-box">' +
-    ' <h4>Pay 200 KES using:</h4>' +
-    ' <p><strong>MTN Mobile Money:</strong> 0776 686096</p>' +
-    ' <p><strong>Airtel Money:</strong> 0707 880128</p>' +
-    ' <p>After paying, enter the transaction ID or phone number used below:</p>' +
-    ' </div>' +
-    ' <input type="text" id="paymentRef" placeholder="Transaction ID or phone number" required>' +
-    ' <button class="connect-btn" onclick="submitAd()">Confirm Payment</button>' +
-    ' </div>' +
+    ' <button class="connect-btn" onclick="submitAd()">Pay 200 KES & Post Job</button>' +
     ' <p id="adMsg" style="margin-top:10px; font-size:14px;"></p>' +
     ' </div>' +
     ' <h2>Community Job Posts</h2>' +
@@ -104,7 +96,6 @@ app.get('/', (req, res) => {
     ' </div>' +
     ' <script>' +
     ' let allJobs = [];' +
-    ' let pendingJobData = {};' +
     ' function timeAgo(dateStr) {' +
     ' if (!dateStr) return "";' +
     ' const date = new Date(dateStr);' +
@@ -113,11 +104,6 @@ app.get('/', (req, res) => {
     ' if (diff === 0) return "Today";' +
     ' if (diff === 1) return "1 day ago";' +
     ' return diff + " days ago";' +
-    ' }' +
-    ' function filterJobs(jobs, days) {' +
-    ' if (days === "all") return jobs;' +
-    ' const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;' +
-    ' return jobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);' +
     ' }' +
     ' function renderJobs(jobs) {' +
     ' if (!jobs.length) {' +
@@ -162,7 +148,7 @@ app.get('/', (req, res) => {
     ' const ads = await res.json();' +
     ' renderUserAds(ads);' +
     ' }' +
-    ' function showPayment() {' +
+    ' async function submitAd() {' +
     ' const data = {' +
     ' title: document.getElementById("adTitle").value,' +
     ' company: document.getElementById("adCompany").value,' +
@@ -176,28 +162,26 @@ app.get('/', (req, res) => {
     ' document.getElementById("adMsg").style.color = "red";' +
     ' return;' +
     ' }' +
-    ' pendingJobData = data;' +
-    ' document.getElementById("paymentStep").style.display = "block";' +
-    ' document.getElementById("adMsg").textContent = "";' +
-    ' }' +
-    ' async function submitAd() {' +
-    ' const paymentRef = document.getElementById("paymentRef").value;' +
-    ' if (!paymentRef) {' +
-    ' document.getElementById("adMsg").textContent = "Enter your transaction ID or phone number.";' +
-    ' document.getElementById("adMsg").style.color = "red";' +
-    ' return;' +
-    ' }' +
-    ' const res = await fetch("/ads", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({...pendingJobData, paymentRef})});' +
-    ' if (res.ok) {' +
-    ' document.getElementById("adMsg").textContent = "Payment submitted! We’ll approve within 1 hour after confirming.";' +
-    ' document.getElementById("adMsg").style.color = "green";' +
-    ' document.getElementById("adForm").reset();' +
-    ' document.getElementById("paymentStep").style.display = "none";' +
-    ' loadUserAds();' +
+    ' document.getElementById("adMsg").textContent = "Redirecting to payment...";' +
+    ' document.getElementById("adMsg").style.color = "blue";' +
+    ' const res = await fetch("/ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
+    ' const result = await res.json();' +
+    ' if (result.payment_link) {' +
+    ' window.location.href = result.payment_link;' +
     ' } else {' +
-    ' document.getElementById("adMsg").textContent = "Failed to submit payment.";' +
+    ' document.getElementById("adMsg").textContent = "Payment failed. Try again.";' +
     ' document.getElementById("adMsg").style.color = "red";' +
     ' }' +
+    ' }' +
+    ' const urlParams = new URLSearchParams(window.location.search);' +
+    ' if (urlParams.get("payment") === "success") {' +
+    ' document.getElementById("adMsg").textContent = "Payment successful! Job posted.";' +
+    ' document.getElementById("adMsg").style.color = "green";' +
+    ' loadUserAds();' +
+    ' }' +
+    ' if (urlParams.get("payment") === "failed") {' +
+    ' document.getElementById("adMsg").textContent = "Payment failed or cancelled.";' +
+    ' document.getElementById("adMsg").style.color = "red";' +
     ' }' +
     ' document.getElementById("searchInput").addEventListener("input", loadJobs);' +
     ' document.getElementById("dateFilter").addEventListener("change", loadJobs);' +
@@ -291,88 +275,84 @@ app.get('/jobs', async (req, res) => {
 });
 
 app.get('/ads', (req, res) => {
-  res.json(userAds.filter(ad => ad.status === 'approved').slice().reverse());
+  res.json(userAds.filter(ad => ad.status === 'approved').reverse());
 });
 
-app.post('/ads', (req, res) => {
-  const { title, company, location, phone, url, description, paymentRef } = req.body;
-  if (!title ||!company ||!location ||!paymentRef) {
+// 1. Create Flutterwave payment link
+app.post('/ads/initiate-payment', async (req, res) => {
+  const { title, company, location, phone, url, description } = req.body;
+  if (!title ||!company ||!location) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
-  userAds.push({
-    title, company, location, phone: phone || null, url: url || null, description, paymentRef,
-    status: 'pending',
-    date_posted: new Date().toISOString()
-  });
-  res.json({ success: true });
-});
 
-app.get('/admin', (req, res) => {
-  res.send(
-    '<!DOCTYPE html>' +
-    '<html>' +
-    '<head>' +
-    '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
-    '<title>Admin</title>' +
-    '<style>' +
-    'body{font-family:Arial;padding:20px;background:#f5f7fa;}' +
-    '.login{background:white;padding:30px;border-radius:12px;max-width:400px;margin:100px auto;box-shadow:0 2px 8px rgba(0,0,0,0.08);}' +
-    'input{width:100%;padding:10px;margin:10px 0;border:1px solid #ddd;border-radius:8px;}' +
-    'button{background:#1a73e8;color:white;padding:10px 20px;border:none;border-radius:8px;cursor:pointer;}' +
-    '.pending{background:white;padding:20px;margin:10px 0;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08);}' +
-    '.approve-btn{background:#ff6b00;color:white;padding:8px 16px;border:none;border-radius:8px;cursor:pointer;}' +
-    '</style>' +
-    '</head>' +
-    '<body>' +
-    '<div id="app"></div>' +
-    '<script>' +
-    'let token = localStorage.getItem("admin_token");' +
-    'if(!token){showLogin();}else{loadPending();}' +
-    'function showLogin(){document.getElementById("app").innerHTML=\'<div class="login"><h2>Admin Login</h2><input type="password" id="pass" placeholder="Password"><button onclick="login()">Login</button></div>\';}' +
-    'async function login(){' +
-    'const pass=document.getElementById("pass").value;' +
-    'const res=await fetch("/admin-login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:pass})});' +
-    'if(res.ok){token=pass;localStorage.setItem("admin_token",pass);loadPending();}else{alert("Wrong password");}' +
-    '}' +
-    'async function loadPending(){' +
-    'const res=await fetch("/admin-pending?password="+token);' +
-    'if(res.status===401){localStorage.removeItem("admin_token");showLogin();return;}' +
-    'const ads=await res.json();' +
-    'document.getElementById("app").innerHTML=\'<h2>Pending Payments</h2>\'+ads.map(a=>\'<div class="pending"><h3>\'+a.title+\'</h3><p><b>Company:</b> \'+a.company+\'</p><p><b>Payment Ref:</b> \'+a.paymentRef+\'</p><button class="approve-btn" onclick="approve(\\"\'+a.paymentRef+\'\\")">Approve</button></div>\').join("");' +
-    '}' +
-    'async function approve(ref){' +
-    'await fetch("/approve-payment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paymentRef:ref,password:token})});' +
-    'alert("Approved!");loadPending();' +
-    '}' +
-    '</script>' +
-    '</body>' +
-    '</html>'
-  );
-});
+  const tx_ref = 'jobai_' + Date.now();
+  pendingPayments[tx_ref] = { title, company, location, phone, url, description };
 
-app.post('/admin-login', (req, res) => {
-  if(req.body.password === ADMIN_PASSWORD){
-    res.json({success:true});
-  }else{
-    res.status(401).json({error:'Unauthorized'});
+  try {
+    const response = await fetch('https://api.flutterwave.com/v3/payments', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${FLW_SECRET_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        tx_ref,
+        amount: 200,
+        currency: 'KES',
+        redirect_url: `https://anding.onrender.com/payment-callback`,
+        customer: {
+          email: 'customer@jobai.com',
+          phonenumber: phone || '0700000',
+          name: company
+        },
+        customizations: {
+          title: 'Job Post Payment',
+          description: 'Pay 200 KES to post job on Jobai'
+        }
+      })
+    });
+
+    const data = await response.json();
+    if (data.status === 'success') {
+      res.json({ payment_link: data.data.link });
+    } else {
+      res.status(400).json({ error: 'Failed to create payment' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Payment error' });
   }
 });
 
-app.get('/admin-pending', (req, res) => {
-  if(req.query.password!== ADMIN_PASSWORD){
-    return res.status(401).json({error:'Unauthorized'});
-  }
-  res.json(userAds.filter(ad => ad.status === 'pending'));
-});
+// 2. Flutterwave redirects here after payment
+app.get('/payment-callback', async (req, res) => {
+  const { transaction_id, tx_ref } = req.query;
 
-app.post('/approve-payment', (req, res) => {
-  if(req.body.password!== ADMIN_PASSWORD){
-    return res.status(401).json({error:'Unauthorized'});
+  try {
+    const response = await fetch(`https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`, {
+      headers: { 'Authorization': `Bearer ${FLW_SECRET_KEY}` }
+    });
+    const data = await response.json();
+
+    if (data.status === 'success' && data.data.status === 'successful') {
+      const jobData = pendingPayments[tx_ref];
+      if (jobData) {
+        userAds.push({
+         ...jobData,
+          status: 'approved',
+          paymentRef: transaction_id,
+          date_posted: new Date().toISOString()
+        });
+        delete pendingPayments[tx_ref];
+        res.redirect('/?payment=success');
+      } else {
+        res.redirect('/?payment=failed');
+      }
+    } else {
+      res.redirect('/?payment=failed');
+    }
+  } catch (err) {
+    res.redirect('/?payment=failed');
   }
-  const ad = userAds.find(a => a.paymentRef === req.body.paymentRef);
-  if (!ad) return res.status(404).json({ error: 'Payment not found' });
-  ad.status = 'approved';
-  res.json({ success: true });
 });
 
 app.listen(PORT, function() {
