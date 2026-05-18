@@ -6,9 +6,8 @@ const PORT = process.env.PORT || 3000;
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
-const ADMIN_PASSWORD = '@1122EMM';
+const ADMIN_PASSWORD = '@1122EMM'; 
 
-// In-memory storage
 let userAds = [];
 
 app.use(express.json());
@@ -308,7 +307,6 @@ app.post('/ads', (req, res) => {
   res.json({ success: true });
 });
 
-// ADMIN PAGE
 app.get('/admin', (req, res) => {
   res.send(
     '<!DOCTYPE html>' +
