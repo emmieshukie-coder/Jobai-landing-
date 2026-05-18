@@ -297,7 +297,7 @@ app.post('/ads/initiate-payment', async (req, res) => {
         tx_ref,
         amount: 200,
         currency: 'KES',
-        redirect_url: `https://anding.onrender.com/payment-callback`,
+        redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
         customer: {
           email: 'customer@jobai.com',
           phonenumber: phone || '0700000',
@@ -334,7 +334,7 @@ app.get('/payment-callback', async (req, res) => {
       const jobData = pendingPayments[tx_ref];
       if (jobData) {
         userAds.push({
-       ...jobData,
+      ...jobData,
           status: 'approved',
           paymentRef: transaction_id,
           date_posted: new Date().toISOString()
@@ -369,7 +369,7 @@ app.get('/manual-approve/:txid', (req, res) => {
   }
 
   userAds.push({
-   ...jobData,
+  ...jobData,
     status: 'approved',
     paymentRef: txid,
     date_posted: new Date().toISOString()
