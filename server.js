@@ -28,20 +28,20 @@ app.get('/', (req, res) => {
     ' <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-app-pub-1637256996790764" crossorigin="anonymous"></script>' +
     ' <style>' +
     ' body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }' +
-    '.hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 60px 20px; text-align: center; }' +
-    '.hero h1 { font-size: 36px; margin-bottom: 10px; font-weight: 700; }' +
-    '.hero p { font-size: 18px; opacity: 0.95; }' +
-    '.container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }' +
-    '.controls { display: flex; gap: 12px; margin-bottom: 24px; align-items: center; flex-wrap: wrap; }' +
+    '.hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; }' +
+    '.hero h1 { font-size: 32px; margin: 0 0 8px 0; font-weight: 700; }' +
+    '.hero p { font-size: 16px; opacity: 0.95; margin: 0; }' +
+    '.container { max-width: 1000px; margin: 20px auto; padding: 0 16px; }' +
+    '.controls { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }' +
     '.controls input,.controls select { padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; background: white; }' +
     '.controls input { flex: 1; min-width: 200px; }' +
-    '.section { margin-bottom: 48px; }' +
-    '.section h2 { margin: 0 0 20px 0; font-size: 26px; color: #1a1a1a; }' +
-    '.job-card { background: white; padding: 24px; margin-bottom: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; color: inherit; display: block; }' +
+    '.section { margin-bottom: 32px; }' +
+    '.section h2 { margin: 0 0 16px 0; font-size: 24px; color: #1a1a1a; }' +
+    '.job-card { background: white; padding: 20px; margin-bottom: 14px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; color: inherit; display: block; }' +
     '.job-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }' +
-    '.job-card h3 { margin: 0 0 8px 0; color: #1a73e8; font-size: 20px; }' +
-    '.job-meta { margin: 0 0 12px 0; color: #666; font-size: 14px; }' +
-    '.job-meta span { margin-right: 12px; }' +
+    '.job-card h3 { margin: 0 0 8px 0; color: #1a73e8; font-size: 18px; }' +
+    '.job-meta { margin: 0 0 10px 0; color: #666; font-size: 14px; }' +
+    '.job-meta span { margin-right: 10px; }' +
     '.country-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }' +
     '.source-tag { display: inline-block; background: #f5f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }' +
     '.user-ad-tag { background: #fff3e0; color: #f57c00; }' +
@@ -50,13 +50,14 @@ app.get('/', (req, res) => {
     '.connect-btn:hover { background: #1557b0; }' +
     '.call-btn { background: #34a853; }' +
     '.call-btn:hover { background: #2d9147; }' +
-    '.loading { text-align: center; color: #666; padding: 40px; font-size: 16px; }' +
-    '.error { text-align: center; color: #d32f2f; padding: 40px; }' +
-    '.ad-form { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 32px; }' +
+    '.loading { text-align: center; color: #666; padding: 30px; font-size: 16px; }' +
+    '.error { text-align: center; color: #d32f2f; padding: 30px; }' +
+    '.ad-form { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }' +
     '.ad-form input,.ad-form textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; }' +
-    '.ad-form h3 { margin-top: 0; }' +
+    '.ad-form h3 { margin-top: 0; font-size: 18px; }' +
     '.phone-display { color: #34a853; font-weight: 600; }' +
-    '.ad-unit { text-align:center;margin:30px 0; }' +
+    '.ad-unit { margin: 0; padding: 0; min-height: 0; }' +
+    '.ad-unit ins.adsbygoogle[data-ad-status="unfilled"] { display: none!important; }' +
     ' </style>' +
     '</head>' +
     '<body>' +
@@ -278,10 +279,7 @@ async function fetchJSearchJobs(query, location) {
         'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
       }
     });
-    if (!response.ok) {
-      console.log('JSearch error:', response.status);
-      return [];
-    }
+    if (!response.ok) return [];
     const data = await response.json();
     return (data.data || []).map(j => ({
       title: j.job_title || 'Job Title',
@@ -293,7 +291,6 @@ async function fetchJSearchJobs(query, location) {
       source: j.job_publisher || 'JSearch'
     }));
   } catch (err) {
-    console.log('JSearch fetch error:', err.message);
     return [];
   }
 }
@@ -345,7 +342,6 @@ app.get('/jobs', async (req, res) => {
 
     res.json(allJobs.slice(0, 50));
   } catch (err) {
-    console.log('Jobs route error:', err.message);
     res.json([]);
   }
 });
@@ -465,7 +461,7 @@ app.get('/payment-callback', async (req, res) => {
           const expires = new Date();
           expires.setDate(expires.getDate() + AD_DURATION_DAYS);
           paidAds.push({
-          ...jobData,
+         ...jobData,
             status: 'approved',
             paymentRef: transaction_id,
             created_at: new Date().toISOString(),
@@ -473,7 +469,7 @@ app.get('/payment-callback', async (req, res) => {
           });
         } else {
           userAds.push({
-          ...jobData,
+         ...jobData,
             status: 'approved',
             paymentRef: transaction_id,
             date_posted: new Date().toISOString()
@@ -510,7 +506,7 @@ app.get('/manual-approve/:txid', (req, res) => {
     const expires = new Date();
     expires.setDate(expires.getDate() + AD_DURATION_DAYS);
     paidAds.push({
-    ...jobData,
+   ...jobData,
       status: 'approved',
       paymentRef: txid,
       created_at: new Date().toISOString(),
@@ -518,7 +514,7 @@ app.get('/manual-approve/:txid', (req, res) => {
     });
   } else {
     userAds.push({
-    ...jobData,
+   ...jobData,
       status: 'approved',
       paymentRef: txid,
       date_posted: new Date().toISOString()
