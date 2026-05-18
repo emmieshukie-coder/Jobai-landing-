@@ -1,7 +1,8 @@
 import express from 'express';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import crypto from 'crypto';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,31 +12,31 @@ const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
 const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X';
 
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'jobai-ads',
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+    transformation: [{ width: 800, height: 600, crop: 'limit' }]
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }
+});
+
 let userAds = [];
 let paidAds = [];
 let pendingPayments = {};
 const AD_PRICE = 500;
 const AD_DURATION_DAYS = 7;
-
-// Setup multer for image uploads
-const uploadDir = 'public/uploads';
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: uploadDir,
-  filename: (req, file, cb) => {
-    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
-    cb(null, uniqueName);
-  }
-});
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new Error('Only images allowed'));
-  }
-});
 
 app.use(express.json());
 app.use(express.static('public'));
@@ -60,7 +61,7 @@ app.get('/', (req, res) => {
     '.controls input { flex: 1; min-width: 200px; }' +
     '.section { margin-bottom: 32px; }' +
     '.section h2 { margin: 0 0 16px 0; font-size: 24px; color: #1a1a1a; }' +
-    '.job-card { background: white; padding: 20px; margin-bottom: 14px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; color: inherit; display: block; }' +
+    '.job-card { background: white; padding: 20px; margin-bottom: 14px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; }' +
     '.job-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }' +
     '.job-card h3 { margin: 0 0 8px 0; color: #1a73e8; font-size: 18px; }' +
     '.job-meta { margin: 0 0 10px 0; color: #666; font-size: 14px; }' +
@@ -73,6 +74,10 @@ app.get('/', (req, res) => {
     '.connect-btn:hover { background: #1557b0; }' +
     '.call-btn { background: #34a853; }' +
     '.call-btn:hover { background: #2d9147; }' +
+    '.delete-btn { background: #d32f2f; }' +
+    '.delete-btn:hover { background: #b71c1c; }' +
+    '.edit-btn { background: #ff9800; }' +
+    '.edit-btn:hover { background: #f57c00; }' +
     '.loading { text-align: center; color: #666; padding: 30px; font-size: 16px; }' +
     '.error { text-align: center; color: #d32f2f; padding: 30px; }' +
     '.ad-form { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }' +
@@ -82,6 +87,11 @@ app.get('/', (req, res) => {
     '.ad-unit { margin: 0; padding: 0; min-height: 0; }' +
     '.ad-unit ins.adsbygoogle[data-ad-status="unfilled"] { display: none!important; }' +
     '.img-preview { max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 10px; display: none; }' +
+    '.card-actions { position: absolute; top: 12px; right: 12px; display: flex; gap: 8px; }' +
+    '.icon-btn { width: 32px; height: 32px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; }' +
+    '.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }' +
+    '.modal.active { display: flex; }' +
+    '.modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%; }' +
     ' </style>' +
     '</head>' +
     '<body>' +
@@ -150,6 +160,24 @@ app.get('/', (req, res) => {
     ' </div>' +
 
     ' </div>' +
+
+    ' <div id="editModal" class="modal">' +
+    ' <div class="modal-content">' +
+    ' <h3>Edit Ad</h3>' +
+    ' <input type="hidden" id="editId">' +
+    ' <input type="hidden" id="editToken">' +
+    ' <input type="hidden" id="editType">' +
+    ' <input type="text" id="editTitle" placeholder="Title/Business">' +
+    ' <input type="text" id="editLocation" placeholder="Location">' +
+    ' <input type="text" id="editCompany" placeholder="Company">' +
+    ' <textarea id="editDesc" placeholder="Description" rows="3"></textarea>' +
+    ' <div class="btn-group" style="margin-top:16px;">' +
+    ' <button class="connect-btn" onclick="saveEdit()">Save</button>' +
+    ' <button class="connect-btn" style="background:#666;" onclick="closeEdit()">Cancel</button>' +
+    ' </div>' +
+    ' </div>' +
+    ' </div>' +
+
     ' <script>' +
     ' let allJobs = [];' +
     ' document.getElementById("adImgFile").addEventListener("change", async function(e) {' +
@@ -209,7 +237,11 @@ app.get('/', (req, res) => {
     ' buttons += "<a href=\\"tel:" + j.phone + "\\" class=\\"connect-btn call-btn\\">Call " + j.phone + "</a>";' +
     ' }' +
     ' buttons += "</div>";' +
-    ' return "<div class=\\"job-card\\"><span class=\\"country-tag user-ad-tag\\">Community</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
+    ' let actions = "<div class=\\"card-actions\\">";' +
+    ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\\'user\\',\\'"+j.id+"\\',\\'"+j.token+"\\')\\">✏️</button>";' +
+    ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\\'user\\',\\'"+j.id+"\\',\\'"+j.token+"\\')\\">🗑️</button>";' +
+    ' actions += "</div>";' +
+    ' return "<div class=\\"job-card\\" style=\\"position:relative\\">"+actions+"<span class=\\"country-tag user-ad-tag\\">Community</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
     ' }).join("");' +
     ' }' +
     ' function renderPaidAds(ads) {' +
@@ -219,7 +251,12 @@ app.get('/', (req, res) => {
     ' }' +
     ' document.getElementById("paidAds").innerHTML = ads.map(function(ad) {' +
     ' let img = ad.image? \'<img src="\' + ad.image + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
-    ' return \'<div class="job-card" style="border:2px solid #f57c00;">\' +' +
+    ' let actions = "<div class=\\"card-actions\\">";' +
+    ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\\'paid\\',\\'"+ad.id+"\\',\\'"+ad.token+"\\')\\">✏️</button>";' +
+    ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\\'paid\\',\\'"+ad.id+"\\',\\'"+ad.token+"\\')\\">🗑️</button>";' +
+    ' actions += "</div>";' +
+    ' return \'<div class="job-card" style="border:2px solid #f57c00;position:relative;">\' +' +
+    ' actions +' +
     ' \'<span class="country-tag user-ad-tag">Sponsored</span>\' +' +
     ' img +' +
     ' \'<h3>\' + ad.business + \'</h3>\' +' +
@@ -227,6 +264,51 @@ app.get('/', (req, res) => {
     ' \'<a href="\' + ad.link + \'" target="_blank" class="connect-btn" style="background:#f57c00;">Visit</a>\' +' +
     ' \'</div>\';' +
     ' }).join("");' +
+    ' }' +
+    ' function openEdit(type, id, token) {' +
+    ' document.getElementById("editType").value = type;' +
+    ' document.getElementById("editId").value = id;' +
+    ' document.getElementById("editToken").value = token;' +
+    ' document.getElementById("editModal").classList.add("active");' +
+    ' }' +
+    ' function closeEdit() {' +
+    ' document.getElementById("editModal").classList.remove("active");' +
+    ' }' +
+    ' async function saveEdit() {' +
+    ' const type = document.getElementById("editType").value;' +
+    ' const id = document.getElementById("editId").value;' +
+    ' const token = document.getElementById("editToken").value;' +
+    ' const data = {' +
+    ' id, token,' +
+    ' title: document.getElementById("editTitle").value,' +
+    ' location: document.getElementById("editLocation").value,' +
+    ' company: document.getElementById("editCompany").value,' +
+    ' description: document.getElementById("editDesc").value' +
+    ' };' +
+    ' const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";' +
+    ' const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
+    ' const result = await res.json();' +
+    ' if (result.success) {' +
+    ' closeEdit();' +
+    ' loadUserAds();' +
+    ' loadPaidAds();' +
+    ' alert("Updated successfully");' +
+    ' } else {' +
+    ' alert("Update failed");' +
+    ' }' +
+    ' }' +
+    ' async function deleteAd(type, id, token) {' +
+    ' if (!confirm("Delete this ad?")) return;' +
+    ' const endpoint = type === "paid"? "/paid-ads/delete" : "/ads/delete";' +
+    ' const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, token})});' +
+    ' const result = await res.json();' +
+    ' if (result.success) {' +
+    ' loadUserAds();' +
+    ' loadPaidAds();' +
+    ' alert("Deleted successfully");' +
+    ' } else {' +
+    ' alert("Delete failed");' +
+    ' }' +
     ' }' +
     ' async function loadJobs() {' +
     ' const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant";' +
@@ -322,8 +404,7 @@ app.get('/', (req, res) => {
 
 app.post('/upload-ad-image', upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-  const url = '/uploads/' + req.file.filename;
-  res.json({ url });
+  res.json({ url: req.file.path });
 });
 
 async function fetchJSearchJobs(query, location) {
@@ -422,7 +503,8 @@ app.post('/ads/initiate-payment', async (req, res) => {
   }
 
   const tx_ref = 'jobai_' + Date.now();
-  pendingPayments[tx_ref] = { title, company, location, phone, url, description, type: 'job' };
+  const token = crypto.randomBytes(16).toString('hex');
+  pendingPayments[tx_ref] = { title, company, location, phone, url, description, type: 'job', token };
 
   try {
     const response = await fetch('https://api.flutterwave.com/v3/payments', {
@@ -466,7 +548,8 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
   }
 
   const tx_ref = 'ad_' + Date.now();
-  pendingPayments[tx_ref] = { business, link, text, image, type: 'ad' };
+  const token = crypto.randomBytes(16).toString('hex');
+  pendingPayments[tx_ref] = { business, link, text, image, type: 'ad', token };
 
   try {
     const response = await fetch('https://api.flutterwave.com/v3/payments', {
@@ -479,24 +562,8 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
         tx_ref,
         amount: AD_PRICE,
         currency: 'KES',
-        redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
-        customer: {
-          email: 'advertiser@jobai.com',
-          name: business
-        },
-        customizations: {
-          title: 'Sponsored Ad Payment',
-          description: 'Pay ' + AD_PRICE + ' KES for 7 days ad'
-        }
-      })
-    });
-
-    const data = await response.json();
-    if (data.status === 'success') {
-      res.json({ payment_link: data.data.link });
-    } else {
-      res.status(400).json({ error: 'Failed to create payment' });
-    }
+        redirect_url: `https://jobai-landing.onrender.com/
+            }))
   } catch (err) {
     res.status(500).json({ error: 'Payment error' });
   }
@@ -514,11 +581,17 @@ app.get('/payment-callback', async (req, res) => {
     if (data.status === 'success' && data.data.status === 'successful') {
       const jobData = pendingPayments[tx_ref];
       if (jobData) {
+        const id = Date.now() + Math.random();
         if (jobData.type === 'ad') {
           const expires = new Date();
           expires.setDate(expires.getDate() + AD_DURATION_DAYS);
           paidAds.push({
-           ...jobData,
+            id,
+            token: jobData.token,
+            business: jobData.business,
+            link: jobData.link,
+            text: jobData.text,
+            image: jobData.image,
             status: 'approved',
             paymentRef: transaction_id,
             created_at: new Date().toISOString(),
@@ -526,7 +599,14 @@ app.get('/payment-callback', async (req, res) => {
           });
         } else {
           userAds.push({
-           ...jobData,
+            id,
+            token: jobData.token,
+            title: jobData.title,
+            company: jobData.company,
+            location: jobData.location,
+            phone: jobData.phone,
+            url: jobData.url,
+            description: jobData.description,
             status: 'approved',
             paymentRef: transaction_id,
             date_posted: new Date().toISOString()
@@ -545,6 +625,54 @@ app.get('/payment-callback', async (req, res) => {
   }
 });
 
+// Edit user ad
+app.post('/ads/edit', (req, res) => {
+  const { id, token, title, location, company, description } = req.body;
+  const ad = userAds.find(a => a.id == id && a.token === token);
+  if (!ad) return res.json({ success: false, error: 'Not authorized' });
+
+  if (title) ad.title = title;
+  if (location) ad.location = location;
+  if (company) ad.company = company;
+  if (description) ad.description = description;
+
+  res.json({ success: true });
+});
+
+// Delete user ad
+app.post('/ads/delete', (req, res) => {
+  const { id, token } = req.body;
+  const index = userAds.findIndex(a => a.id == id && a.token === token);
+  if (index === -1) return res.json({ success: false, error: 'Not authorized' });
+
+  userAds.splice(index, 1);
+  res.json({ success: true });
+});
+
+// Edit paid ad
+app.post('/paid-ads/edit', (req, res) => {
+  const { id, token, title, location, company, description } = req.body;
+  const ad = paidAds.find(a => a.id == id && a.token === token);
+  if (!ad) return res.json({ success: false, error: 'Not authorized' });
+
+  if (title) ad.business = title;
+  if (description) ad.text = description;
+  if (location) ad.location = location;
+  if (company) ad.company = company;
+
+  res.json({ success: true });
+});
+
+// Delete paid ad
+app.post('/paid-ads/delete', (req, res) => {
+  const { id, token } = req.body;
+  const index = paidAds.findIndex(a => a.id == id && a.token === token);
+  if (index === -1) return res.json({ success: false, error: 'Not authorized' });
+
+  paidAds.splice(index, 1);
+  res.json({ success: true });
+});
+
 app.get('/manual-approve/:txid', (req, res) => {
   const txid = req.params.txid;
   let jobData = null;
@@ -559,10 +687,13 @@ app.get('/manual-approve/:txid', (req, res) => {
     return res.send('No pending job found. Pay again or check if server restarted.');
   }
 
+  const id = Date.now() + Math.random();
   if (jobData.type === 'ad') {
     const expires = new Date();
     expires.setDate(expires.getDate() + AD_DURATION_DAYS);
     paidAds.push({
+      id,
+      token: jobData.token,
      ...jobData,
       status: 'approved',
       paymentRef: txid,
@@ -571,6 +702,8 @@ app.get('/manual-approve/:txid', (req, res) => {
     });
   } else {
     userAds.push({
+      id,
+      token: jobData.token,
      ...jobData,
       status: 'approved',
       paymentRef: txid,
