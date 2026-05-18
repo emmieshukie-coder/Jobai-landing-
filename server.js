@@ -6,7 +6,7 @@ const PORT = process.env.PORT || 3000;
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
-const FLW_SECRET_KEY = process.env.FLW_SECRET_KEY || 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X';
+const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X';
 
 let userAds = [];
 let paidAds = [];
@@ -104,7 +104,6 @@ app.get('/', (req, res) => {
     ' <button class="connect-btn" onclick="submitAd()">Pay 200 KES & Post Job</button>' +
     ' <p id="adMsg" style="margin-top:10px; font-size:14px;"></p>' +
     ' </div>' +
-
     ' <h2>Community Job Posts</h2>' +
     ' <div id="userAds" class="loading">Loading...</div>' +
     ' </div>' +
@@ -168,12 +167,12 @@ app.get('/', (req, res) => {
     ' }' +
     ' document.getElementById("paidAds").innerHTML = ads.map(function(ad) {' +
     ' let img = ad.image? \'<img src="\' + ad.image + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
-    ' return \'<div class="job-card" style="border:2px solid #f57c00;">\' +\n' +
-    ' \'<span class="country-tag user-ad-tag">Sponsored</span>\' +\n' +
-    ' img +\n' +
-    ' \'<h3>\' + ad.business + \'</h3>\' +\n' +
-    ' \'<p>\' + ad.text + \'</p>\' +\n' +
-    ' \'<a href="\' + ad.link + \'" target="_blank" class="connect-btn" style="background:#f57c00;">Visit</a>\' +\n' +
+    ' return \'<div class="job-card" style="border:2px solid #f57c00;">\' +' +
+    ' \'<span class="country-tag user-ad-tag">Sponsored</span>\' +' +
+    ' img +' +
+    ' \'<h3>\' + ad.business + \'</h3>\' +' +
+    ' \'<p>\' + ad.text + \'</p>\' +' +
+    ' \'<a href="\' + ad.link + \'" target="_blank" class="connect-btn" style="background:#f57c00;">Visit</a>\' +' +
     ' \'</div>\';' +
     ' }).join("");' +
     ' }' +
@@ -280,7 +279,7 @@ async function fetchJSearchJobs(query, location) {
       }
     });
     if (!response.ok) {
-      console.log('JSearch error for', location, response.status);
+      console.log('JSearch error:', response.status);
       return [];
     }
     const data = await response.json();
@@ -321,7 +320,7 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
 
 app.get('/jobs', async (req, res) => {
   try {
-    const query = req.query.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
+    const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
     const recentDays = parseInt(req.query.recent) || 7;
 
     const countries = [
@@ -466,7 +465,7 @@ app.get('/payment-callback', async (req, res) => {
           const expires = new Date();
           expires.setDate(expires.getDate() + AD_DURATION_DAYS);
           paidAds.push({
-           ...jobData,
+          ...jobData,
             status: 'approved',
             paymentRef: transaction_id,
             created_at: new Date().toISOString(),
@@ -474,7 +473,7 @@ app.get('/payment-callback', async (req, res) => {
           });
         } else {
           userAds.push({
-           ...jobData,
+          ...jobData,
             status: 'approved',
             paymentRef: transaction_id,
             date_posted: new Date().toISOString()
@@ -491,6 +490,43 @@ app.get('/payment-callback', async (req, res) => {
   } catch (err) {
     res.redirect('/?payment=failed');
   }
+});
+
+app.get('/manual-approve/:txid', (req, res) => {
+  const txid = req.params.txid;
+  let jobData = null;
+  let txRefKey = null;
+  for (let key in pendingPayments) {
+    jobData = pendingPayments[key];
+    txRefKey = key;
+    break;
+  }
+
+  if (!jobData) {
+    return res.send('No pending job found. Pay again or check if server restarted.');
+  }
+
+  if (jobData.type === 'ad') {
+    const expires = new Date();
+    expires.setDate(expires.getDate() + AD_DURATION_DAYS);
+    paidAds.push({
+    ...jobData,
+      status: 'approved',
+      paymentRef: txid,
+      created_at: new Date().toISOString(),
+      expires_at: expires.toISOString()
+    });
+  } else {
+    userAds.push({
+    ...jobData,
+      status: 'approved',
+      paymentRef: txid,
+      date_posted: new Date().toISOString()
+    });
+  }
+
+  delete pendingPayments[txRefKey];
+  res.send('Approved! Go back to the site and refresh.');
 });
 
 app.listen(PORT, function() {
