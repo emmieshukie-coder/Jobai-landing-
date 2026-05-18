@@ -6,7 +6,7 @@ const PORT = process.env.PORT || 3000;
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
-const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X'; 
+const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X';
 
 let userAds = [];
 let pendingPayments = {};
@@ -240,7 +240,7 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
 
 app.get('/jobs', async (req, res) => {
   try {
-    const query = req.query.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
+    const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
     const recentDays = parseInt(req.query.recent) || 7;
 
     const countries = [
@@ -334,7 +334,7 @@ app.get('/payment-callback', async (req, res) => {
       const jobData = pendingPayments[tx_ref];
       if (jobData) {
         userAds.push({
-        ...jobData,
+       ...jobData,
           status: 'approved',
           paymentRef: transaction_id,
           date_posted: new Date().toISOString()
@@ -350,6 +350,33 @@ app.get('/payment-callback', async (req, res) => {
   } catch (err) {
     res.redirect('/?payment=failed');
   }
+});
+
+// Manual approval endpoint - add this only
+app.get('/manual-approve/:txid', (req, res) => {
+  const txid = req.params.txid;
+
+  let jobData = null;
+  let txRefKey = null;
+  for (let key in pendingPayments) {
+    jobData = pendingPayments[key];
+    txRefKey = key;
+    break;
+  }
+
+  if (!jobData) {
+    return res.send('No pending job found. Pay again or check if server restarted.');
+  }
+
+  userAds.push({
+   ...jobData,
+    status: 'approved',
+    paymentRef: txid,
+    date_posted: new Date().toISOString()
+  });
+
+  delete pendingPayments[txRefKey];
+  res.send('Job approved and posted! Go back to the site and refresh.');
 });
 
 app.listen(PORT, function() {
