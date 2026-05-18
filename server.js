@@ -1,5 +1,4 @@
 import express from 'express';
-import fetch from 'node-fetch';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -241,7 +240,7 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
 
 app.get('/jobs', async (req, res) => {
   try {
-    const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
+    const query = req.query.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
     const recentDays = parseInt(req.query.recent) || 7;
 
     const countries = [
@@ -278,7 +277,6 @@ app.get('/ads', (req, res) => {
   res.json(userAds.filter(ad => ad.status === 'approved').reverse());
 });
 
-// 1. Create Flutterwave payment link
 app.post('/ads/initiate-payment', async (req, res) => {
   const { title, company, location, phone, url, description } = req.body;
   if (!title ||!company ||!location) {
@@ -323,7 +321,6 @@ app.post('/ads/initiate-payment', async (req, res) => {
   }
 });
 
-// 2. Flutterwave redirects here after payment
 app.get('/payment-callback', async (req, res) => {
   const { transaction_id, tx_ref } = req.query;
 
@@ -337,7 +334,7 @@ app.get('/payment-callback', async (req, res) => {
       const jobData = pendingPayments[tx_ref];
       if (jobData) {
         userAds.push({
-         ...jobData,
+        ...jobData,
           status: 'approved',
           paymentRef: transaction_id,
           date_posted: new Date().toISOString()
