@@ -6,7 +6,7 @@ const PORT = process.env.PORT || 3000;
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
-const FLW_SECRET_KEY = 'FLWSECK_TEST-xxxxxxxxxx'; // REPLACE THIS with your Flutterwave secret key
+const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X'; 
 
 let userAds = [];
 let pendingPayments = {};
