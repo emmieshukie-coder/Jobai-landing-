@@ -3,6 +3,7 @@ import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,6 +12,11 @@ const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
 const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X';
+
+const SUPABASE_URL = 'https://mfjgvtcviwjhiggmkrrf.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1mamd2dGN2aXdqaGlnZ21rcnJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMDI5OTEsImV4cCI6MjA5NDc3ODk5MX0.fqQ4tOaW0VxGqfvEghNNiqCnQmKl-ZMW1AeMexv-wyE';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -32,8 +38,6 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }
 });
 
-let userAds = [];
-let paidAds = [];
 let pendingPayments = {};
 const AD_PRICE = 500;
 const AD_DURATION_DAYS = 7;
@@ -221,8 +225,8 @@ app.get('/', (req, res) => {
     ' }' +
     ' document.getElementById("userAds").innerHTML = ads.map(function(j) {' +
     ' let buttons = "<div class=\\"btn-group\\">";' +
-    ' if (j.url && j.url!== "#") {' +
-    ' buttons += "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"connect-btn\\">Apply Now</a>";' +
+    ' if (j.link && j.link!== "#") {' +
+    ' buttons += "<a href=\\"" + j.link + "\\" target=\\"_blank\\" class=\\"connect-btn\\">Apply Now</a>";' +
     ' }' +
     ' if (j.phone) {' +
     ' buttons += "<a href=\\"tel:" + j.phone + "\\" class=\\"connect-btn call-btn\\">Call " + j.phone + "</a>";' +
@@ -241,7 +245,7 @@ app.get('/', (req, res) => {
     ' return;' +
     ' }' +
     ' document.getElementById("paidAds").innerHTML = ads.map(function(ad) {' +
-    ' let img = ad.image? \'<img src="\' + ad.image + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
+    ' let img = ad.image_url? \'<img src="\' + ad.image_url + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
     ' let actions = "<div class=\\"card-actions\\">";' +
     ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">✏️</button>";' +
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">🗑️</button>";' +
@@ -250,8 +254,8 @@ app.get('/', (req, res) => {
     ' actions +' +
     ' \'<span class="country-tag user-ad-tag">Sponsored</span>\' +' +
     ' img +' +
-    ' \'<h3>\' + ad.business + \'</h3>\' +' +
-    ' \'<p>\' + ad.text + \'</p>\' +' +
+    ' \'<h3>\' + ad.title + \'</h3>\' +' +
+    ' \'<p>\' + ad.description + \'</p>\' +' +
     ' \'<a href="\' + ad.link + \'" target="_blank" class="connect-btn" style="background:#f57c00;">Visit</a>\' +' +
     ' \'</div>\';' +
     ' }).join("");' +
@@ -474,53 +478,6 @@ app.get('/jobs', async (req, res) => {
     res.json([]);
   }
 });
-
-app.get('/ads', (req, res) => {
-  res.json(userAds.filter(ad => ad.status === 'approved').reverse());
-});
-
-app.get('/paid-ads', (req, res) => {
-  const now = Date.now();
-  const activeAds = paidAds.filter(ad =>
-    ad.status === 'approved' && new Date(ad.expires_at).getTime() > now
-  );
-  res.json(activeAds.reverse());
-});
-
-app.post('/ads/initiate-payment', async (req, res) => {
-  const { title, company, location, phone, url, description } = req.body;
-  if (!title ||!company ||!location) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-
-  const tx_ref = 'jobai_' + Date.now();
-  const token = crypto.randomBytes(16).toString('hex');
-  pendingPayments[tx_ref] = { title, company, location, phone, url, description, type: 'job', token };
-
-  try {
-    const response = await fetch('https://api.flutterwave.com/v3/payments', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${FLW_SECRET_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        tx_ref,
-        amount: 200,
-        currency: 'KES',
-        redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
-        customer: {
-          email: 'customer@jobai.com',
-          phonenumber: phone || '0700000',
-          name: company
-        },
-        customizations: {
-          title: 'Job Post Payment',
-          description: 'Pay 200 KES to post job on Jobai'
-        }
-      })
-    });
-
     const data = await response.json();
     if (data.status === 'success') {
       res.json({ payment_link: data.data.link });
@@ -540,7 +497,7 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
 
   const tx_ref = 'ad_' + Date.now();
   const token = crypto.randomBytes(16).toString('hex');
-  pendingPayments[tx_ref] = { business, link, text, image, type: 'ad', token };
+  pendingPayments[tx_ref] = { business, link, text, image, type: 'paid', token };
 
   try {
     const response = await fetch('https://api.flutterwave.com/v3/payments', {
@@ -558,7 +515,7 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
           email: 'advertiser@jobai.com',
           name: business
         },
-                customizations: {
+        customizations: {
           title: 'Sponsored Ad Payment',
           description: 'Pay ' + AD_PRICE + ' KES for 7 days ad'
         }
@@ -588,37 +545,40 @@ app.get('/payment-callback', async (req, res) => {
     if (data.status === 'success' && data.data.status === 'successful') {
       const jobData = pendingPayments[tx_ref];
       if (jobData) {
-        const id = Date.now() + Math.random();
-        if (jobData.type === 'ad') {
+        const id = crypto.randomUUID();
+
+        if (jobData.type === 'paid') {
           const expires = new Date();
           expires.setDate(expires.getDate() + AD_DURATION_DAYS);
-          paidAds.push({
+
+          await supabase.from('ads').insert([{
             id,
             token: jobData.token,
-            business: jobData.business,
+            title: jobData.business,
             link: jobData.link,
-            text: jobData.text,
-            image: jobData.image,
+            image_url: jobData.image,
+            description: jobData.text,
+            type: 'paid',
             status: 'approved',
-            paymentRef: transaction_id,
-            created_at: new Date().toISOString(),
+            payment_ref: transaction_id,
             expires_at: expires.toISOString()
-          });
+          }]);
         } else {
-          userAds.push({
+          await supabase.from('ads').insert([{
             id,
             token: jobData.token,
             title: jobData.title,
             company: jobData.company,
             location: jobData.location,
             phone: jobData.phone,
-            url: jobData.url,
+            link: jobData.url,
             description: jobData.description,
+            type: 'user',
             status: 'approved',
-            paymentRef: transaction_id,
-            date_posted: new Date().toISOString()
-          });
+            payment_ref: transaction_id
+          }]);
         }
+
         delete pendingPayments[tx_ref];
         res.redirect('/?payment=success');
       } else {
@@ -632,55 +592,63 @@ app.get('/payment-callback', async (req, res) => {
   }
 });
 
-// Edit user ad
-app.post('/ads/edit', (req, res) => {
+app.post('/ads/edit', async (req, res) => {
   const { id, token, title, location, company, description } = req.body;
-  const ad = userAds.find(a => a.id == id && a.token === token);
-  if (!ad) return res.json({ success: false, error: 'Not authorized' });
 
-  if (title) ad.title = title;
-  if (location) ad.location = location;
-  if (company) ad.company = company;
-  if (description) ad.description = description;
+  const { error } = await supabase
+  .from('ads')
+  .update({ title, location, company, description })
+  .eq('id', id)
+  .eq('token', token)
+  .eq('type', 'user');
 
+  if (error) return res.json({ success: false });
   res.json({ success: true });
 });
 
-// Delete user ad
-app.post('/ads/delete', (req, res) => {
+app.post('/ads/delete', async (req, res) => {
   const { id, token } = req.body;
-  const index = userAds.findIndex(a => a.id == id && a.token === token);
-  if (index === -1) return res.json({ success: false, error: 'Not authorized' });
 
-  userAds.splice(index, 1);
+  const { error } = await supabase
+  .from('ads')
+  .delete()
+  .eq('id', id)
+  .eq('token', token)
+  .eq('type', 'user');
+
+  if (error) return res.json({ success: false });
   res.json({ success: true });
 });
 
-// Edit paid ad
-app.post('/paid-ads/edit', (req, res) => {
-  const { id, token, title, location, company, description } = req.body;
-  const ad = paidAds.find(a => a.id == id && a.token === token);
-  if (!ad) return res.json({ success: false, error: 'Not authorized' });
+app.post('/paid-ads/edit', async (req, res) => {
+  const { id, token, title, description } = req.body;
 
-  if (title) ad.business = title;
-  if (description) ad.text = description;
-  if (location) ad.location = location;
-  if (company) ad.company = company;
+  const { error } = await supabase
+  .from('ads')
+  .update({ title: title, description: description })
+  .eq('id', id)
+  .eq('token', token)
+  .eq('type', 'paid');
 
+  if (error) return res.json({ success: false });
   res.json({ success: true });
 });
 
-// Delete paid ad
-app.post('/paid-ads/delete', (req, res) => {
+app.post('/paid-ads/delete', async (req, res) => {
   const { id, token } = req.body;
-  const index = paidAds.findIndex(a => a.id == id && a.token === token);
-  if (index === -1) return res.json({ success: false, error: 'Not authorized' });
 
-  paidAds.splice(index, 1);
+  const { error } = await supabase
+  .from('ads')
+  .delete()
+  .eq('id', id)
+  .eq('token', token)
+  .eq('type', 'paid');
+
+  if (error) return res.json({ success: false });
   res.json({ success: true });
 });
 
-app.get('/manual-approve/:txid', (req, res) => {
+app.get('/manual-approve/:txid', async (req, res) => {
   const txid = req.params.txid;
   let jobData = null;
   let txRefKey = null;
@@ -694,28 +662,37 @@ app.get('/manual-approve/:txid', (req, res) => {
     return res.send('No pending job found. Pay again or check if server restarted.');
   }
 
-  const id = Date.now() + Math.random();
-  if (jobData.type === 'ad') {
+  const id = crypto.randomUUID();
+
+  if (jobData.type === 'paid') {
     const expires = new Date();
     expires.setDate(expires.getDate() + AD_DURATION_DAYS);
-    paidAds.push({
+    await supabase.from('ads').insert([{
       id,
       token: jobData.token,
-     ...jobData,
+      title: jobData.business,
+      link: jobData.link,
+      image_url: jobData.image,
+      description: jobData.text,
+      type: 'paid',
       status: 'approved',
-      paymentRef: txid,
-      created_at: new Date().toISOString(),
+      payment_ref: txid,
       expires_at: expires.toISOString()
-    });
+    }]);
   } else {
-    userAds.push({
+    await supabase.from('ads').insert([{
       id,
       token: jobData.token,
-     ...jobData,
+      title: jobData.title,
+      company: jobData.company,
+      location: jobData.location,
+      phone: jobData.phone,
+      link: jobData.url,
+      description: jobData.description,
+      type: 'user',
       status: 'approved',
-      paymentRef: txid,
-      date_posted: new Date().toISOString()
-    });
+      payment_ref: txid
+    }]);
   }
 
   delete pendingPayments[txRefKey];
