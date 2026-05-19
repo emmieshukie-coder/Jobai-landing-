@@ -61,11 +61,11 @@ app.get('/', (req, res) => {
     '.controls input { flex: 1; min-width: 200px; }' +
     '.section { margin-bottom: 32px; }' +
     '.section h2 { margin: 0 0 16px 0; font-size: 24px; color: #1a1a1a; }' +
-    '.job-card { background: white; padding: 20px; margin-bottom: 14px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; transition: transform 0.2s, box-shadow 0.2s; }' +
+    '.job-card { background: white; padding: 20px; margin-bottom: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; transition: transform 0.2s, box-shadow 0.2s; display: block; text-decoration: none; color: inherit; }' +
     '.job-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }' +
-    '.job-card h3 { margin: 0 0 8px 0; color: #1a73e8; font-size: 18px; }' +
-    '.job-meta { margin: 0 0 10px 0; color: #666; font-size: 14px; }' +
-    '.job-meta span { margin-right: 10px; }' +
+    '.job-card h3 { margin: 8px 0 8px 0; color: #1a73e8; font-size: 18px; line-height: 1.4; }' +
+    '.job-meta { margin: 0 0 14px 0; color: #666; font-size: 14px; line-height: 1.5; }' +
+    '.job-meta span { margin-right: 8px; }' +
     '.country-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }' +
     '.source-tag { display: inline-block; background: #f5f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }' +
     '.user-ad-tag { background: #fff3e0; color: #f57c00; }' +
@@ -558,13 +558,14 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
           email: 'advertiser@jobai.com',
           name: business
         },
-        customizations: {
+                customizations: {
           title: 'Sponsored Ad Payment',
           description: 'Pay ' + AD_PRICE + ' KES for 7 days ad'
         }
       })
     });
-        const data = await response.json();
+
+    const data = await response.json();
     if (data.status === 'success') {
       res.json({ payment_link: data.data.link });
     } else {
