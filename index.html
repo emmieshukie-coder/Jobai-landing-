@@ -4,17 +4,81 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Jobai</title>
+  
+  <!-- PWA Setup -->
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#000">
+  <link rel="icon" href="/icon-192.png">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #ffffff;
+      color: #000;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+    p {
+      font-size: 1.2rem;
+      color: #555;
+      margin-bottom: 30px;
+    }
+    #installBtn {
+      display: none;
+      background: #000;
+      color: #fff;
+      border: none;
+      padding: 14px 28px;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #installBtn:active {
+      opacity: 0.8;
+    }
+  </style>
 </head>
 <body>
-  <h1>Jobai Landing</h1>
-  <p>If you see this, the PWA setup worked.</p>
+  <h1>Jobai</h1>
+  <p>Find jobs faster with AI</p>
   
+  <button id="installBtn">Install App</button>
+
   <script>
+    // Register service worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js');
     }
+
+    // Install prompt logic
+    let deferredPrompt;
+    const installBtn = document.getElementById('installBtn');
+    
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.style.display = 'block';
+    });
+
+    installBtn.addEventListener('click', async () => {
+      installBtn.style.display = 'none';
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+      }
+    });
   </script>
 </body>
 </html>
