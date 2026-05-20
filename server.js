@@ -88,7 +88,7 @@ app.get('/', (req, res) => {
     '.hero p { font-size: 16px; opacity: 0.95; margin: 0; }' +
     '.container { max-width: 1000px; margin: 20px auto; padding: 0 16px; }' +
     '.controls { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }' +
-    '.controls input,.controls select,.controls button { padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; background: white; }' +
+    '.controls input,.controls select { padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; background: white; }' +
     '.controls input { flex: 1; min-width: 200px; }' +
     '.section { margin-bottom: 32px; }' +
     '.section h2 { margin: 0 0 16px 0; font-size: 24px; color: #1a1a1a; }' +
@@ -482,7 +482,7 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
 app.get('/jobs', async (req, res) => {
   try {
     const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
-    const recentDays = parseInt(req.query.recent) || 7;
+    const recentDays = req.query.recent === 'all'? 'all' : parseInt(req.query.recent) || 7;
 
     const countries = [
       { code: 'ug', name: 'Uganda' },
@@ -499,7 +499,7 @@ app.get('/jobs', async (req, res) => {
       allJobs.push(...jsearchJobs,...adzunaJobs);
     }
 
-    if (recentDays > 0 && recentDays!== 'all') {
+    if (recentDays!== 'all') {
       const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
