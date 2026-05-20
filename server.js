@@ -4,6 +4,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
+import paidAdsRouter from './paid-ads.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,8 +40,6 @@ const upload = multer({
 });
 
 let pendingPayments = {};
-const AD_PRICE = 500;
-const AD_DURATION_DAYS = 7;
 
 app.use(express.json());
 app.use(express.static('public'));
@@ -144,14 +143,14 @@ app.get('/', (req, res) => {
     ' <div class="section">' +
     ' <h2>Sponsored Ads</h2>' +
     ' <div class="ad-form">' +
-    ' <h3>Advertise here for ' + AD_PRICE + ' KES for 7 days</h3>' +
+    ' <h3>Advertise here for 500 KES for 7 days</h3>' +
     ' <input type="text" id="adBizName" placeholder="Business name" required>' +
     ' <input type="url" id="adLink" placeholder="Website or WhatsApp link" required>' +
     ' <input type="text" id="adText" placeholder="Short ad text" required>' +
     ' <input type="file" id="adImgFile" accept="image/*" capture="environment">' +
     ' <img id="imgPreview" class="img-preview" />' +
     ' <input type="hidden" id="adImgUrl">' +
-    ' <button class="connect-btn" style="background:#f57c00;" onclick="submitPaidAd()">Pay ' + AD_PRICE + ' KES & Run Ad</button>' +
+    ' <button class="connect-btn" style="background:#f57c00;" onclick="submitPaidAd()">Pay 500 KES & Run Ad</button>' +
     ' <p id="adPayMsg" style="margin-top:10px; font-size:14px;"></p>' +
     ' </div>' +
     ' <div id="paidAds" class="loading">Loading ads...</div>' +
@@ -478,6 +477,40 @@ app.get('/jobs', async (req, res) => {
     res.json([]);
   }
 });
+
+app.post('/ads/initiate-payment', async (req, res) => {
+  const { title, company, location, phone, url, description } = req.body;
+  if (!title ||!company ||!location) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  const tx_ref = 'ad_' + Date.now();
+  const token = crypto.randomBytes(16).toString('hex');
+  pendingPayments[tx_ref] = { title, company, location, phone, url, description, type: 'user', token };
+
+  try {
+    const response = await fetch('https://api.flutterwave.com/v3/payments', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${FLW_SECRET_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        tx_ref,
+        amount: 200,
+        currency: 'KES',
+        redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
+        customer: {
+          email: 'advertiser@jobai.com',
+          name: company
+        },
+        customizations: {
+          title: 'Job Post Payment',
+          description: 'Pay 200 KES to post job for 7 days'
+        }
+      })
+    });
+
     const data = await response.json();
     if (data.status === 'success') {
       res.json({ payment_link: data.data.link });
@@ -489,7 +522,24 @@ app.get('/jobs', async (req, res) => {
   }
 });
 
-app.post('/paid-ads/initiate-payment', async (req, res) => {
+app.use(paidAdsRouter);
+
+app.listen(PORT, function() {
+  console.log('Server running on port ' + PORT);
+});
+
+export { pendingPayments, supabase };
+import express from 'express';
+import crypto from 'crypto';
+import { pendingPayments, supabase } from './server.js';
+
+const router = express.Router();
+
+const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X';
+const AD_PRICE = 500;
+const AD_DURATION_DAYS = 7;
+
+router.post('/paid-ads/initiate-payment', async (req, res) => {
   const { business, link, text, image } = req.body;
   if (!business ||!link ||!text) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -533,7 +583,7 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
   }
 });
 
-app.get('/payment-callback', async (req, res) => {
+router.get('/payment-callback', async (req, res) => {
   const { transaction_id, tx_ref } = req.query;
 
   try {
@@ -592,7 +642,32 @@ app.get('/payment-callback', async (req, res) => {
   }
 });
 
-app.post('/ads/edit', async (req, res) => {
+router.get('/ads', async (req, res) => {
+  const { data, error } = await supabase
+  .from('ads')
+  .select('*')
+  .eq('type', 'user')
+  .eq('status', 'approved')
+  .order('created_at', { ascending: false });
+
+  if (error) return res.json([]);
+  res.json(data);
+});
+
+router.get('/paid-ads', async (req, res) => {
+  const { data, error } = await supabase
+  .from('ads')
+  .select('*')
+  .eq('type', 'paid')
+  .eq('status', 'approved')
+  .gte('expires_at', new Date().toISOString())
+  .order('created_at', { ascending: false });
+
+  if (error) return res.json([]);
+  res.json(data);
+});
+
+router.post('/ads/edit', async (req, res) => {
   const { id, token, title, location, company, description } = req.body;
 
   const { error } = await supabase
@@ -606,7 +681,7 @@ app.post('/ads/edit', async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/ads/delete', async (req, res) => {
+router.post('/ads/delete', async (req, res) => {
   const { id, token } = req.body;
 
   const { error } = await supabase
@@ -620,7 +695,7 @@ app.post('/ads/delete', async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/paid-ads/edit', async (req, res) => {
+router.post('/paid-ads/edit', async (req, res) => {
   const { id, token, title, description } = req.body;
 
   const { error } = await supabase
@@ -634,7 +709,7 @@ app.post('/paid-ads/edit', async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/paid-ads/delete', async (req, res) => {
+router.post('/paid-ads/delete', async (req, res) => {
   const { id, token } = req.body;
 
   const { error } = await supabase
@@ -648,7 +723,7 @@ app.post('/paid-ads/delete', async (req, res) => {
   res.json({ success: true });
 });
 
-app.get('/manual-approve/:txid', async (req, res) => {
+router.get('/manual-approve/:txid', async (req, res) => {
   const txid = req.params.txid;
   let jobData = null;
   let txRefKey = null;
@@ -699,6 +774,4 @@ app.get('/manual-approve/:txid', async (req, res) => {
   res.send('Approved! Go back to the site and refresh.');
 });
 
-app.listen(PORT, function() {
-  console.log('Server running on port ' + PORT);
-});
+export default router;
