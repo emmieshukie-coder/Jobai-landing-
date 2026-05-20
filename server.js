@@ -66,7 +66,10 @@ const upload = multer({
 });
 
 let pendingPayments = {};
-const AD_PRICE = 500;
+const AD_PRICE_KES = 500;
+const AD_PRICE_UGX = 145000;
+const JOB_PRICE_KES = 200;
+const JOB_PRICE_UGX = 5800;
 const AD_DURATION_DAYS = 7;
 
 app.use(express.json());
@@ -112,7 +115,7 @@ app.get('/', (req, res) => {
     '.loading { text-align: center; color: #666; padding: 30px; font-size: 16px; }' +
     '.error { text-align: center; color: #d32f2f; padding: 30px; }' +
     '.ad-form { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }' +
-    '.ad-form input,.ad-form textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; }' +
+    '.ad-form input,.ad-form textarea,.ad-form select { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; }' +
     '.ad-form h3 { margin-top: 0; font-size: 18px; }' +
     '.phone-display { color: #34a853; font-weight: 600; }' +
     '.ad-unit { margin: 0; padding: 0; min-height: 0; }' +
@@ -123,6 +126,7 @@ app.get('/', (req, res) => {
     '.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }' +
     '.modal.active { display: flex; }' +
     '.modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%; }' +
+    '.price-label { font-size: 13px; color: #666; margin-bottom: 8px; }' +
     ' </style>' +
     '</head>' +
     '<body>' +
@@ -156,14 +160,19 @@ app.get('/', (req, res) => {
     ' <div class="section">' +
     ' <h2>Post a Job</h2>' +
     ' <div class="ad-form" id="adForm">' +
-    ' <h3>Advertise your job for 200 KES</h3>' +
+    ' <h3>Advertise your job</h3>' +
+    ' <select id="adCountry" onchange="updateJobPrice()">' +
+    ' <option value="UG">Uganda - UGX</option>' +
+    ' <option value="KE">Kenya - KES</option>' +
+    ' </select>' +
+    ' <p class="price-label" id="jobPriceLabel">Price: 5800 UGX</p>' +
     ' <input type="text" id="adTitle" placeholder="Job title" required>' +
     ' <input type="text" id="adCompany" placeholder="Company name" required>' +
     ' <input type="text" id="adLocation" placeholder="Location" required>' +
     ' <input type="tel" id="adPhone" placeholder="Phone number for applicants">' +
     ' <input type="url" id="adUrl" placeholder="Apply link (optional)">' +
     ' <textarea id="adDesc" placeholder="Short description" rows="3"></textarea>' +
-    ' <button class="connect-btn" onclick="submitAd()">Pay 200 KES & Post Job</button>' +
+    ' <button class="connect-btn" onclick="submitAd()">Pay & Post Job</button>' +
     ' <p id="adMsg" style="margin-top:10px; font-size:14px;"></p>' +
     ' </div>' +
     ' <h2>Community Job Posts</h2>' +
@@ -172,14 +181,20 @@ app.get('/', (req, res) => {
     ' <div class="section">' +
     ' <h2>Sponsored Ads</h2>' +
     ' <div class="ad-form">' +
-    ' <h3>Advertise here for ' + AD_PRICE + ' KES for 7 days</h3>' +
+    ' <h3>Advertise here for 7 days</h3>' +
+    ' <select id="adBizCountry" onchange="updateAdPrice()">' +
+    ' <option value="UG">Uganda - UGX</option>' +
+    ' <option value="KE">Kenya - KES</option>' +
+    ' </select>' +
+    ' <p class="price-label" id="adPriceLabel">Price: 145000 UGX</p>' +
     ' <input type="text" id="adBizName" placeholder="Business name" required>' +
     ' <input type="url" id="adLink" placeholder="Website or WhatsApp link" required>' +
     ' <input type="text" id="adText" placeholder="Short ad text" required>' +
+    ' <input type="tel" id="adBizPhone" placeholder="Phone number (optional)">' +
     ' <input type="file" id="adImgFile" accept="image/*" capture="environment">' +
     ' <img id="imgPreview" class="img-preview" />' +
     ' <input type="hidden" id="adImgUrl">' +
-    ' <button class="connect-btn" style="background:#f57c00;" onclick="submitPaidAd()">Pay ' + AD_PRICE + ' KES & Run Ad</button>' +
+    ' <button class="connect-btn" style="background:#f57c00;" onclick="submitPaidAd()">Pay & Run Ad</button>' +
     ' <p id="adPayMsg" style="margin-top:10px; font-size:14px;"></p>' +
     ' </div>' +
     ' <div id="paidAds" class="loading">Loading ads...</div>' +
@@ -203,6 +218,14 @@ app.get('/', (req, res) => {
     ' </div>' +
     ' <script>' +
     ' let allJobs = [];' +
+    ' function updateJobPrice() {' +
+    ' const country = document.getElementById("adCountry").value;' +
+    ' document.getElementById("jobPriceLabel").textContent = country === "UG"? "Price: 5800 UGX" : "Price: 200 KES";' +
+    ' }' +
+    ' function updateAdPrice() {' +
+    ' const country = document.getElementById("adBizCountry").value;' +
+    ' document.getElementById("adPriceLabel").textContent = country === "UG"? "Price: 145000 UGX" : "Price: 500 KES";' +
+    ' }' +
     ' document.getElementById("adImgFile").addEventListener("change", async function(e) {' +
     ' const file = e.target.files[0];' +
     ' if (!file) return;' +
@@ -356,13 +379,15 @@ app.get('/', (req, res) => {
     ' renderPaidAds(ads);' +
     ' }' +
     ' async function submitAd() {' +
+    ' const country = document.getElementById("adCountry").value;' +
     ' const data = {' +
     ' title: document.getElementById("adTitle").value,' +
     ' company: document.getElementById("adCompany").value,' +
     ' location: document.getElementById("adLocation").value,' +
     ' phone: document.getElementById("adPhone").value,' +
     ' url: document.getElementById("adUrl").value,' +
-    ' description: document.getElementById("adDesc").value' +
+    ' description: document.getElementById("adDesc").value,' +
+    ' country: country' +
     ' };' +
     ' if (!data.title ||!data.company ||!data.location) {' +
     ' document.getElementById("adMsg").textContent = "Please fill title, company and location.";' +
@@ -381,11 +406,14 @@ app.get('/', (req, res) => {
     ' }' +
     ' }' +
     ' async function submitPaidAd() {' +
+    ' const country = document.getElementById("adBizCountry").value;' +
     ' const data = {' +
     ' business: document.getElementById("adBizName").value,' +
     ' link: document.getElementById("adLink").value,' +
     ' text: document.getElementById("adText").value,' +
-    ' image: document.getElementById("adImgUrl").value' +
+    ' image: document.getElementById("adImgUrl").value,' +
+    ' phone: document.getElementById("adBizPhone").value,' +
+    ' country: country' +
     ' };' +
     ' if (!data.business ||!data.link ||!data.text) {' +
     ' document.getElementById("adPayMsg").textContent = "Fill business, link and text.";' +
@@ -422,6 +450,8 @@ app.get('/', (req, res) => {
     ' loadJobs();' +
     ' loadUserAds();' +
     ' loadPaidAds();' +
+    ' updateJobPrice();' +
+    ' updateAdPrice();' +
     ' </script>' +
     '</body>' +
     '</html>'
@@ -533,14 +563,33 @@ app.get('/paid-ads', async (req, res) => {
 });
 
 app.post('/ads/initiate-payment', async (req, res) => {
-  const { title, company, location, phone, url, description } = req.body;
-  if (!title ||!company ||!location) {
+  const { title, company, location, phone, url, description, country } = req.body;
+  if (!title || !company || !location) {
     return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  const currency = country === 'UG' ? 'UGX' : 'KES';
+  const amount = currency === 'UGX' ? JOB_PRICE_UGX : JOB_PRICE_KES;
+
+  // Format phone to E.164
+  let formattedPhone = phone || '';
+  if (formattedPhone) {
+    let digits = formattedPhone.replace(/\D/g, '');
+    if (digits.startsWith('0')) {
+      digits = digits.substring(1);
+    }
+    if (country === 'UG' && !digits.startsWith('256')) {
+      digits = '256' + digits;
+    }
+    if (country === 'KE' && !digits.startsWith('254')) {
+      digits = '254' + digits;
+    }
+    formattedPhone = '+' + digits;
   }
 
   const tx_ref = 'jobai_' + Date.now();
   const token = crypto.randomBytes(16).toString('hex');
-  pendingPayments[tx_ref] = { title, company, location, phone, url, description, type: 'job', token };
+  pendingPayments[tx_ref] = { title, company, location, phone: formattedPhone, url, description, type: 'job', token, currency };
 
   try {
     const response = await fetch('https://api.flutterwave.com/v3/payments', {
@@ -551,17 +600,17 @@ app.post('/ads/initiate-payment', async (req, res) => {
       },
       body: JSON.stringify({
         tx_ref,
-        amount: 200,
-        currency: 'KES',
+        amount,
+        currency,
         redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
         customer: {
           email: 'customer@jobai.com',
-          phonenumber: phone || '0700000',
+          phonenumber: formattedPhone,
           name: company
         },
         customizations: {
           title: 'Job Post Payment',
-          description: 'Pay 200 KES to post job on Jobai'
+          description: `Pay ${amount} ${currency} to post job on Jobai`
         }
       })
     });
@@ -573,20 +622,40 @@ app.post('/ads/initiate-payment', async (req, res) => {
       res.status(400).json({ error: 'Failed to create payment' });
     }
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Payment error' });
   }
 });
 
 app.post('/paid-ads/initiate-payment', async (req, res) => {
-  const { business, link, text, image } = req.body;
+  const { business, link, text, image, phone, country } = req.body;
 
   if (!business || !link || !text) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
+  const currency = country === 'UG' ? 'UGX' : 'KES';
+  const amount = currency === 'UGX' ? AD_PRICE_UGX : AD_PRICE_KES;
+
+  // Format phone to E.164
+  let formattedPhone = phone || '';
+  if (formattedPhone) {
+    let digits = formattedPhone.replace(/\D/g, '');
+    if (digits.startsWith('0')) {
+      digits = digits.substring(1);
+    }
+    if (country === 'UG' && !digits.startsWith('256')) {
+      digits = '256' + digits;
+    }
+    if (country === 'KE' && !digits.startsWith('254')) {
+      digits = '254' + digits;
+    }
+    formattedPhone = '+' + digits;
+  }
+
   const tx_ref = 'ad_' + Date.now();
   const token = crypto.randomBytes(16).toString('hex');
-  pendingPayments[tx_ref] = { business, link, text, image, type: 'ad', token };
+  pendingPayments[tx_ref] = { business, link, text, image, type: 'ad', token, currency };
 
   try {
     const response = await fetch('https://api.flutterwave.com/v3/payments', {
@@ -597,16 +666,17 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
       },
       body: JSON.stringify({
         tx_ref,
-        amount: AD_PRICE,
-        currency: 'KES',
+        amount,
+        currency,
         redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
         customer: {
           email: 'advertiser@jobai.com',
-          name: business
+          name: business,
+          phonenumber: formattedPhone
         },
         customizations: {
           title: 'Sponsored Ad Payment',
-          description: 'Pay ' + AD_PRICE + ' KES for 7 days ad'
+          description: `Pay ${amount} ${currency} for 7 days ad`
         }
       })
     });
