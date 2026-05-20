@@ -10,6 +10,9 @@ const { Pool } = pkg;
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const adminRoutes = require('./routes/admin');
+app.use('/admin', adminRoutes);
+
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
