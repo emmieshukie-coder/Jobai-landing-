@@ -75,6 +75,7 @@ const AD_DURATION_DAYS = 7;
 app.use(express.json());
 app.use(express.static('public'));
 
+// [HTML part unchanged - same as your last file]
 app.get('/', (req, res) => {
   res.send(
     '<!DOCTYPE html>' +
@@ -547,6 +548,7 @@ app.get('/ads', async (req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
+    console.error(err);
     res.json([]);
   }
 });
@@ -558,6 +560,7 @@ app.get('/paid-ads', async (req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
+    console.error(err);
     res.json([]);
   }
 });
@@ -616,14 +619,16 @@ app.post('/ads/initiate-payment', async (req, res) => {
     });
 
     const data = await response.json();
+    console.log('Flutterwave response:', data);
+
     if (data.status === 'success') {
       res.json({ payment_link: data.data.link });
     } else {
-      res.status(400).json({ error: 'Failed to create payment' });
+      res.status(400).json({ error: 'Failed to create payment', details: data });
     }
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Payment error' });
+    console.error('Payment error:', err);
+    res.status(500).json({ error: 'Payment error', details: err.message });
   }
 });
 
@@ -682,14 +687,16 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
     });
 
     const data = await response.json();
+    console.log('Flutterwave response:', data);
+
     if (data.status === 'success') {
       res.json({ payment_link: data.data.link });
     } else {
-      res.status(400).json({ error: 'Failed to create payment' });
+      res.status(400).json({ error: 'Failed to create payment', details: data });
     }
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Payment error' });
+    console.error('Payment error:', err);
+    res.status(500).json({ error: 'Payment error', details: err.message });
   }
 });
 
@@ -730,7 +737,7 @@ app.get('/payment-callback', async (req, res) => {
       res.redirect('/?payment=failed');
     }
   } catch (err) {
-    console.error(err);
+    console.error('Callback error:', err);
     res.redirect('/?payment=failed');
   }
 });
@@ -746,6 +753,7 @@ app.post('/ads/edit', async (req, res) => {
     );
     res.json({ success: result.rowCount > 0 });
   } catch (err) {
+    console.error(err);
     res.json({ success: false });
   }
 });
@@ -759,6 +767,7 @@ app.post('/ads/delete', async (req, res) => {
     );
     res.json({ success: result.rowCount > 0 });
   } catch (err) {
+    console.error(err);
     res.json({ success: false });
   }
 });
@@ -773,6 +782,7 @@ app.post('/paid-ads/edit', async (req, res) => {
     );
     res.json({ success: result.rowCount > 0 });
   } catch (err) {
+    console.error(err);
     res.json({ success: false });
   }
 });
@@ -786,6 +796,7 @@ app.post('/paid-ads/delete', async (req, res) => {
     );
     res.json({ success: result.rowCount > 0 });
   } catch (err) {
+    console.error(err);
     res.json({ success: false });
   }
 });
