@@ -112,6 +112,7 @@ app.get('/', (req, res) => {
     ' <option value="3">Last 3 days</option>' +
     ' <option value="1">Last 24 hours</option>' +
     ' </select>' +
+    ' <button class="connect-btn" id="searchBtn">Search</button>' +
     ' </div>' +
     ' <div class="section">' +
     ' <h2>Trending Jobs</h2>' +
@@ -382,8 +383,11 @@ app.get('/', (req, res) => {
     ' document.getElementById("adMsg").textContent = "Payment failed or cancelled.";' +
     ' document.getElementById("adMsg").style.color = "red";' +
     ' }' +
-    ' document.getElementById("searchInput").addEventListener("input", loadJobs);' +
+    ' document.getElementById("searchBtn").addEventListener("click", loadJobs);' +
     ' document.getElementById("dateFilter").addEventListener("change", loadJobs);' +
+    ' document.getElementById("searchInput").addEventListener("keypress", function(e) {' +
+    ' if (e.key === "Enter") loadJobs();' +
+    ' });' +
     ' loadJobs();' +
     ' loadUserAds();' +
     ' loadPaidAds();' +
@@ -551,14 +555,15 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
       },
       body: JSON.stringify({
         tx_ref,
-        amount: AD_PRICE,
+        amount:
+                  AD_PRICE,
         currency: 'KES',
         redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
         customer: {
           email: 'advertiser@jobai.com',
           name: business
         },
-                customizations: {
+        customizations: {
           title: 'Sponsored Ad Payment',
           description: 'Pay ' + AD_PRICE + ' KES for 7 days ad'
         }
