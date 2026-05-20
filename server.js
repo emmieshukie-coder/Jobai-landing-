@@ -700,7 +700,6 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
   }
 });
 
-// Flutterwave callback - verifies payment and saves to Postgres
 app.get('/payment-callback', async (req, res) => {
   const { tx_ref, transaction_id, status } = req.query;
   const payment = pendingPayments[tx_ref];
@@ -742,7 +741,6 @@ app.get('/payment-callback', async (req, res) => {
   }
 });
 
-// Edit and delete routes
 app.post('/ads/edit', async (req, res) => {
   const { id, token, title, location, company, description } = req.body;
   try {
