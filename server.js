@@ -575,10 +575,12 @@ app.post('/ads/initiate-payment', async (req, res) => {
 
 app.post('/paid-ads/initiate-payment', async (req, res) => {
   const { business, link, text, image } = req.body;
-  return res.status(400).json({ error: 'Missing required fields' });
-  });
 
-  const tx_ref = 'ad_' + Date.now();
+  if (!business ||!link ||!text) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+    const tx_ref = 'ad_' + Date.now();
   const token = crypto.randomBytes(16).toString('hex');
   pendingPayments[tx_ref] = { business, link, text, image, type: 'ad', token };
 
@@ -614,157 +616,4 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: 'Payment error' });
   }
-});   // <-- this closes app.post('/paid-ads/initiate-payment'
-
-  // Flutterwave callback - verifies payment and saves to Postgres
-
-
-// Flutterwave callback - verifies payment and saves to Postgres
-app.get('/payment-callback', async (req, res) => {
-  const { transaction_id, tx_ref } = req.query;
-
-  try {
-    const verify = await fetch(`https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`, {
-      headers: { 'Authorization': `Bearer ${FLW_SECRET_KEY}` }
-    });
-    const data = await verify.json();
-
-    if (data.status === 'success' && data.data.status === 'successful') {
-      const payment = pendingPayments[tx_ref];
-
-      if (payment) {
-        const id = Date.now();
-        const expires_at = payment.type === 'ad'
-        ? new Date(Date.now() + AD_DURATION_DAYS * 24 * 60 * 60 * 1000)
-          : null;
-
-        if (payment.type === 'job') {
-          await pool.query(
-            `INSERT INTO ads (id, token, type, status, title, company, location, phone, url, description, paymentref, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
-            [id, payment.token, 'job', 'approved', payment.title, payment.company, payment.location, payment.phone, payment.url, payment.description, tx_ref]
-          );
-        } else {
-          await pool.query(
-            `INSERT INTO ads (id, token, type, status, business, link, text, image, paymentref, created_at, expires_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10)`,
-            [id, payment.token, 'ad', 'approved', payment.business, payment.link, payment.text, payment.image, tx_ref, expires_at]
-          );
-        }
-
-        delete pendingPayments[tx_ref];
-        return res.redirect('/?payment=success');
-      }
-    }
-
-    res.redirect('/?payment=failed');
-  } catch (err) {
-    console.error(err);
-    res.redirect('/?payment=failed');
-  }
-});
-
-// Edit user ad
-app.post('/ads/edit', async (req, res) => {
-  const { id, token, title, location, company, description } = req.body;
-  try {
-    const result = await pool.query(
-      `UPDATE ads SET title=$1, location=$2, company=$3, description=$4
-       WHERE id=$5 AND token=$6 AND type='job'`,
-      [title, location, company, description, id, token]
-    );
-    res.json({ success: result.rowCount > 0 });
-  } catch (err) {
-    res.json({ success: false, error: err.message });
-  }
-});
-
-// Delete user ad
-app.post('/ads/delete', async (req, res) => {
-  const { id, token } = req.body;
-  try {
-    const result = await pool.query(
-      `DELETE FROM ads WHERE id=$1 AND token=$2 AND type='job'`,
-      [id, token]
-    );
-    res.json({ success: result.rowCount > 0 });
-  } catch (err) {
-    res.json({ success: false, error: err.message });
-  }
-});
-
-// Edit paid ad
-app.post('/paid-ads/edit', async (req, res) => {
-  const { id, token, title, location, company, description } = req.body;
-  try {
-    const result = await pool.query(
-      `UPDATE ads SET business=$1, text=$2
-       WHERE id=$3 AND token=$4 AND type='ad'`,
-      [title, description, id, token]
-    );
-    res.json({ success: result.rowCount > 0 });
-  } catch (err) {
-    res.json({ success: false, error: err.message });
-  }
-});
-
-// Delete paid ad
-app.post('/paid-ads/delete', async (req, res) => {
-  const { id, token } = req.body;
-  try {
-    const result = await pool.query(
-      `DELETE FROM ads WHERE id=$1 AND token=$2 AND type='ad'`,
-      [id, token]
-    );
-    res.json({ success: result.rowCount > 0 });
-  } catch (err) {
-    res.json({ success: false, error: err.message });
-  }
-});
-
-// Manual approve for testing if callback fails
-app.get('/manual-approve/:txid', async (req, res) => {
-  const txid = req.params.txid;
-  let jobData = null;
-  let txRefKey = null;
-
-  for (let key in pendingPayments) {
-    jobData = pendingPayments[key];
-    txRefKey = key;
-    break;
-  }
-
-  if (!jobData) {
-    return res.send('No pending job found. Pay again or check if server restarted.');
-  }
-
-  try {
-    const id = Date.now();
-    const expires_at = jobData.type === 'ad'
-    ? new Date(Date.now() + AD_DURATION_DAYS * 24 * 60 * 60 * 1000)
-      : null;
-
-    if (jobData.type === 'ad') {
-      await pool.query(
-        `INSERT INTO ads (id, token, type, status, business, link, text, image, paymentref, created_at, expires_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10)`,
-        [id, jobData.token, 'ad', 'approved', jobData.business, jobData.link, jobData.text, jobData.image, txid, expires_at]
-      );
-    } else {
-      await pool.query(
-        `INSERT INTO ads (id, token, type, status, title, company, location, phone, url, description, paymentref, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
-        [id, jobData.token, 'job', 'approved', jobData.title, jobData.company, jobData.location, jobData.phone, jobData.url, jobData.description, txid]
-      );
-    }
-
-    delete pendingPayments[txRefKey];
-    res.send('Approved! Go back to the site and refresh.');
-  } catch (err) {
-    res.send('Error: ' + err.message);
-  }
-});
-
-app.listen(PORT, () => {
-  console.log('Server running on port ' + PORT);
 });
