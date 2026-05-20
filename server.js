@@ -24,6 +24,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
+app.locals.pool = pool;
 // Create tables on startup
 pool.query(`
   CREATE TABLE IF NOT EXISTS ads (
