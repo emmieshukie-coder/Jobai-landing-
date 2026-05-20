@@ -614,7 +614,7 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: 'Payment error' });
   }
-});   // <-- this closes app.post('/paid-ads/initiate-payment')
+});   // <-- this closes app.post('/paid-ads/initiate-payment'
 
   // Flutterwave callback - verifies payment and saves to Postgres
 
