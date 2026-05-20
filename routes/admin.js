@@ -20,6 +20,17 @@ const basicAuth = (req, res, next) => {
 
 router.use(basicAuth);
 
+// Escape HTML to prevent breaking the page
+const escapeHtml = (str) => {
+  if (!str) return '-';
+  return String(str)
+   .replace(/&/g, '&amp;')
+   .replace(/</g, '&lt;')
+   .replace(/>/g, '&gt;')
+   .replace(/"/g, '&quot;')
+   .replace(/'/g, '&#039;');
+};
+
 // Send rejection notification - email + SMS
 async function sendRejectionNotification(ad) {
   const message = `Your ad "${ad.title || ad.text || 'Ad #' + ad.id}" was rejected.\nReason: ${ad.rejection_reason}\n\nYou can edit and resubmit it.`;
@@ -96,29 +107,100 @@ router.get('/ads', async (req, res) => {
     const result = await req.app.locals.pool.query(query, params);
 
     res.send(`
+      <!DOCTYPE html>
       <html>
         <head>
+          <meta charset="UTF-8">
           <title>Admin - Ads</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 20px; background: #111; color: #eee; }
-            table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-            th, td { border: 1px solid #333; padding: 8px; text-align: left; font-size: 14px; }
-            th { background: #222; }
-            input, button, select, textarea { padding: 6px; margin: 2px; background: #222; color: #eee; border: 1px solid #333; border-radius: 4px; }
-            button { cursor: pointer; background: #e11d48; color: white; border: none; }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+              padding: 20px;
+              background: #111;
+              color: #eee;
+              margin: 0;
+            }
+            h2 { margin-top: 0; }
+            table {
+              border-collapse: collapse;
+              width: 100%;
+              margin-top: 20px;
+              background: #1a1a1a;
+            }
+            th, td {
+              border: 1px solid #333;
+              padding: 10px;
+              text-align: left;
+              font-size: 14px;
+            }
+            th {
+              background: #222;
+              font-weight: 600;
+            }
+            tr:hover { background: #1f1f1f; }
+            input, button, select, textarea {
+              padding: 8px 12px;
+              margin: 2px;
+              background: #222;
+              color: #eee;
+              border: 1px solid #333;
+              border-radius: 4px;
+              font-size: 14px;
+            }
+            button {
+              cursor: pointer;
+              background: #e11d48;
+              color: white;
+              border: none;
+              font-weight: 500;
+            }
+            button:hover { opacity: 0.9; }
             button.extend { background: #16a34a; }
             button.search { background: #2563eb; }
             button.approve { background: #059669; }
             button.reject { background: #dc2626; }
-       .top { margin-bottom: 20px; display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end; }
-       .filters { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-       .filters a { padding: 6px 12px; background: #222; color: #eee; text-decoration: none; border-radius: 4px; border: 1px solid #333; }
-       .filters a.active { background: #2563eb; border-color: #2563eb; }
-       .filters a:hover { background: #333; }
-       .actions form { display: inline-block; margin-right: 4px; }
-       .reason { color: #f87171; font-size: 12px; font-style: italic; }
-        dialog { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 20px; color: #eee; }
-        dialog::backdrop { background: rgba(0,0,0,0.7); }
+           .top {
+              margin-bottom: 20px;
+              display: flex;
+              gap: 15px;
+              flex-wrap: wrap;
+              align-items: flex-end;
+            }
+           .filters {
+              margin-bottom: 15px;
+              display: flex;
+              gap: 10px;
+              flex-wrap: wrap;
+              align-items: center;
+            }
+           .filters a {
+              padding: 8px 14px;
+              background: #222;
+              color: #eee;
+              text-decoration: none;
+              border-radius: 4px;
+              border: 1px solid #333;
+            }
+           .filters a.active {
+              background: #2563eb;
+              border-color: #2563eb;
+            }
+           .filters a:hover { background: #333; }
+           .actions form { display: inline-block; margin-right: 4px; }
+           .reason {
+              color: #f87171;
+              font-size: 12px;
+              font-style: italic;
+            }
+            dialog {
+              background: #1a1a1a;
+              border: 1px solid #333;
+              border-radius: 8px;
+              padding: 24px;
+              color: #eee;
+            }
+            dialog::backdrop { background: rgba(0,0,0,0.7); }
+           .count { color: #aaa; margin: 10px 0; }
           </style>
         </head>
         <body>
@@ -126,17 +208,17 @@ router.get('/ads', async (req, res) => {
 
           <div class="filters">
             <strong>Filter:</strong>
-            <a href="/admin/ads?q=${search}" class="${status === 'all'? 'active' : ''}">All</a>
-            <a href="/admin/ads?q=${search}&status=pending" class="${status === 'pending'? 'active' : ''}">Pending</a>
-            <a href="/admin/ads?q=${search}&status=approved" class="${status === 'approved'? 'active' : ''}">Active</a>
-            <a href="/admin/ads?q=${search}&status=rejected" class="${status === 'rejected'? 'active' : ''}">Rejected</a>
-            <a href="/admin/ads?q=${search}&status=expired" class="${status === 'expired'? 'active' : ''}">Expired</a>
+            <a href="/admin/ads?q=${escapeHtml(search)}" class="${status === 'all'? 'active' : ''}">All</a>
+            <a href="/admin/ads?q=${escapeHtml(search)}&status=pending" class="${status === 'pending'? 'active' : ''}">Pending</a>
+            <a href="/admin/ads?q=${escapeHtml(search)}&status=approved" class="${status === 'approved'? 'active' : ''}">Active</a>
+            <a href="/admin/ads?q=${escapeHtml(search)}&status=rejected" class="${status === 'rejected'? 'active' : ''}">Rejected</a>
+            <a href="/admin/ads?q=${escapeHtml(search)}&status=expired" class="${status === 'expired'? 'active' : ''}">Expired</a>
           </div>
 
           <div class="filters">
             <form method="GET" action="/admin/ads">
-              <input type="hidden" name="status" value="${status}">
-              <input name="q" placeholder="Search business, phone, title..." value="${search}" style="width: 300px;">
+              <input type="hidden" name="status" value="${escapeHtml(status)}">
+              <input name="q" placeholder="Search business, phone, title..." value="${escapeHtml(search)}" style="width: 300px;">
               <button class="search">Search</button>
               <a href="/admin/ads">Clear</a>
             </form>
@@ -145,40 +227,49 @@ router.get('/ads', async (req, res) => {
           <div class="top">
             <form method="POST" action="/admin/ads/approve">
               <input name="id" placeholder="Ad ID" required>
-              <input name="days" type="number" placeholder="Days" value="30">
+              <input name="days" type="number" placeholder="Days" value="30" min="1">
               <button class="approve">Approve</button>
             </form>
             <button class="reject" onclick="document.getElementById('rejectModal').showModal()">Reject with Reason</button>
             <form method="POST" action="/admin/ads/extend">
               <input name="id" placeholder="Ad ID" required>
-              <input name="days" type="number" placeholder="Add days" value="7">
+              <input name="days" type="number" placeholder="Add days" value="7" min="1">
               <button class="extend">Extend Expiry</button>
             </form>
-            <form method="POST" action="/admin/ads/delete" onsubmit="return confirm('Delete this ad?');">
+            <form method="POST" action="/admin/ads/delete" onsubmit="return confirm('Delete this ad permanently?');">
               <input name="id" placeholder="Ad ID" required>
               <button>Delete Ad</button>
             </form>
           </div>
 
-          <p>Showing ${result.rows.length} results</p>
+          <p class="count">Showing ${result.rows.length} results</p>
 
           <table>
             <tr>
-              <th>ID</th><th>Type</th><th>Status</th><th>Business</th><th>Title</th>
-              <th>Phone</th><th>Email</th><th>Created</th><th>Expires</th><th>Reason</th><th>Actions</th>
+              <th>ID</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Business</th>
+              <th>Title</th>
+              <th>Phone</th>
+              <th>Email</th>
+              <th>Created</th>
+              <th>Expires</th>
+              <th>Reason</th>
+              <th>Actions</th>
             </tr>
             ${result.rows.map(r => `
               <tr>
                 <td>${r.id}</td>
-                <td>${r.type}</td>
-                <td>${r.status}</td>
-                <td>${r.business || r.company || '-'}</td>
-                <td>${r.title || r.text || '-'}</td>
-                <td>${r.phone || '-'}</td>
-                <td>${r.email || '-'}</td>
-                <td>${new Date(r.created_at).toLocaleString()}</td>
+                <td>${escapeHtml(r.type)}</td>
+                <td>${escapeHtml(r.status)}</td>
+                <td>${escapeHtml(r.business || r.company)}</td>
+                <td>${escapeHtml(r.title || r.text)}</td>
+                <td>${escapeHtml(r.phone)}</td>
+                <td>${escapeHtml(r.email)}</td>
+                <td>${r.created_at? new Date(r.created_at).toLocaleString() : '-'}</td>
                 <td>${r.expires_at? new Date(r.expires_at).toLocaleString() : '-'}</td>
-                <td><span class="reason">${r.rejection_reason || '-'}</span></td>
+                <td><span class="reason">${escapeHtml(r.rejection_reason)}</span></td>
                 <td class="actions">
                   ${r.status === 'pending'? `
                     <form method="POST" action="/admin/ads/approve" style="display:inline;">
@@ -187,7 +278,7 @@ router.get('/ads', async (req, res) => {
                       <button class="approve" style="padding:4px 8px; font-size:12px;">Approve</button>
                     </form>
                     <button onclick="openReject(${r.id})" class="reject" style="padding:4px 8px; font-size:12px;">Reject</button>
-                  ` : ''}
+                  ` : '-'}
                 </td>
               </tr>
             `).join('')}
@@ -195,12 +286,12 @@ router.get('/ads', async (req, res) => {
 
           <dialog id="rejectModal">
             <form method="POST" action="/admin/ads/reject">
-              <h3>Reject Ad</h3>
+              <h3 style="margin-top:0;">Reject Ad</h3>
               <input type="hidden" name="id" id="rejectId">
               <label>Reason:</label><br>
-              <textarea name="reason" rows="4" cols="40" placeholder="Enter reason for rejection..." required></textarea><br><br>
+              <textarea name="reason" rows="4" cols="50" placeholder="Enter reason for rejection..." required></textarea><br><br>
               <button type="submit" class="reject">Confirm Reject & Notify</button>
-              <button type="button" onclick="document.getElementById('rejectModal').close()">Cancel</button>
+              <button type="button" onclick="document.getElementById('rejectModal').close()" style="background:#444;">Cancel</button>
             </form>
           </dialog>
 
