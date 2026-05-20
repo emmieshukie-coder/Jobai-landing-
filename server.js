@@ -3,47 +3,14 @@ import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import crypto from 'crypto';
-import pkg from 'pg';
-
-const { Pool } = pkg;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Use env vars only
-const ADZUNA_APP_ID = process.env.ADZUNA_APP_ID;
-const ADZUNA_API_KEY = process.env.ADZUNA_API_KEY;
-const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
-const FLW_SECRET_KEY = process.env.FLW_SECRET_KEY;
-
-// Neon Postgres pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
-
-// Create table on startup
-pool.query(`
-  CREATE TABLE IF NOT EXISTS ads (
-    id BIGINT PRIMARY KEY,
-    token TEXT,
-    type TEXT,
-    status TEXT,
-    title TEXT,
-    company TEXT,
-    location TEXT,
-    phone TEXT,
-    url TEXT,
-    description TEXT,
-    business TEXT,
-    link TEXT,
-    text TEXT,
-    image TEXT,
-    paymentref TEXT,
-    created_at TIMESTAMP DEFAULT NOW(),
-    expires_at TIMESTAMP
-  )
-`).catch(console.error);
+const ADZUNA_APP_ID = 'cd82aca8';
+const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
+const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
+const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -65,17 +32,15 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }
 });
 
+let userAds = [];
+let paidAds = [];
 let pendingPayments = {};
-const AD_PRICE_KES = 500;
-const AD_PRICE_UGX = 145000;
-const JOB_PRICE_KES = 200;
-const JOB_PRICE_UGX = 5800;
+const AD_PRICE = 500;
 const AD_DURATION_DAYS = 7;
 
 app.use(express.json());
 app.use(express.static('public'));
 
-// [HTML part unchanged - same as your last file]
 app.get('/', (req, res) => {
   res.send(
     '<!DOCTYPE html>' +
@@ -116,7 +81,7 @@ app.get('/', (req, res) => {
     '.loading { text-align: center; color: #666; padding: 30px; font-size: 16px; }' +
     '.error { text-align: center; color: #d32f2f; padding: 30px; }' +
     '.ad-form { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }' +
-    '.ad-form input,.ad-form textarea,.ad-form select { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; }' +
+    '.ad-form input,.ad-form textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; }' +
     '.ad-form h3 { margin-top: 0; font-size: 18px; }' +
     '.phone-display { color: #34a853; font-weight: 600; }' +
     '.ad-unit { margin: 0; padding: 0; min-height: 0; }' +
@@ -127,7 +92,6 @@ app.get('/', (req, res) => {
     '.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }' +
     '.modal.active { display: flex; }' +
     '.modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%; }' +
-    '.price-label { font-size: 13px; color: #666; margin-bottom: 8px; }' +
     ' </style>' +
     '</head>' +
     '<body>' +
@@ -148,7 +112,6 @@ app.get('/', (req, res) => {
     ' <option value="3">Last 3 days</option>' +
     ' <option value="1">Last 24 hours</option>' +
     ' </select>' +
-    ' <button class="connect-btn" id="searchBtn">Search</button>' +
     ' </div>' +
     ' <div class="section">' +
     ' <h2>Trending Jobs</h2>' +
@@ -161,19 +124,14 @@ app.get('/', (req, res) => {
     ' <div class="section">' +
     ' <h2>Post a Job</h2>' +
     ' <div class="ad-form" id="adForm">' +
-    ' <h3>Advertise your job</h3>' +
-    ' <select id="adCountry" onchange="updateJobPrice()">' +
-    ' <option value="UG">Uganda - UGX</option>' +
-    ' <option value="KE">Kenya - KES</option>' +
-    ' </select>' +
-    ' <p class="price-label" id="jobPriceLabel">Price: 5800 UGX</p>' +
+    ' <h3>Advertise your job for 200 KES</h3>' +
     ' <input type="text" id="adTitle" placeholder="Job title" required>' +
     ' <input type="text" id="adCompany" placeholder="Company name" required>' +
     ' <input type="text" id="adLocation" placeholder="Location" required>' +
     ' <input type="tel" id="adPhone" placeholder="Phone number for applicants">' +
     ' <input type="url" id="adUrl" placeholder="Apply link (optional)">' +
     ' <textarea id="adDesc" placeholder="Short description" rows="3"></textarea>' +
-    ' <button class="connect-btn" onclick="submitAd()">Pay & Post Job</button>' +
+    ' <button class="connect-btn" onclick="submitAd()">Pay 200 KES & Post Job</button>' +
     ' <p id="adMsg" style="margin-top:10px; font-size:14px;"></p>' +
     ' </div>' +
     ' <h2>Community Job Posts</h2>' +
@@ -182,20 +140,14 @@ app.get('/', (req, res) => {
     ' <div class="section">' +
     ' <h2>Sponsored Ads</h2>' +
     ' <div class="ad-form">' +
-    ' <h3>Advertise here for 7 days</h3>' +
-    ' <select id="adBizCountry" onchange="updateAdPrice()">' +
-    ' <option value="UG">Uganda - UGX</option>' +
-    ' <option value="KE">Kenya - KES</option>' +
-    ' </select>' +
-    ' <p class="price-label" id="adPriceLabel">Price: 145000 UGX</p>' +
+    ' <h3>Advertise here for ' + AD_PRICE + ' KES for 7 days</h3>' +
     ' <input type="text" id="adBizName" placeholder="Business name" required>' +
     ' <input type="url" id="adLink" placeholder="Website or WhatsApp link" required>' +
     ' <input type="text" id="adText" placeholder="Short ad text" required>' +
-    ' <input type="tel" id="adBizPhone" placeholder="Phone number (optional)">' +
     ' <input type="file" id="adImgFile" accept="image/*" capture="environment">' +
     ' <img id="imgPreview" class="img-preview" />' +
     ' <input type="hidden" id="adImgUrl">' +
-    ' <button class="connect-btn" style="background:#f57c00;" onclick="submitPaidAd()">Pay & Run Ad</button>' +
+    ' <button class="connect-btn" style="background:#f57c00;" onclick="submitPaidAd()">Pay ' + AD_PRICE + ' KES & Run Ad</button>' +
     ' <p id="adPayMsg" style="margin-top:10px; font-size:14px;"></p>' +
     ' </div>' +
     ' <div id="paidAds" class="loading">Loading ads...</div>' +
@@ -219,14 +171,6 @@ app.get('/', (req, res) => {
     ' </div>' +
     ' <script>' +
     ' let allJobs = [];' +
-    ' function updateJobPrice() {' +
-    ' const country = document.getElementById("adCountry").value;' +
-    ' document.getElementById("jobPriceLabel").textContent = country === "UG"? "Price: 5800 UGX" : "Price: 200 KES";' +
-    ' }' +
-    ' function updateAdPrice() {' +
-    ' const country = document.getElementById("adBizCountry").value;' +
-    ' document.getElementById("adPriceLabel").textContent = country === "UG"? "Price: 145000 UGX" : "Price: 500 KES";' +
-    ' }' +
     ' document.getElementById("adImgFile").addEventListener("change", async function(e) {' +
     ' const file = e.target.files[0];' +
     ' if (!file) return;' +
@@ -380,15 +324,13 @@ app.get('/', (req, res) => {
     ' renderPaidAds(ads);' +
     ' }' +
     ' async function submitAd() {' +
-    ' const country = document.getElementById("adCountry").value;' +
     ' const data = {' +
     ' title: document.getElementById("adTitle").value,' +
     ' company: document.getElementById("adCompany").value,' +
     ' location: document.getElementById("adLocation").value,' +
     ' phone: document.getElementById("adPhone").value,' +
     ' url: document.getElementById("adUrl").value,' +
-    ' description: document.getElementById("adDesc").value,' +
-    ' country: country' +
+    ' description: document.getElementById("adDesc").value' +
     ' };' +
     ' if (!data.title ||!data.company ||!data.location) {' +
     ' document.getElementById("adMsg").textContent = "Please fill title, company and location.";' +
@@ -407,14 +349,11 @@ app.get('/', (req, res) => {
     ' }' +
     ' }' +
     ' async function submitPaidAd() {' +
-    ' const country = document.getElementById("adBizCountry").value;' +
     ' const data = {' +
     ' business: document.getElementById("adBizName").value,' +
     ' link: document.getElementById("adLink").value,' +
     ' text: document.getElementById("adText").value,' +
-    ' image: document.getElementById("adImgUrl").value,' +
-    ' phone: document.getElementById("adBizPhone").value,' +
-    ' country: country' +
+    ' image: document.getElementById("adImgUrl").value' +
     ' };' +
     ' if (!data.business ||!data.link ||!data.text) {' +
     ' document.getElementById("adPayMsg").textContent = "Fill business, link and text.";' +
@@ -443,16 +382,11 @@ app.get('/', (req, res) => {
     ' document.getElementById("adMsg").textContent = "Payment failed or cancelled.";' +
     ' document.getElementById("adMsg").style.color = "red";' +
     ' }' +
-    ' document.getElementById("searchBtn").addEventListener("click", loadJobs);' +
+    ' document.getElementById("searchInput").addEventListener("input", loadJobs);' +
     ' document.getElementById("dateFilter").addEventListener("change", loadJobs);' +
-    ' document.getElementById("searchInput").addEventListener("keypress", function(e) {' +
-    ' if (e.key === "Enter") loadJobs();' +
-    ' });' +
     ' loadJobs();' +
     ' loadUserAds();' +
     ' loadPaidAds();' +
-    ' updateJobPrice();' +
-    ' updateAdPrice();' +
     ' </script>' +
     '</body>' +
     '</html>'
@@ -513,7 +447,7 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
 app.get('/jobs', async (req, res) => {
   try {
     const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
-    const recentDays = req.query.recent === 'all'? 'all' : parseInt(req.query.recent) || 7;
+    const recentDays = parseInt(req.query.recent) || 7;
 
     const countries = [
       { code: 'ug', name: 'Uganda' },
@@ -530,7 +464,7 @@ app.get('/jobs', async (req, res) => {
       allJobs.push(...jsearchJobs,...adzunaJobs);
     }
 
-    if (recentDays!== 'all') {
+    if (recentDays > 0 && recentDays!== 'all') {
       const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
@@ -541,58 +475,27 @@ app.get('/jobs', async (req, res) => {
   }
 });
 
-app.get('/ads', async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT * FROM ads WHERE type = 'job' AND status = 'approved' ORDER BY created_at DESC`
-    );
-    res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.json([]);
-  }
+app.get('/ads', (req, res) => {
+  res.json(userAds.filter(ad => ad.status === 'approved').reverse());
 });
 
-app.get('/paid-ads', async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT * FROM ads WHERE type = 'ad' AND status = 'approved' AND expires_at > NOW() ORDER BY created_at DESC`
-    );
-    res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.json([]);
-  }
+app.get('/paid-ads', (req, res) => {
+  const now = Date.now();
+  const activeAds = paidAds.filter(ad =>
+    ad.status === 'approved' && new Date(ad.expires_at).getTime() > now
+  );
+  res.json(activeAds.reverse());
 });
 
 app.post('/ads/initiate-payment', async (req, res) => {
-  const { title, company, location, phone, url, description, country } = req.body;
-  if (!title || !company || !location) {
+  const { title, company, location, phone, url, description } = req.body;
+  if (!title ||!company ||!location) {
     return res.status(400).json({ error: 'Missing required fields' });
-  }
-
-  const currency = country === 'UG' ? 'UGX' : 'KES';
-  const amount = currency === 'UGX' ? JOB_PRICE_UGX : JOB_PRICE_KES;
-
-  // Format phone to E.164
-  let formattedPhone = phone || '';
-  if (formattedPhone) {
-    let digits = formattedPhone.replace(/\D/g, '');
-    if (digits.startsWith('0')) {
-      digits = digits.substring(1);
-    }
-    if (country === 'UG' && !digits.startsWith('256')) {
-      digits = '256' + digits;
-    }
-    if (country === 'KE' && !digits.startsWith('254')) {
-      digits = '254' + digits;
-    }
-    formattedPhone = '+' + digits;
   }
 
   const tx_ref = 'jobai_' + Date.now();
   const token = crypto.randomBytes(16).toString('hex');
-  pendingPayments[tx_ref] = { title, company, location, phone: formattedPhone, url, description, type: 'job', token, currency };
+  pendingPayments[tx_ref] = { title, company, location, phone, url, description, type: 'job', token };
 
   try {
     const response = await fetch('https://api.flutterwave.com/v3/payments', {
@@ -603,64 +506,41 @@ app.post('/ads/initiate-payment', async (req, res) => {
       },
       body: JSON.stringify({
         tx_ref,
-        amount,
-        currency,
+        amount: 200,
+        currency: 'KES',
         redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
         customer: {
           email: 'customer@jobai.com',
-          phonenumber: formattedPhone,
+          phonenumber: phone || '0700000',
           name: company
         },
         customizations: {
           title: 'Job Post Payment',
-          description: `Pay ${amount} ${currency} to post job on Jobai`
+          description: 'Pay 200 KES to post job on Jobai'
         }
       })
     });
 
     const data = await response.json();
-    console.log('Flutterwave response:', data);
-
     if (data.status === 'success') {
       res.json({ payment_link: data.data.link });
     } else {
-      res.status(400).json({ error: 'Failed to create payment', details: data });
+      res.status(400).json({ error: 'Failed to create payment' });
     }
   } catch (err) {
-    console.error('Payment error:', err);
-    res.status(500).json({ error: 'Payment error', details: err.message });
+    res.status(500).json({ error: 'Payment error' });
   }
 });
 
 app.post('/paid-ads/initiate-payment', async (req, res) => {
-  const { business, link, text, image, phone, country } = req.body;
-
-  if (!business || !link || !text) {
+  const { business, link, text, image } = req.body;
+  if (!business ||!link ||!text) {
     return res.status(400).json({ error: 'Missing required fields' });
-  }
-
-  const currency = country === 'UG' ? 'UGX' : 'KES';
-  const amount = currency === 'UGX' ? AD_PRICE_UGX : AD_PRICE_KES;
-
-  // Format phone to E.164
-  let formattedPhone = phone || '';
-  if (formattedPhone) {
-    let digits = formattedPhone.replace(/\D/g, '');
-    if (digits.startsWith('0')) {
-      digits = digits.substring(1);
-    }
-    if (country === 'UG' && !digits.startsWith('256')) {
-      digits = '256' + digits;
-    }
-    if (country === 'KE' && !digits.startsWith('254')) {
-      digits = '254' + digits;
-    }
-    formattedPhone = '+' + digits;
   }
 
   const tx_ref = 'ad_' + Date.now();
   const token = crypto.randomBytes(16).toString('hex');
-  pendingPayments[tx_ref] = { business, link, text, image, type: 'ad', token, currency };
+  pendingPayments[tx_ref] = { business, link, text, image, type: 'ad', token };
 
   try {
     const response = await fetch('https://api.flutterwave.com/v3/payments', {
@@ -671,134 +551,177 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
       },
       body: JSON.stringify({
         tx_ref,
-        amount,
-        currency,
+        amount: AD_PRICE,
+        currency: 'KES',
         redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
         customer: {
           email: 'advertiser@jobai.com',
-          name: business,
-          phonenumber: formattedPhone
+          name: business
         },
-        customizations: {
+                customizations: {
           title: 'Sponsored Ad Payment',
-          description: `Pay ${amount} ${currency} for 7 days ad`
+          description: 'Pay ' + AD_PRICE + ' KES for 7 days ad'
         }
       })
     });
 
     const data = await response.json();
-    console.log('Flutterwave response:', data);
-
     if (data.status === 'success') {
       res.json({ payment_link: data.data.link });
     } else {
-      res.status(400).json({ error: 'Failed to create payment', details: data });
+      res.status(400).json({ error: 'Failed to create payment' });
     }
   } catch (err) {
-    console.error('Payment error:', err);
-    res.status(500).json({ error: 'Payment error', details: err.message });
+    res.status(500).json({ error: 'Payment error' });
   }
 });
 
 app.get('/payment-callback', async (req, res) => {
-  const { tx_ref, transaction_id, status } = req.query;
-  const payment = pendingPayments[tx_ref];
-
-  if (!payment) {
-    return res.redirect('/?payment=failed');
-  }
+  const { transaction_id, tx_ref } = req.query;
 
   try {
-    if (status === 'successful' || status === 'completed') {
-      const id = Date.now();
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + AD_DURATION_DAYS);
+    const response = await fetch(`https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`, {
+      headers: { 'Authorization': `Bearer ${FLW_SECRET_KEY}` }
+    });
+    const data = await response.json();
 
-      if (payment.type === 'job') {
-        await pool.query(
-          `INSERT INTO ads (id, token, type, status, title, company, location, phone, url, description, created_at, expires_at) 
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), $11)`,
-          [id, payment.token, 'job', 'approved', payment.title, payment.company, payment.location, 
-           payment.phone, payment.url, payment.description, expiresAt]
-        );
+    if (data.status === 'success' && data.data.status === 'successful') {
+      const jobData = pendingPayments[tx_ref];
+      if (jobData) {
+        const id = Date.now() + Math.random();
+        if (jobData.type === 'ad') {
+          const expires = new Date();
+          expires.setDate(expires.getDate() + AD_DURATION_DAYS);
+          paidAds.push({
+            id,
+            token: jobData.token,
+            business: jobData.business,
+            link: jobData.link,
+            text: jobData.text,
+            image: jobData.image,
+            status: 'approved',
+            paymentRef: transaction_id,
+            created_at: new Date().toISOString(),
+            expires_at: expires.toISOString()
+          });
+        } else {
+          userAds.push({
+            id,
+            token: jobData.token,
+            title: jobData.title,
+            company: jobData.company,
+            location: jobData.location,
+            phone: jobData.phone,
+            url: jobData.url,
+            description: jobData.description,
+            status: 'approved',
+            paymentRef: transaction_id,
+            date_posted: new Date().toISOString()
+          });
+        }
+        delete pendingPayments[tx_ref];
+        res.redirect('/?payment=success');
       } else {
-        await pool.query(
-          `INSERT INTO ads (id, token, type, status, business, link, text, image, paymentref, created_at, expires_at) 
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10)`,
-          [id, payment.token, 'ad', 'approved', payment.business, payment.link, payment.text, 
-           payment.image, tx_ref, expiresAt]
-        );
+        res.redirect('/?payment=failed');
       }
-
-      delete pendingPayments[tx_ref];
-      res.redirect('/?payment=success');
     } else {
       res.redirect('/?payment=failed');
     }
   } catch (err) {
-    console.error('Callback error:', err);
     res.redirect('/?payment=failed');
   }
 });
 
-app.post('/ads/edit', async (req, res) => {
+// Edit user ad
+app.post('/ads/edit', (req, res) => {
   const { id, token, title, location, company, description } = req.body;
-  try {
-    const result = await pool.query(
-      `UPDATE ads SET title=$1, location=$2, company=$3, description=$4 
-       WHERE id=$5 AND token=$6 AND type='job'`,
-      [title, location, company, description, id, token]
-    );
-    res.json({ success: result.rowCount > 0 });
-  } catch (err) {
-    console.error(err);
-    res.json({ success: false });
-  }
+  const ad = userAds.find(a => a.id == id && a.token === token);
+  if (!ad) return res.json({ success: false, error: 'Not authorized' });
+
+  if (title) ad.title = title;
+  if (location) ad.location = location;
+  if (company) ad.company = company;
+  if (description) ad.description = description;
+
+  res.json({ success: true });
 });
 
-app.post('/ads/delete', async (req, res) => {
+// Delete user ad
+app.post('/ads/delete', (req, res) => {
   const { id, token } = req.body;
-  try {
-    const result = await pool.query(
-      `DELETE FROM ads WHERE id=$1 AND token=$2 AND type='job'`,
-      [id, token]
-    );
-    res.json({ success: result.rowCount > 0 });
-  } catch (err) {
-    console.error(err);
-    res.json({ success: false });
-  }
+  const index = userAds.findIndex(a => a.id == id && a.token === token);
+  if (index === -1) return res.json({ success: false, error: 'Not authorized' });
+
+  userAds.splice(index, 1);
+  res.json({ success: true });
 });
 
-app.post('/paid-ads/edit', async (req, res) => {
+// Edit paid ad
+app.post('/paid-ads/edit', (req, res) => {
   const { id, token, title, location, company, description } = req.body;
-  try {
-    const result = await pool.query(
-      `UPDATE ads SET business=$1, link=$2, text=$3 
-       WHERE id=$4 AND token=$5 AND type='ad'`,
-      [title, location, description, id, token]
-    );
-    res.json({ success: result.rowCount > 0 });
-  } catch (err) {
-    console.error(err);
-    res.json({ success: false });
-  }
+  const ad = paidAds.find(a => a.id == id && a.token === token);
+  if (!ad) return res.json({ success: false, error: 'Not authorized' });
+
+  if (title) ad.business = title;
+  if (description) ad.text = description;
+  if (location) ad.location = location;
+  if (company) ad.company = company;
+
+  res.json({ success: true });
 });
 
-app.post('/paid-ads/delete', async (req, res) => {
+// Delete paid ad
+app.post('/paid-ads/delete', (req, res) => {
   const { id, token } = req.body;
-  try {
-    const result = await pool.query(
-      `DELETE FROM ads WHERE id=$1 AND token=$2 AND type='ad'`,
-      [id, token]
-    );
-    res.json({ success: result.rowCount > 0 });
-  } catch (err) {
-    console.error(err);
-    res.json({ success: false });
-  }
+  const index = paidAds.findIndex(a => a.id == id && a.token === token);
+  if (index === -1) return res.json({ success: false, error: 'Not authorized' });
+
+  paidAds.splice(index, 1);
+  res.json({ success: true });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.get('/manual-approve/:txid', (req, res) => {
+  const txid = req.params.txid;
+  let jobData = null;
+  let txRefKey = null;
+  for (let key in pendingPayments) {
+    jobData = pendingPayments[key];
+    txRefKey = key;
+    break;
+  }
+
+  if (!jobData) {
+    return res.send('No pending job found. Pay again or check if server restarted.');
+  }
+
+  const id = Date.now() + Math.random();
+  if (jobData.type === 'ad') {
+    const expires = new Date();
+    expires.setDate(expires.getDate() + AD_DURATION_DAYS);
+    paidAds.push({
+      id,
+      token: jobData.token,
+     ...jobData,
+      status: 'approved',
+      paymentRef: txid,
+      created_at: new Date().toISOString(),
+      expires_at: expires.toISOString()
+    });
+  } else {
+    userAds.push({
+      id,
+      token: jobData.token,
+     ...jobData,
+      status: 'approved',
+      paymentRef: txid,
+      date_posted: new Date().toISOString()
+    });
+  }
+
+  delete pendingPayments[txRefKey];
+  res.send('Approved! Go back to the site and refresh.');
+});
+
+app.listen(PORT, function() {
+  console.log('Server running on port ' + PORT);
 });
