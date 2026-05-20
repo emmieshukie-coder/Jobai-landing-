@@ -88,7 +88,7 @@ app.get('/', (req, res) => {
     '.hero p { font-size: 16px; opacity: 0.95; margin: 0; }' +
     '.container { max-width: 1000px; margin: 20px auto; padding: 0 16px; }' +
     '.controls { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }' +
-    '.controls input,.controls select { padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; background: white; }' +
+    '.controls input,.controls select,.controls button { padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; background: white; }' +
     '.controls input { flex: 1; min-width: 200px; }' +
     '.section { margin-bottom: 32px; }' +
     '.section h2 { margin: 0 0 16px 0; font-size: 24px; color: #1a1a1a; }' +
@@ -143,6 +143,7 @@ app.get('/', (req, res) => {
     ' <option value="3">Last 3 days</option>' +
     ' <option value="1">Last 24 hours</option>' +
     ' </select>' +
+    ' <button class="connect-btn" id="searchBtn">Search</button>' +
     ' </div>' +
     ' <div class="section">' +
     ' <h2>Trending Jobs</h2>' +
@@ -413,8 +414,11 @@ app.get('/', (req, res) => {
     ' document.getElementById("adMsg").textContent = "Payment failed or cancelled.";' +
     ' document.getElementById("adMsg").style.color = "red";' +
     ' }' +
-    ' document.getElementById("searchInput").addEventListener("input", loadJobs);' +
+    ' document.getElementById("searchBtn").addEventListener("click", loadJobs);' +
     ' document.getElementById("dateFilter").addEventListener("change", loadJobs);' +
+    ' document.getElementById("searchInput").addEventListener("keypress", function(e) {' +
+    ' if (e.key === "Enter") loadJobs();' +
+    ' });' +
     ' loadJobs();' +
     ' loadUserAds();' +
     ' loadPaidAds();' +
@@ -576,11 +580,11 @@ app.post('/ads/initiate-payment', async (req, res) => {
 app.post('/paid-ads/initiate-payment', async (req, res) => {
   const { business, link, text, image } = req.body;
 
-  if (!business ||!link ||!text) {
+  if (!business || !link || !text) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-    const tx_ref = 'ad_' + Date.now();
+  const tx_ref = 'ad_' + Date.now();
   const token = crypto.randomBytes(16).toString('hex');
   pendingPayments[tx_ref] = { business, link, text, image, type: 'ad', token };
 
@@ -614,6 +618,108 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
       res.status(400).json({ error: 'Failed to create payment' });
     }
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Payment error' });
   }
+});
+
+// Flutterwave callback - verifies payment and saves to Postgres
+app.get('/payment-callback', async (req, res) => {
+  const { tx_ref, transaction_id, status } = req.query;
+  const payment = pendingPayments[tx_ref];
+
+  if (!payment) {
+    return res.redirect('/?payment=failed');
+  }
+
+  try {
+    if (status === 'successful' || status === 'completed') {
+      const id = Date.now();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + AD_DURATION_DAYS);
+
+      if (payment.type === 'job') {
+        await pool.query(
+          `INSERT INTO ads (id, token, type, status, title, company, location, phone, url, description, created_at, expires_at) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), $11)`,
+          [id, payment.token, 'job', 'approved', payment.title, payment.company, payment.location, 
+           payment.phone, payment.url, payment.description, expiresAt]
+        );
+      } else {
+        await pool.query(
+          `INSERT INTO ads (id, token, type, status, business, link, text, image, paymentref, created_at, expires_at) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10)`,
+          [id, payment.token, 'ad', 'approved', payment.business, payment.link, payment.text, 
+           payment.image, tx_ref, expiresAt]
+        );
+      }
+
+      delete pendingPayments[tx_ref];
+      res.redirect('/?payment=success');
+    } else {
+      res.redirect('/?payment=failed');
+    }
+  } catch (err) {
+    console.error(err);
+    res.redirect('/?payment=failed');
+  }
+});
+
+// Edit and delete routes
+app.post('/ads/edit', async (req, res) => {
+  const { id, token, title, location, company, description } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE ads SET title=$1, location=$2, company=$3, description=$4 
+       WHERE id=$5 AND token=$6 AND type='job'`,
+      [title, location, company, description, id, token]
+    );
+    res.json({ success: result.rowCount > 0 });
+  } catch (err) {
+    res.json({ success: false });
+  }
+});
+
+app.post('/ads/delete', async (req, res) => {
+  const { id, token } = req.body;
+  try {
+    const result = await pool.query(
+      `DELETE FROM ads WHERE id=$1 AND token=$2 AND type='job'`,
+      [id, token]
+    );
+    res.json({ success: result.rowCount > 0 });
+  } catch (err) {
+    res.json({ success: false });
+  }
+});
+
+app.post('/paid-ads/edit', async (req, res) => {
+  const { id, token, title, location, company, description } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE ads SET business=$1, link=$2, text=$3 
+       WHERE id=$4 AND token=$5 AND type='ad'`,
+      [title, location, description, id, token]
+    );
+    res.json({ success: result.rowCount > 0 });
+  } catch (err) {
+    res.json({ success: false });
+  }
+});
+
+app.post('/paid-ads/delete', async (req, res) => {
+  const { id, token } = req.body;
+  try {
+    const result = await pool.query(
+      `DELETE FROM ads WHERE id=$1 AND token=$2 AND type='ad'`,
+      [id, token]
+    );
+    res.json({ success: result.rowCount > 0 });
+  } catch (err) {
+    res.json({ success: false });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
