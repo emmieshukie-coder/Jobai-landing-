@@ -3,21 +3,47 @@ import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import crypto from 'crypto';
-import { createClient } from '@supabase/supabase-js';
-import paidAdsRouter from './paid-ads.js';
+import pkg from 'pg';
+
+const { Pool } = pkg;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const ADZUNA_APP_ID = 'cd82aca8';
-const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
-const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
-const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X';
+// Use env vars only
+const ADZUNA_APP_ID = process.env.ADZUNA_APP_ID;
+const ADZUNA_API_KEY = process.env.ADZUNA_API_KEY;
+const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
+const FLW_SECRET_KEY = process.env.FLW_SECRET_KEY;
 
-const SUPABASE_URL = 'https://mfjgvtcviwjhiggmkrrf.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1mamd2dGN2aXdqaGlnZ21rcnJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMDI5OTEsImV4cCI6MjA5NDc3ODk5MX0.fqQ4tOaW0VxGqfvEghNNiqCnQmKl-ZMW1AeMexv-wyE';
+// Neon Postgres pool
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Create table on startup
+pool.query(`
+  CREATE TABLE IF NOT EXISTS ads (
+    id BIGINT PRIMARY KEY,
+    token TEXT,
+    type TEXT,
+    status TEXT,
+    title TEXT,
+    company TEXT,
+    location TEXT,
+    phone TEXT,
+    url TEXT,
+    description TEXT,
+    business TEXT,
+    link TEXT,
+    text TEXT,
+    image TEXT,
+    paymentref TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    expires_at TIMESTAMP
+  )
+`).catch(console.error);
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -40,6 +66,8 @@ const upload = multer({
 });
 
 let pendingPayments = {};
+const AD_PRICE = 500;
+const AD_DURATION_DAYS = 7;
 
 app.use(express.json());
 app.use(express.static('public'));
@@ -143,14 +171,14 @@ app.get('/', (req, res) => {
     ' <div class="section">' +
     ' <h2>Sponsored Ads</h2>' +
     ' <div class="ad-form">' +
-    ' <h3>Advertise here for 500 KES for 7 days</h3>' +
+    ' <h3>Advertise here for ' + AD_PRICE + ' KES for 7 days</h3>' +
     ' <input type="text" id="adBizName" placeholder="Business name" required>' +
     ' <input type="url" id="adLink" placeholder="Website or WhatsApp link" required>' +
     ' <input type="text" id="adText" placeholder="Short ad text" required>' +
     ' <input type="file" id="adImgFile" accept="image/*" capture="environment">' +
     ' <img id="imgPreview" class="img-preview" />' +
     ' <input type="hidden" id="adImgUrl">' +
-    ' <button class="connect-btn" style="background:#f57c00;" onclick="submitPaidAd()">Pay 500 KES & Run Ad</button>' +
+    ' <button class="connect-btn" style="background:#f57c00;" onclick="submitPaidAd()">Pay ' + AD_PRICE + ' KES & Run Ad</button>' +
     ' <p id="adPayMsg" style="margin-top:10px; font-size:14px;"></p>' +
     ' </div>' +
     ' <div id="paidAds" class="loading">Loading ads...</div>' +
@@ -224,8 +252,8 @@ app.get('/', (req, res) => {
     ' }' +
     ' document.getElementById("userAds").innerHTML = ads.map(function(j) {' +
     ' let buttons = "<div class=\\"btn-group\\">";' +
-    ' if (j.link && j.link!== "#") {' +
-    ' buttons += "<a href=\\"" + j.link + "\\" target=\\"_blank\\" class=\\"connect-btn\\">Apply Now</a>";' +
+    ' if (j.url && j.url!== "#") {' +
+    ' buttons += "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"connect-btn\\">Apply Now</a>";' +
     ' }' +
     ' if (j.phone) {' +
     ' buttons += "<a href=\\"tel:" + j.phone + "\\" class=\\"connect-btn call-btn\\">Call " + j.phone + "</a>";' +
@@ -244,7 +272,7 @@ app.get('/', (req, res) => {
     ' return;' +
     ' }' +
     ' document.getElementById("paidAds").innerHTML = ads.map(function(ad) {' +
-    ' let img = ad.image_url? \'<img src="\' + ad.image_url + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
+    ' let img = ad.image? \'<img src="\' + ad.image + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
     ' let actions = "<div class=\\"card-actions\\">";' +
     ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">✏️</button>";' +
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">🗑️</button>";' +
@@ -253,8 +281,8 @@ app.get('/', (req, res) => {
     ' actions +' +
     ' \'<span class="country-tag user-ad-tag">Sponsored</span>\' +' +
     ' img +' +
-    ' \'<h3>\' + ad.title + \'</h3>\' +' +
-    ' \'<p>\' + ad.description + \'</p>\' +' +
+    ' \'<h3>\' + ad.business + \'</h3>\' +' +
+    ' \'<p>\' + ad.text + \'</p>\' +' +
     ' \'<a href="\' + ad.link + \'" target="_blank" class="connect-btn" style="background:#f57c00;">Visit</a>\' +' +
     ' \'</div>\';' +
     ' }).join("");' +
@@ -478,15 +506,37 @@ app.get('/jobs', async (req, res) => {
   }
 });
 
+app.get('/ads', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM ads WHERE type = 'job' AND status = 'approved' ORDER BY created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.json([]);
+  }
+});
+
+app.get('/paid-ads', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM ads WHERE type = 'ad' AND status = 'approved' AND expires_at > NOW() ORDER BY created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.json([]);
+  }
+});
+
 app.post('/ads/initiate-payment', async (req, res) => {
   const { title, company, location, phone, url, description } = req.body;
   if (!title ||!company ||!location) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  const tx_ref = 'ad_' + Date.now();
+  const tx_ref = 'jobai_' + Date.now();
   const token = crypto.randomBytes(16).toString('hex');
-  pendingPayments[tx_ref] = { title, company, location, phone, url, description, type: 'user', token };
+  pendingPayments[tx_ref] = { title, company, location, phone, url, description, type: 'job', token };
 
   try {
     const response = await fetch('https://api.flutterwave.com/v3/payments', {
@@ -501,12 +551,13 @@ app.post('/ads/initiate-payment', async (req, res) => {
         currency: 'KES',
         redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
         customer: {
-          email: 'advertiser@jobai.com',
+          email: 'customer@jobai.com',
+          phonenumber: phone || '0700000',
           name: company
         },
         customizations: {
           title: 'Job Post Payment',
-          description: 'Pay 200 KES to post job for 7 days'
+          description: 'Pay 200 KES to post job on Jobai'
         }
       })
     });
@@ -522,10 +573,195 @@ app.post('/ads/initiate-payment', async (req, res) => {
   }
 });
 
-app.use(paidAdsRouter);
+app.post('/paid-ads/initiate-payment', async (req, res) => {
+  const { business, link, text, image } = req.body;
+  return res.status(400).json({ error: 'Missing required fields' });
+  }
 
-app.listen(PORT, function() {
-  console.log('Server running on port ' + PORT);
+  const tx_ref = 'ad_' + Date.now();
+  const token = crypto.randomBytes(16).toString('hex');
+  pendingPayments[tx_ref] = { business, link, text, image, type: 'ad', token };
+
+  try {
+    const response = await fetch('https://api.flutterwave.com/v3/payments', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${FLW_SECRET_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        tx_ref,
+        amount: AD_PRICE,
+        currency: 'KES',
+        redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
+        customer: {
+          email: 'advertiser@jobai.com',
+          name: business
+        },
+        customizations: {
+          title: 'Sponsored Ad Payment',
+          description: 'Pay ' + AD_PRICE + ' KES for 7 days ad'
+        }
+      })
+    });
+
+    const data = await response.json();
+    if (data.status === 'success') {
+      res.json({ payment_link: data.data.link });
+    } else {
+      res.status(400).json({ error: 'Failed to create payment' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Payment error' });
+  }
 });
 
-export { pendingPayments, supabase };
+// Flutterwave callback - verifies payment and saves to Postgres
+app.get('/payment-callback', async (req, res) => {
+  const { transaction_id, tx_ref } = req.query;
+
+  try {
+    const verify = await fetch(`https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`, {
+      headers: { 'Authorization': `Bearer ${FLW_SECRET_KEY}` }
+    });
+    const data = await verify.json();
+
+    if (data.status === 'success' && data.data.status === 'successful') {
+      const payment = pendingPayments[tx_ref];
+
+      if (payment) {
+        const id = Date.now();
+        const expires_at = payment.type === 'ad'
+        ? new Date(Date.now() + AD_DURATION_DAYS * 24 * 60 * 60 * 1000)
+          : null;
+
+        if (payment.type === 'job') {
+          await pool.query(
+            `INSERT INTO ads (id, token, type, status, title, company, location, phone, url, description, paymentref, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+            [id, payment.token, 'job', 'approved', payment.title, payment.company, payment.location, payment.phone, payment.url, payment.description, tx_ref]
+          );
+        } else {
+          await pool.query(
+            `INSERT INTO ads (id, token, type, status, business, link, text, image, paymentref, created_at, expires_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10)`,
+            [id, payment.token, 'ad', 'approved', payment.business, payment.link, payment.text, payment.image, tx_ref, expires_at]
+          );
+        }
+
+        delete pendingPayments[tx_ref];
+        return res.redirect('/?payment=success');
+      }
+    }
+
+    res.redirect('/?payment=failed');
+  } catch (err) {
+    console.error(err);
+    res.redirect('/?payment=failed');
+  }
+});
+
+// Edit user ad
+app.post('/ads/edit', async (req, res) => {
+  const { id, token, title, location, company, description } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE ads SET title=$1, location=$2, company=$3, description=$4
+       WHERE id=$5 AND token=$6 AND type='job'`,
+      [title, location, company, description, id, token]
+    );
+    res.json({ success: result.rowCount > 0 });
+  } catch (err) {
+    res.json({ success: false, error: err.message });
+  }
+});
+
+// Delete user ad
+app.post('/ads/delete', async (req, res) => {
+  const { id, token } = req.body;
+  try {
+    const result = await pool.query(
+      `DELETE FROM ads WHERE id=$1 AND token=$2 AND type='job'`,
+      [id, token]
+    );
+    res.json({ success: result.rowCount > 0 });
+  } catch (err) {
+    res.json({ success: false, error: err.message });
+  }
+});
+
+// Edit paid ad
+app.post('/paid-ads/edit', async (req, res) => {
+  const { id, token, title, location, company, description } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE ads SET business=$1, text=$2
+       WHERE id=$3 AND token=$4 AND type='ad'`,
+      [title, description, id, token]
+    );
+    res.json({ success: result.rowCount > 0 });
+  } catch (err) {
+    res.json({ success: false, error: err.message });
+  }
+});
+
+// Delete paid ad
+app.post('/paid-ads/delete', async (req, res) => {
+  const { id, token } = req.body;
+  try {
+    const result = await pool.query(
+      `DELETE FROM ads WHERE id=$1 AND token=$2 AND type='ad'`,
+      [id, token]
+    );
+    res.json({ success: result.rowCount > 0 });
+  } catch (err) {
+    res.json({ success: false, error: err.message });
+  }
+});
+
+// Manual approve for testing if callback fails
+app.get('/manual-approve/:txid', async (req, res) => {
+  const txid = req.params.txid;
+  let jobData = null;
+  let txRefKey = null;
+
+  for (let key in pendingPayments) {
+    jobData = pendingPayments[key];
+    txRefKey = key;
+    break;
+  }
+
+  if (!jobData) {
+    return res.send('No pending job found. Pay again or check if server restarted.');
+  }
+
+  try {
+    const id = Date.now();
+    const expires_at = jobData.type === 'ad'
+    ? new Date(Date.now() + AD_DURATION_DAYS * 24 * 60 * 60 * 1000)
+      : null;
+
+    if (jobData.type === 'ad') {
+      await pool.query(
+        `INSERT INTO ads (id, token, type, status, business, link, text, image, paymentref, created_at, expires_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10)`,
+        [id, jobData.token, 'ad', 'approved', jobData.business, jobData.link, jobData.text, jobData.image, txid, expires_at]
+      );
+    } else {
+      await pool.query(
+        `INSERT INTO ads (id, token, type, status, title, company, location, phone, url, description, paymentref, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+        [id, jobData.token, 'job', 'approved', jobData.title, jobData.company, jobData.location, jobData.phone, jobData.url, jobData.description, txid]
+      );
+    }
+
+    delete pendingPayments[txRefKey];
+    res.send('Approved! Go back to the site and refresh.');
+  } catch (err) {
+    res.send('Error: ' + err.message);
+  }
+});
+
+app.listen(PORT, () => {
+  console.log('Server running on port ' + PORT);
+});
