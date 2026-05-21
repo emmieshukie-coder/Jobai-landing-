@@ -545,7 +545,7 @@ app.get('/jobs', async (req, res) => {
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
 
-    res.json(allJobs.slice(0, 50));
+        res.json(allJobs.slice(0, 50));
   } catch (err) {
     console.error('Jobs route error:', err);
     res.json([]);
@@ -558,18 +558,6 @@ app.get('/ads', async (req, res) => {
       `SELECT * FROM ads WHERE type = 'job' AND status = 'approved' ORDER BY created_at DESC`
     );
     res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.json([]);
-  }
-});
-
-app.get('/paid-ads', async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT * FROM ads WHERE type = 'ad' AND status = 'approved' AND expires_at > NOW() ORDER BY created_at DESC`
-    );
-        res.json(result.rows);
   } catch (err) {
     console.error(err);
     res.json([]);
