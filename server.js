@@ -3,50 +3,14 @@ import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import crypto from 'crypto';
-import pkg from 'pg';
-
-const { Pool } = pkg;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-const adminRoutes = require('./routes/admin');
-app.use('/admin', adminRoutes);
 
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
 const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X';
-
-// Neon Postgres pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
-
-app.locals.pool = pool;
-// Create tables on startup
-pool.query(`
-  CREATE TABLE IF NOT EXISTS ads (
-    id BIGINT PRIMARY KEY,
-    token TEXT,
-    type TEXT,
-    status TEXT,
-    title TEXT,
-    company TEXT,
-    location TEXT,
-    phone TEXT,
-    url TEXT,
-    description TEXT,
-    business TEXT,
-    link TEXT,
-    text TEXT,
-    image TEXT,
-    paymentref TEXT,
-    created_at TIMESTAMP DEFAULT NOW(),
-    expires_at TIMESTAMP
-  )
-`).catch(console.error);
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -68,6 +32,8 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }
 });
 
+let userAds = [];
+let paidAds = [];
 let pendingPayments = {};
 const AD_PRICE = 500;
 const AD_DURATION_DAYS = 7;
@@ -513,28 +479,16 @@ app.get('/jobs', async (req, res) => {
   }
 });
 
-app.get('/ads', async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT * FROM ads WHERE type = 'job' AND status = 'approved' ORDER BY created_at DESC`
-    );
-    res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.json([]);
-  }
+app.get('/ads', (req, res) => {
+  res.json(userAds.filter(ad => ad.status === 'approved').reverse());
 });
 
-app.get('/paid-ads', async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT * FROM ads WHERE type = 'ad' AND status = 'approved' AND expires_at > NOW() ORDER BY created_at DESC`
-    );
-    res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.json([]);
-  }
+app.get('/paid-ads', (req, res) => {
+  const now = Date.now();
+  const activeAds = paidAds.filter(ad =>
+    ad.status === 'approved' && new Date(ad.expires_at).getTime() > now
+  );
+  res.json(activeAds.reverse());
 });
 
 app.post('/ads/initiate-payment', async (req, res) => {
@@ -571,14 +525,13 @@ app.post('/ads/initiate-payment', async (req, res) => {
       })
     });
 
-        const data = await response.json();
+    const data = await response.json();
     if (data.status === 'success') {
       res.json({ payment_link: data.data.link });
     } else {
       res.status(400).json({ error: 'Failed to create payment' });
     }
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: 'Payment error' });
   }
 });
@@ -602,7 +555,8 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
       },
       body: JSON.stringify({
         tx_ref,
-        amount: AD_PRICE,
+        amount:
+                  AD_PRICE,
         currency: 'KES',
         redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
         customer: {
@@ -623,7 +577,6 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
       res.status(400).json({ error: 'Failed to create payment' });
     }
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: 'Payment error' });
   }
 });
@@ -640,22 +593,36 @@ app.get('/payment-callback', async (req, res) => {
     if (data.status === 'success' && data.data.status === 'successful') {
       const jobData = pendingPayments[tx_ref];
       if (jobData) {
-        const id = Date.now() + Math.floor(Math.random() * 1000);
-        const expires = new Date();
-        expires.setDate(expires.getDate() + AD_DURATION_DAYS);
-
+        const id = Date.now() + Math.random();
         if (jobData.type === 'ad') {
-          await pool.query(
-            `INSERT INTO ads (id, token, type, status, business, link, text, image, paymentref, expires_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-            [id, jobData.token, 'ad', 'approved', jobData.business, jobData.link, jobData.text, jobData.image, transaction_id, expires]
-          );
+          const expires = new Date();
+          expires.setDate(expires.getDate() + AD_DURATION_DAYS);
+          paidAds.push({
+            id,
+            token: jobData.token,
+            business: jobData.business,
+            link: jobData.link,
+            text: jobData.text,
+            image: jobData.image,
+            status: 'approved',
+            paymentRef: transaction_id,
+            created_at: new Date().toISOString(),
+            expires_at: expires.toISOString()
+          });
         } else {
-          await pool.query(
-            `INSERT INTO ads (id, token, type, status, title, company, location, phone, url, description, paymentref, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
-            [id, jobData.token, 'job', 'approved', jobData.title, jobData.company, jobData.location, jobData.phone, jobData.url, jobData.description, transaction_id]
-          );
+          userAds.push({
+            id,
+            token: jobData.token,
+            title: jobData.title,
+            company: jobData.company,
+            location: jobData.location,
+            phone: jobData.phone,
+            url: jobData.url,
+            description: jobData.description,
+            status: 'approved',
+            paymentRef: transaction_id,
+            date_posted: new Date().toISOString()
+          });
         }
         delete pendingPayments[tx_ref];
         res.redirect('/?payment=success');
@@ -666,76 +633,59 @@ app.get('/payment-callback', async (req, res) => {
       res.redirect('/?payment=failed');
     }
   } catch (err) {
-    console.error(err);
     res.redirect('/?payment=failed');
   }
 });
 
 // Edit user ad
-app.post('/ads/edit', async (req, res) => {
+app.post('/ads/edit', (req, res) => {
   const { id, token, title, location, company, description } = req.body;
-  try {
-    const result = await pool.query(
-      `UPDATE ads SET title = COALESCE($1, title), location = COALESCE($2, location),
-       company = COALESCE($3, company), description = COALESCE($4, description)
-       WHERE id = $5 AND token = $6 AND type = 'job' RETURNING id`,
-      [title, location, company, description, id, token]
-    );
-    res.json({ success: result.rowCount > 0 });
-  } catch (err) {
-    console.error(err);
-    res.json({ success: false });
-  }
+  const ad = userAds.find(a => a.id == id && a.token === token);
+  if (!ad) return res.json({ success: false, error: 'Not authorized' });
+
+  if (title) ad.title = title;
+  if (location) ad.location = location;
+  if (company) ad.company = company;
+  if (description) ad.description = description;
+
+  res.json({ success: true });
 });
 
 // Delete user ad
-app.post('/ads/delete', async (req, res) => {
+app.post('/ads/delete', (req, res) => {
   const { id, token } = req.body;
-  try {
-    const result = await pool.query(
-      `DELETE FROM ads WHERE id = $1 AND token = $2 AND type = 'job' RETURNING id`,
-      [id, token]
-    );
-    res.json({ success: result.rowCount > 0 });
-  } catch (err) {
-    console.error(err);
-    res.json({ success: false });
-  }
+  const index = userAds.findIndex(a => a.id == id && a.token === token);
+  if (index === -1) return res.json({ success: false, error: 'Not authorized' });
+
+  userAds.splice(index, 1);
+  res.json({ success: true });
 });
 
 // Edit paid ad
-app.post('/paid-ads/edit', async (req, res) => {
+app.post('/paid-ads/edit', (req, res) => {
   const { id, token, title, location, company, description } = req.body;
-  try {
-    const result = await pool.query(
-      `UPDATE ads SET business = COALESCE($1, business), text = COALESCE($2, text),
-       location = COALESCE($3, location), company = COALESCE($4, company)
-       WHERE id = $5 AND token = $6 AND type = 'ad' RETURNING id`,
-      [title, description, location, company, id, token]
-    );
-    res.json({ success: result.rowCount > 0 });
-  } catch (err) {
-    console.error(err);
-    res.json({ success: false });
-  }
+  const ad = paidAds.find(a => a.id == id && a.token === token);
+  if (!ad) return res.json({ success: false, error: 'Not authorized' });
+
+  if (title) ad.business = title;
+  if (description) ad.text = description;
+  if (location) ad.location = location;
+  if (company) ad.company = company;
+
+  res.json({ success: true });
 });
 
 // Delete paid ad
-app.post('/paid-ads/delete', async (req, res) => {
+app.post('/paid-ads/delete', (req, res) => {
   const { id, token } = req.body;
-  try {
-    const result = await pool.query(
-      `DELETE FROM ads WHERE id = $1 AND token = $2 AND type = 'ad' RETURNING id`,
-      [id, token]
-    );
-    res.json({ success: result.rowCount > 0 });
-  } catch (err) {
-    console.error(err);
-    res.json({ success: false });
-  }
+  const index = paidAds.findIndex(a => a.id == id && a.token === token);
+  if (index === -1) return res.json({ success: false, error: 'Not authorized' });
+
+  paidAds.splice(index, 1);
+  res.json({ success: true });
 });
 
-app.get('/manual-approve/:txid', async (req, res) => {
+app.get('/manual-approve/:txid', (req, res) => {
   const txid = req.params.txid;
   let jobData = null;
   let txRefKey = null;
@@ -749,31 +699,32 @@ app.get('/manual-approve/:txid', async (req, res) => {
     return res.send('No pending job found. Pay again or check if server restarted.');
   }
 
-  try {
-    const id = Date.now() + Math.floor(Math.random() * 1000);
+  const id = Date.now() + Math.random();
+  if (jobData.type === 'ad') {
     const expires = new Date();
     expires.setDate(expires.getDate() + AD_DURATION_DAYS);
-
-    if (jobData.type === 'ad') {
-      await pool.query(
-        `INSERT INTO ads (id, token, type, status, business, link, text, image, paymentref, expires_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-        [id, jobData.token, 'ad', 'approved', jobData.business, jobData.link, jobData.text, jobData.image, txid, expires]
-      );
-    } else {
-      await pool.query(
-        `INSERT INTO ads (id, token, type, status, title, company, location, phone, url, description, paymentref, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
-        [id, jobData.token, 'job', 'approved', jobData.title, jobData.company, jobData.location, jobData.phone, jobData.url, jobData.description, txid]
-      );
-    }
-
-    delete pendingPayments[txRefKey];
-    res.send('Approved! Go back to the site and refresh.');
-  } catch (err) {
-    console.error(err);
-    res.send('Error approving payment.');
+    paidAds.push({
+      id,
+      token: jobData.token,
+     ...jobData,
+      status: 'approved',
+      paymentRef: txid,
+      created_at: new Date().toISOString(),
+      expires_at: expires.toISOString()
+    });
+  } else {
+    userAds.push({
+      id,
+      token: jobData.token,
+     ...jobData,
+      status: 'approved',
+      paymentRef: txid,
+      date_posted: new Date().toISOString()
+    });
   }
+
+  delete pendingPayments[txRefKey];
+  res.send('Approved! Go back to the site and refresh.');
 });
 
 app.listen(PORT, function() {
