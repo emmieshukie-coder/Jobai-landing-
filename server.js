@@ -569,19 +569,7 @@ app.get('/paid-ads', async (req, res) => {
     const result = await pool.query(
       `SELECT * FROM ads WHERE type = 'ad' AND status = 'approved' AND expires_at > NOW() ORDER BY created_at DESC`
     );
-    res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.json([]);
-  }
-});
-
-app.get('/ads', async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT * FROM ads WHERE type = 'job' AND status = 'approved' ORDER BY created_at DESC`
-    );
-    res.json(result.rows);
+        res.json(result.rows);
   } catch (err) {
     console.error(err);
     res.json([]);
@@ -837,6 +825,11 @@ app.get('/manual-approve/:txid', async (req, res) => {
     console.error(err);
     res.send('Error approving payment.');
   }
+});
+
+// Google Search Console verification route
+app.get('/google765cda11c517c492.html', (req, res) => {
+  res.send('google-site-verification: google765cda11c517c492.html');
 });
 
 app.listen(PORT, function() {
