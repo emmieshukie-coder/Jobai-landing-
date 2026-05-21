@@ -1,36 +1,18 @@
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+import express from 'express';
+import multer from 'multer';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import crypto from 'crypto';
+import pkg from 'pg';
 
-const express = require('express');
-const multer = require('multer');
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const crypto = require('crypto');
-const { Pool } = require('pg');
+const { Pool } = pkg;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ===== BASIC AUTH FOR ADMIN =====
-const ADMIN_USER = process.env.ADMIN_USER || 'admin';
-const ADMIN_PASS = process.env.ADMIN_PASS || 'change-me';
-
-const basicAuth = (req, res, next) => {
-  const auth = req.headers.authorization;
-  if (!auth) {
-    res.set('WWW-Authenticate', 'Basic realm="Admin"');
-    return res.status(401).send('Auth required');
-  }
-  try {
-    const [user, pass] = Buffer.from(auth.split(' ')[1], 'base64').toString().split(':');
-    if (user === ADMIN_USER && pass === ADMIN_PASS) return next();
-  } catch (e) {}
-  res.set('WWW-Authenticate', 'Basic realm="Admin"');
-  res.status(401).send('Wrong credentials');
-};
-
-// Mount admin routes with auth
-const adminRoutes = require('./routes/admin');
-app.use('/admin', basicAuth, adminRoutes);
+// Use import for admin routes to match ES module
+import adminRoutes from './routes/admin.js';
+app.use('/admin', adminRoutes);
 
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
@@ -44,6 +26,7 @@ const pool = new Pool({
 });
 
 app.locals.pool = pool;
+
 // Create tables on startup
 pool.query(`
   CREATE TABLE IF NOT EXISTS ads (
@@ -62,8 +45,6 @@ pool.query(`
     text TEXT,
     image TEXT,
     paymentref TEXT,
-    email TEXT,
-    rejection_reason TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     expires_at TIMESTAMP
   )
@@ -94,7 +75,7 @@ const AD_PRICE = 500;
 const AD_DURATION_DAYS = 7;
 
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true })); // added this
 app.use(express.static('public'));
 
 app.get('/', (req, res) => {
@@ -105,7 +86,7 @@ app.get('/', (req, res) => {
     ' <meta charset="UTF-8">' +
     ' <meta name="viewport" content="width=device-width, initial-scale=1.0">' +
     ' <title>Jobai - Get Connected to Jobs & Workers</title>' +
-    ' <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1637256996790764" crossorigin="anonymous"></script>' +
+    ' <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-app-pub-1637256996790764" crossorigin="anonymous"></script>' +
     ' <style>' +
     ' body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }' +
     '.hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; }' +
@@ -156,7 +137,7 @@ app.get('/', (req, res) => {
     ' <p>AI-powered matching for Uganda, Kenya, Tanzania, Rwanda, Burundi, India, UAE, Saudi Arabia, France, UK, Canada, China, Taiwan, Thailand</p>' +
     ' </div>' +
     ' <div class="ad-unit">' +
-    ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
+    ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-app-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
     ' <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>' +
     ' </div>' +
     ' <div class="container">' +
@@ -175,7 +156,7 @@ app.get('/', (req, res) => {
     ' <div id="jobs" class="loading">Loading jobs...</div>' +
     ' </div>' +
     ' <div class="ad-unit">' +
-    ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
+    ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-app-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
     ' <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>' +
     ' </div>' +
     ' <div class="section">' +
@@ -468,19 +449,8 @@ async function fetchJSearchJobs(query, location) {
         'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
       }
     });
-
-    if (!response.ok) {
-      console.error(`JSearch API Error for ${location}: ${response.status}`);
-      return [];
-    }
-
+    if (!response.ok) return [];
     const data = await response.json();
-
-    if (data.status === 'error' || data.message) {
-      console.error(`JSearch API Error for ${location}:`, data.message || data);
-      return [];
-    }
-
     return (data.data || []).map(j => ({
       title: j.job_title || 'Job Title',
       company: j.employer_name || 'Unknown Company',
@@ -491,7 +461,6 @@ async function fetchJSearchJobs(query, location) {
       source: j.job_publisher || 'JSearch'
     }));
   } catch (err) {
-    console.error('JSearch fetch error:', err.message);
     return [];
   }
 }
@@ -500,10 +469,7 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
   try {
     const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=5&content-type=application/json&max_days_old=7&what=${encodeURIComponent(query)}`;
     const response = await fetch(url);
-    if (!response.ok) {
-      console.error(`Adzuna API Error for ${countryName}: ${response.status}`);
-      return [];
-    }
+    if (!response.ok) return [];
     const data = await response.json();
     return (data.results || []).map(j => ({
       title: j.title || 'Job Title',
@@ -515,13 +481,13 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
       source: 'Adzuna'
     }));
   } catch (err) {
-    console.error('Adzuna fetch error:', err.message);
     return [];
   }
 }
 
 app.get('/jobs', async (req, res) => {
   try {
+    // FIXED: use req.query
     const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
     const recentDays = parseInt(req.query.recent) || 7;
 
@@ -547,8 +513,20 @@ app.get('/jobs', async (req, res) => {
 
     res.json(allJobs.slice(0, 50));
   } catch (err) {
-    console.error('Jobs route error:', err);
+    console.error('Jobs error:', err);
     res.json([]);
+  }
+});
+
+app.get('/ads', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM ads WHERE type = 'job' AND status = 'approved' ORDER BY created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('DB error /ads:', err);
+    res.status(500).json({ error: 'Database error' });
   }
 });
 
@@ -575,7 +553,7 @@ app.post('/ads/initiate-payment', async (req, res) => {
   pendingPayments[tx_ref] = { title, company, location, phone, url, description, type: 'job', token };
 
   try {
-    const response = await fetch('https://api.flutterwave.com/v3/payments', {
+        const response = await fetch('https://api.flutterwave.com/v3/payments', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${FLW_SECRET_KEY}`,
@@ -801,11 +779,6 @@ app.get('/manual-approve/:txid', async (req, res) => {
     console.error(err);
     res.send('Error approving payment.');
   }
-});
-
-// Google Search Console verification route
-app.get('/google765cda11c517c492.html', (req, res) => {
-  res.send('google-site-verification: google765cda11c517c492.html');
 });
 
 app.listen(PORT, function() {
