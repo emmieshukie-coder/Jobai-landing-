@@ -500,7 +500,10 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
   try {
     const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=5&content-type=application/json&max_days_old=7&what=${encodeURIComponent(query)}`;
     const response = await fetch(url);
-    if (!response.ok) return [];
+    if (!response.ok) {
+      console.error(`Adzuna API Error for ${countryName}: ${response.status}`);
+      return [];
+    }
     const data = await response.json();
     return (data.results || []).map(j => ({
       title: j.title || 'Job Title',
@@ -512,6 +515,7 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
       source: 'Adzuna'
     }));
   } catch (err) {
+    console.error('Adzuna fetch error:', err.message);
     return [];
   }
 }
@@ -532,7 +536,8 @@ app.get('/jobs', async (req, res) => {
     let allJobs = [];
     for (let i = 0; i < countries.length; i++) {
       const jsearchJobs = await fetchJSearchJobs(query, countries[i].name);
-      allJobs.push(...jsearchJobs);
+      const adzunaJobs = await fetchAdzunaJobs(countries[i].code, countries[i].name, query);
+      allJobs.push(...jsearchJobs,...adzunaJobs);
     }
 
     if (recentDays > 0 && recentDays!== 'all') {
