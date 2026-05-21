@@ -15,11 +15,13 @@ const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
 const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X';
 
+// Use env var in Render. Don't hardcode the URL.
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
+// Create tables if they don't exist
 pool.query(`
   CREATE TABLE IF NOT EXISTS ads (
     id BIGINT PRIMARY KEY,
@@ -57,7 +59,10 @@ const storage = new CloudinaryStorage({
   }
 });
 
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }
+});
 
 let pendingPayments = {};
 const AD_PRICE = 500;
@@ -67,6 +72,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
+// [Your HTML route stays exactly the same]
 app.get('/', (req, res) => {
   res.send(
     '<!DOCTYPE html>' +
@@ -75,7 +81,6 @@ app.get('/', (req, res) => {
     ' <meta charset="UTF-8">' +
     ' <meta name="viewport" content="width=device-width, initial-scale=1.0">' +
     ' <title>Jobai - Get Connected to Jobs & Workers</title>' +
-    ' <!-- Google AdSense -->' +
     ' <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-app-pub-1637256996790764" crossorigin="anonymous"></script>' +
     ' <style>' +
     ' body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }' +
@@ -111,7 +116,7 @@ app.get('/', (req, res) => {
     '.ad-form input,.ad-form textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; }' +
     '.ad-form h3 { margin-top: 0; font-size: 18px; }' +
     '.phone-display { color: #34a853; font-weight: 600; }' +
-    '.ad-unit { margin: 20px 0; text-align: center; }' +
+    '.ad-unit { margin: 0; padding: 0; min-height: 0; }' +
     '.ad-unit ins.adsbygoogle[data-ad-status="unfilled"] { display: none!important; }' +
     '.img-preview { max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 10px; display: none; }' +
     '.card-actions { position: absolute; top: 12px; right: 12px; display: flex; gap: 8px; }' +
@@ -126,13 +131,10 @@ app.get('/', (req, res) => {
     ' <h1>Get Connected to Jobs & Workers</h1>' +
     ' <p>AI-powered matching for Uganda, Kenya, Tanzania, Rwanda, Burundi, India, UAE, Saudi Arabia, France, UK, Canada, China, Taiwan, Thailand</p>' +
     ' </div>' +
-
-    ' <!-- AdSense Ad Unit 1 - Top Banner -->' +
     ' <div class="ad-unit">' +
     ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-app-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
     ' <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>' +
     ' </div>' +
-
     ' <div class="container">' +
     ' <div class="controls">' +
     ' <input type="text" id="searchInput" placeholder="Search: cleaner, nurse, teacher, engineer, farmer..." />' +
@@ -144,18 +146,14 @@ app.get('/', (req, res) => {
     ' </select>' +
     ' <button class="connect-btn" id="searchBtn">Search</button>' +
     ' </div>' +
-
     ' <div class="section">' +
     ' <h2>Trending Jobs</h2>' +
     ' <div id="jobs" class="loading">Loading jobs...</div>' +
     ' </div>' +
-
-    ' <!-- AdSense Ad Unit 2 - Mid Content -->' +
     ' <div class="ad-unit">' +
     ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-app-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
     ' <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>' +
     ' </div>' +
-
     ' <div class="section">' +
     ' <h2>Post a Job</h2>' +
     ' <div class="ad-form" id="adForm">' +
@@ -172,14 +170,22 @@ app.get('/', (req, res) => {
     ' <h2>Community Job Posts</h2>' +
     ' <div id="userAds" class="loading">Loading...</div>' +
     ' </div>' +
-
-    ' <!-- AdSense Ad Unit 3 - Bottom Banner -->' +
-    ' <div class="ad-unit">' +
-    ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-app-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
-    ' <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>' +
+    ' <div class="section">' +
+    ' <h2>Sponsored Ads</h2>' +
+    ' <div class="ad-form">' +
+    ' <h3>Advertise here for ' + AD_PRICE + ' KES for 7 days</h3>' +
+    ' <input type="text" id="adBizName" placeholder="Business name" required>' +
+    ' <input type="url" id="adLink" placeholder="Website or WhatsApp link" required>' +
+    ' <input type="text" id="adText" placeholder="Short ad text" required>' +
+    ' <input type="file" id="adImgFile" accept="image/*" capture="environment">' +
+    ' <img id="imgPreview" class="img-preview" />' +
+    ' <input type="hidden" id="adImgUrl">' +
+    ' <button class="connect-btn" style="background:#f57c00;" onclick="submitPaidAd()">Pay ' + AD_PRICE + ' KES & Run Ad</button>' +
+    ' <p id="adPayMsg" style="margin-top:10px; font-size:14px;"></p>' +
+    ' </div>' +
+    ' <div id="paidAds" class="loading">Loading ads...</div>' +
     ' </div>' +
     ' </div>' +
-
     ' <div id="editModal" class="modal">' +
     ' <div class="modal-content">' +
     ' <h3>Edit Ad</h3>' +
@@ -196,9 +202,33 @@ app.get('/', (req, res) => {
     ' </div>' +
     ' </div>' +
     ' </div>' +
-
     ' <script>' +
     ' let allJobs = [];' +
+    ' document.getElementById("adImgFile").addEventListener("change", async function(e) {' +
+    ' const file = e.target.files[0];' +
+    ' if (!file) return;' +
+    ' const formData = new FormData();' +
+    ' formData.append("image", file);' +
+    ' document.getElementById("adPayMsg").textContent = "Uploading image...";' +
+    ' document.getElementById("adPayMsg").style.color = "blue";' +
+    ' try {' +
+    ' const res = await fetch("/upload-ad-image", { method: "POST", body: formData });' +
+    ' const data = await res.json();' +
+    ' if (data.url) {' +
+    ' document.getElementById("adImgUrl").value = data.url;' +
+    ' document.getElementById("imgPreview").src = data.url;' +
+    ' document.getElementById("imgPreview").style.display = "block";' +
+    ' document.getElementById("adPayMsg").textContent = "Image uploaded!";' +
+    ' document.getElementById("adPayMsg").style.color = "green";' +
+    ' } else {' +
+    ' document.getElementById("adPayMsg").textContent = "Upload failed";' +
+    ' document.getElementById("adPayMsg").style.color = "red";' +
+    ' }' +
+    ' } catch (err) {' +
+    ' document.getElementById("adPayMsg").textContent = "Upload error";' +
+    ' document.getElementById("adPayMsg").style.color = "red";' +
+    ' }' +
+    ' });' +
     ' function timeAgo(dateStr) {' +
     ' if (!dateStr) return "";' +
     ' const date = new Date(dateStr);' +
@@ -238,6 +268,72 @@ app.get('/', (req, res) => {
     ' return "<div class=\\"job-card\\" style=\\"position:relative\\">"+actions+"<span class=\\"country-tag user-ad-tag\\">Community</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
     ' }).join("");' +
     ' }' +
+    ' function renderPaidAds(ads) {' +
+    ' if (!ads.length) {' +
+    ' document.getElementById("paidAds").innerHTML = "<div class=\\"error\\">No sponsors yet.</div>";' +
+    ' return;' +
+    ' }' +
+    ' document.getElementById("paidAds").innerHTML = ads.map(function(ad) {' +
+    ' let img = ad.image? \'<img src="\' + ad.image + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
+    ' let actions = "<div class=\\"card-actions\\">";' +
+    ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">✏️</button>";' +
+    ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">🗑️</button>";' +
+    ' actions += "</div>";' +
+    ' return \'<div class="job-card" style="border:2px solid #f57c00;position:relative;">\' +' +
+    ' actions +' +
+    ' \'<span class="country-tag user-ad-tag">Sponsored</span>\' +' +
+    ' img +' +
+    ' \'<h3>\' + ad.business + \'</h3>\' +' +
+    ' \'<p>\' + ad.text + \'</p>\' +' +
+    ' \'<a href="\' + ad.link + \'" target="_blank" class="connect-btn" style="background:#f57c00;">Visit</a>\' +' +
+    ' \'</div>\';' +
+    ' }).join("");' +
+    ' }' +
+    ' function openEdit(type, id, token) {' +
+    ' document.getElementById("editType").value = type;' +
+    ' document.getElementById("editId").value = id;' +
+    ' document.getElementById("editToken").value = token;' +
+    ' document.getElementById("editModal").classList.add("active");' +
+    ' }' +
+    ' function closeEdit() {' +
+    ' document.getElementById("editModal").classList.remove("active");' +
+    ' }' +
+    ' async function saveEdit() {' +
+    ' const type = document.getElementById("editType").value;' +
+    ' const id = document.getElementById("editId").value;' +
+    ' const token = document.getElementById("editToken").value;' +
+    ' const data = {' +
+    ' id, token,' +
+    ' title: document.getElementById("editTitle").value,' +
+    ' location: document.getElementById("editLocation").value,' +
+    ' company: document.getElementById("editCompany").value,' +
+    ' description: document.getElementById("editDesc").value' +
+    ' };' +
+    ' const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";' +
+    ' const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
+    ' const result = await res.json();' +
+    ' if (result.success) {' +
+    ' closeEdit();' +
+    ' loadUserAds();' +
+    ' loadPaidAds();' +
+    ' alert("Updated successfully");' +
+    ' } else {' +
+    ' alert("Update failed");' +
+    ' }' +
+    ' }' +
+    ' async function deleteAd(type, id, token) {' +
+    ' if (!confirm("Delete this ad?")) return;' +
+    ' const endpoint = type === "paid"? "/paid-ads/delete" : "/ads/delete";' +
+    ' const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, token})});' +
+    ' const result = await res.json();' +
+    ' if (result.success) {' +
+    ' loadUserAds();' +
+    ' loadPaidAds();' +
+    ' alert("Deleted successfully");' +
+    ' } else {' +
+    ' alert("Delete failed");' +
+    ' }' +
+    ' }' +
     ' async function loadJobs() {' +
     ' const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant";' +
     ' const days = document.getElementById("dateFilter").value;' +
@@ -254,6 +350,11 @@ app.get('/', (req, res) => {
     ' const res = await fetch("/ads");' +
     ' const ads = await res.json();' +
     ' renderUserAds(ads);' +
+    ' }' +
+    ' async function loadPaidAds() {' +
+    ' const res = await fetch("/paid-ads");' +
+    ' const ads = await res.json();' +
+    ' renderPaidAds(ads);' +
     ' }' +
     ' async function submitAd() {' +
     ' const data = {' +
@@ -280,11 +381,35 @@ app.get('/', (req, res) => {
     ' document.getElementById("adMsg").style.color = "red";' +
     ' }' +
     ' }' +
+    ' async function submitPaidAd() {' +
+    ' const data = {' +
+    ' business: document.getElementById("adBizName").value,' +
+    ' link: document.getElementById("adLink").value,' +
+    ' text: document.getElementById("adText").value,' +
+    ' image: document.getElementById("adImgUrl").value' +
+    ' };' +
+    ' if (!data.business ||!data.link ||!data.text) {' +
+    ' document.getElementById("adPayMsg").textContent = "Fill business, link and text.";' +
+    ' document.getElementById("adPayMsg").style.color = "red";' +
+    ' return;' +
+    ' }' +
+    ' document.getElementById("adPayMsg").textContent = "Redirecting to payment...";' +
+    ' document.getElementById("adPayMsg").style.color = "blue";' +
+    ' const res = await fetch("/paid-ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
+    ' const result = await res.json();' +
+    ' if (result.payment_link) {' +
+    ' window.location.href = result.payment_link;' +
+    ' } else {' +
+    ' document.getElementById("adPayMsg").textContent = "Payment failed. Try again.";' +
+    ' document.getElementById("adPayMsg").style.color = "red";' +
+    ' }' +
+    ' }' +
     ' const urlParams = new URLSearchParams(window.location.search);' +
     ' if (urlParams.get("payment") === "success") {' +
     ' document.getElementById("adMsg").textContent = "Payment successful! Job posted.";' +
     ' document.getElementById("adMsg").style.color = "green";' +
     ' loadUserAds();' +
+    ' loadPaidAds();' +
     ' }' +
     ' if (urlParams.get("payment") === "failed") {' +
     ' document.getElementById("adMsg").textContent = "Payment failed or cancelled.";' +
@@ -297,6 +422,7 @@ app.get('/', (req, res) => {
     ' });' +
     ' loadJobs();' +
     ' loadUserAds();' +
+    ' loadPaidAds();' +
     ' </script>' +
     '</body>' +
     '</html>'
@@ -308,6 +434,7 @@ app.post('/upload-ad-image', upload.single('image'), (req, res) => {
   res.json({ url: req.file.path });
 });
 
+// [All job fetching functions stay the same]
 async function fetchJSearchJobs(query, location) {
   try {
     const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1&date_posted=week`;
@@ -385,6 +512,7 @@ app.get('/jobs', async (req, res) => {
   }
 });
 
+// Get approved job ads from DB
 app.get('/ads', async (req, res) => {
   try {
     const result = await pool.query(
@@ -396,6 +524,19 @@ app.get('/ads', async (req, res) => {
   }
 });
 
+// Get approved paid ads from DB
+app.get('/paid-ads', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM ads WHERE type = 'ad' AND status = 'approved' AND expires_at > NOW() ORDER BY created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Payment initiation routes stay the same
 app.post('/ads/initiate-payment', async (req, res) => {
   const { title, company, location, phone, url, description } = req.body;
   if (!title ||!company ||!location) {
@@ -442,6 +583,51 @@ app.post('/ads/initiate-payment', async (req, res) => {
   }
 });
 
+app.post('/paid-ads/initiate-payment', async (req, res) => {
+  const { business, link, text, image } = req.body;
+  if (!business ||!link ||!text) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  const tx_ref = 'ad_' + Date.now();
+  const token = crypto.randomBytes(16).toString('hex');
+  pendingPayments[tx_ref] = { business, link, text, image, type: 'ad', token };
+
+  try {
+    const response = await fetch('https://api.flutterwave.com/v3/payments', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${FLW_SECRET_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        tx_ref,
+        amount: AD_PRICE,
+        currency: 'KES',
+        redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
+        customer: {
+          email: 'advertiser@jobai.com',
+          name: business
+        },
+        customizations: {
+          title: 'Sponsored Ad Payment',
+          description: 'Pay ' + AD_PRICE + ' KES for 7 days ad'
+        }
+      })
+    });
+
+    const data = await response.json();
+    if (data.status === 'success') {
+      res.json({ payment_link: data.data.link });
+    } else {
+      res.status(400).json({ error: 'Failed to create payment' });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Payment error' });
+  }
+});
+
 app.get('/payment-callback', async (req, res) => {
   const { transaction_id, tx_ref } = req.query;
 
@@ -458,12 +644,19 @@ app.get('/payment-callback', async (req, res) => {
         const expires = new Date();
         expires.setDate(expires.getDate() + AD_DURATION_DAYS);
 
-        await pool.query(
-          `INSERT INTO ads (id, token, type, status, title, company, location, phone, url, description, paymentref, created_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
-          [id, jobData.token, 'job', 'approved', jobData.title, jobData.company, jobData.location, jobData.phone, jobData.url, jobData.description, transaction_id]
-        );
-
+        if (jobData.type === 'ad') {
+          await pool.query(
+            `INSERT INTO ads (id, token, type, status, business, link, text, image, paymentref, expires_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+            [id, jobData.token, 'ad', 'approved', jobData.business, jobData.link, jobData.text, jobData.image, transaction_id, expires]
+          );
+        } else {
+          await pool.query(
+            `INSERT INTO ads (id, token, type, status, title, company, location, phone, url, description, paymentref, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+            [id, jobData.token, 'job', 'approved', jobData.title, jobData.company, jobData.location, jobData.phone, jobData.url, jobData.description, transaction_id]
+          );
+        }
         delete pendingPayments[tx_ref];
         res.redirect('/?payment=success');
       } else {
@@ -478,6 +671,7 @@ app.get('/payment-callback', async (req, res) => {
   }
 });
 
+// Edit user ad
 app.post('/ads/edit', async (req, res) => {
   const { id, token, title, location, company, description } = req.body;
   try {
@@ -494,11 +688,44 @@ app.post('/ads/edit', async (req, res) => {
   }
 });
 
+// Delete user ad
 app.post('/ads/delete', async (req, res) => {
   const { id, token } = req.body;
   try {
     const result = await pool.query(
       `DELETE FROM ads WHERE id = $1 AND token = $2 AND type = 'job' RETURNING id`,
+      [id, token]
+    );
+    res.json({ success: result.rowCount > 0 });
+  } catch (err) {
+    console.error(err);
+    res.json({ success: false });
+  }
+});
+
+// Edit paid ad
+app.post('/paid-ads/edit', async (req, res) => {
+  const { id, token, title, location, company, description } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE ads SET business = COALESCE($1, business), text = COALESCE($2, text),
+       location = COALESCE($3, location), company = COALESCE($4, company)
+       WHERE id = $5 AND token = $6 AND type = 'ad' RETURNING id`,
+      [title, description, location, company, id, token]
+    );
+    res.json({ success: result.rowCount > 0 });
+  } catch (err) {
+    console.error(err);
+    res.json({ success: false });
+  }
+});
+
+// Delete paid ad
+app.post('/paid-ads/delete', async (req, res) => {
+  const { id, token } = req.body;
+  try {
+    const result = await pool.query(
+      `DELETE FROM ads WHERE id = $1 AND token = $2 AND type = 'ad' RETURNING id`,
       [id, token]
     );
     res.json({ success: result.rowCount > 0 });
