@@ -10,8 +10,7 @@ const { Pool } = pkg;
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Use import for admin routes to match ES module
-import adminRoutes from './routes/admin.js';
+const adminRoutes = require('./routes/admin');
 app.use('/admin', adminRoutes);
 
 const ADZUNA_APP_ID = 'cd82aca8';
@@ -26,7 +25,6 @@ const pool = new Pool({
 });
 
 app.locals.pool = pool;
-
 // Create tables on startup
 pool.query(`
   CREATE TABLE IF NOT EXISTS ads (
@@ -75,7 +73,6 @@ const AD_PRICE = 500;
 const AD_DURATION_DAYS = 7;
 
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // added this
 app.use(express.static('public'));
 
 app.get('/', (req, res) => {
@@ -487,7 +484,6 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
 
 app.get('/jobs', async (req, res) => {
   try {
-    // FIXED: use req.query
     const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
     const recentDays = parseInt(req.query.recent) || 7;
 
@@ -513,7 +509,6 @@ app.get('/jobs', async (req, res) => {
 
     res.json(allJobs.slice(0, 50));
   } catch (err) {
-    console.error('Jobs error:', err);
     res.json([]);
   }
 });
@@ -525,8 +520,8 @@ app.get('/ads', async (req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.error('DB error /ads:', err);
-    res.status(500).json({ error: 'Database error' });
+    console.error(err);
+    res.json([]);
   }
 });
 
@@ -553,7 +548,7 @@ app.post('/ads/initiate-payment', async (req, res) => {
   pendingPayments[tx_ref] = { title, company, location, phone, url, description, type: 'job', token };
 
   try {
-        const response = await fetch('https://api.flutterwave.com/v3/payments', {
+    const response = await fetch('https://api.flutterwave.com/v3/payments', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${FLW_SECRET_KEY}`,
@@ -576,7 +571,7 @@ app.post('/ads/initiate-payment', async (req, res) => {
       })
     });
 
-    const data = await response.json();
+        const data = await response.json();
     if (data.status === 'success') {
       res.json({ payment_link: data.data.link });
     } else {
