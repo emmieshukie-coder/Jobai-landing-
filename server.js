@@ -105,10 +105,7 @@ app.get('/', (req, res) => {
     ' <meta charset="UTF-8">' +
     ' <meta name="viewport" content="width=device-width, initial-scale=1.0">' +
     ' <title>Jobai - Get Connected to Jobs & Workers</title>' +
-
-    // Google AdSense verification code - ADDED HERE ONLY
     ' <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1637256996790764" crossorigin="anonymous"></script>' +
-
     ' <style>' +
     ' body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }' +
     '.hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; }' +
@@ -471,8 +468,19 @@ async function fetchJSearchJobs(query, location) {
         'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
       }
     });
-    if (!response.ok) return [];
+
+    if (!response.ok) {
+      console.error(`JSearch API Error for ${location}: ${response.status}`);
+      return [];
+    }
+
     const data = await response.json();
+
+    if (data.status === 'error' || data.message) {
+      console.error(`JSearch API Error for ${location}:`, data.message || data);
+      return [];
+    }
+
     return (data.data || []).map(j => ({
       title: j.job_title || 'Job Title',
       company: j.employer_name || 'Unknown Company',
@@ -483,6 +491,7 @@ async function fetchJSearchJobs(query, location) {
       source: j.job_publisher || 'JSearch'
     }));
   } catch (err) {
+    console.error('JSearch fetch error:', err.message);
     return [];
   }
 }
@@ -523,8 +532,7 @@ app.get('/jobs', async (req, res) => {
     let allJobs = [];
     for (let i = 0; i < countries.length; i++) {
       const jsearchJobs = await fetchJSearchJobs(query, countries[i].name);
-      const adzunaJobs = await fetchAdzunaJobs(countries[i].code, countries[i].name, query);
-      allJobs.push(...jsearchJobs,...adzunaJobs);
+      allJobs.push(...jsearchJobs);
     }
 
     if (recentDays > 0 && recentDays!== 'all') {
@@ -534,6 +542,7 @@ app.get('/jobs', async (req, res) => {
 
     res.json(allJobs.slice(0, 50));
   } catch (err) {
+    console.error('Jobs route error:', err);
     res.json([]);
   }
 });
@@ -568,7 +577,7 @@ app.post('/ads/initiate-payment', async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-    const tx_ref = 'jobai_' + Date.now();
+  const tx_ref = 'jobai_' + Date.now();
   const token = crypto.randomBytes(16).toString('hex');
   pendingPayments[tx_ref] = { title, company, location, phone, url, description, type: 'job', token };
 
