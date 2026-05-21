@@ -105,7 +105,10 @@ app.get('/', (req, res) => {
     ' <meta charset="UTF-8">' +
     ' <meta name="viewport" content="width=device-width, initial-scale=1.0">' +
     ' <title>Jobai - Get Connected to Jobs & Workers</title>' +
-    ' <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-app-pub-1637256996790764" crossorigin="anonymous"></script>' +
+
+    // Google AdSense verification code - ADDED HERE ONLY
+    ' <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1637256996790764" crossorigin="anonymous"></script>' +
+
     ' <style>' +
     ' body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }' +
     '.hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; }' +
@@ -156,7 +159,7 @@ app.get('/', (req, res) => {
     ' <p>AI-powered matching for Uganda, Kenya, Tanzania, Rwanda, Burundi, India, UAE, Saudi Arabia, France, UK, Canada, China, Taiwan, Thailand</p>' +
     ' </div>' +
     ' <div class="ad-unit">' +
-    ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-app-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
+    ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
     ' <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>' +
     ' </div>' +
     ' <div class="container">' +
@@ -175,7 +178,7 @@ app.get('/', (req, res) => {
     ' <div id="jobs" class="loading">Loading jobs...</div>' +
     ' </div>' +
     ' <div class="ad-unit">' +
-    ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-app-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
+    ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
     ' <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>' +
     ' </div>' +
     ' <div class="section">' +
