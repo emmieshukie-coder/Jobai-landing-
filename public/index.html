@@ -19,11 +19,37 @@
     <iframe src="/ad-slot-2.html" width="100%" height="250" style="border:none;" loading="lazy"></iframe>
   </div>
 
-  <!-- Your jobs content goes here -->
   <div id="jobs">
-    <!-- If you had job listings in server.js before, paste them here -->
-    <p>Your job listings will appear here</p>
-  </div>
+  <p>Loading jobs...</p>
+</div>
+
+<script>
+async function loadJobs() {
+  try {
+    const res = await fetch('/api/jobs');
+    const jobs = await res.json();
+    
+    const jobsDiv = document.getElementById('jobs');
+    if (!jobs || jobs.length === 0) {
+      jobsDiv.innerHTML = '<p>No jobs found</p>';
+      return;
+    }
+    
+    jobsDiv.innerHTML = jobs.map(job => `
+      <div style="border:1px solid #ddd; padding:15px; margin:10px 0; border-radius:8px;">
+        <h3>${job.title}</h3>
+        <p>${job.company} - ${job.location}</p>
+        <a href="${job.link}" target="_blank">Apply</a>
+      </div>
+    `).join('');
+    
+  } catch (err) {
+    document.getElementById('jobs').innerHTML = '<p>Failed to load jobs</p>';
+  }
+}
+
+loadJobs();
+      </script>
 
 </body>
 </html>
