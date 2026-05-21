@@ -576,6 +576,30 @@ app.get('/paid-ads', async (req, res) => {
   }
 });
 
+app.get('/ads', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM ads WHERE type = 'job' AND status = 'approved' ORDER BY created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.json([]);
+  }
+});
+
+app.get('/paid-ads', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM ads WHERE type = 'ad' AND status = 'approved' AND expires_at > NOW() ORDER BY created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.json([]);
+  }
+});
+
 app.post('/ads/initiate-payment', async (req, res) => {
   const { title, company, location, phone, url, description } = req.body;
   if (!title ||!company ||!location) {
