@@ -1,17 +1,34 @@
-import express from 'express';
-import multer from 'multer';
-import { v2 as cloudinary } from 'cloudinary';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import crypto from 'crypto';
-import pkg from 'pg';
-
-const { Pool } = pkg;
+const express = require('express');
+const multer = require('multer');
+const { v2 as cloudinary } = require('cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const crypto = require('crypto');
+const { Pool } = require('pg');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ===== BASIC AUTH FOR ADMIN =====
+const ADMIN_USER = process.env.ADMIN_USER || 'admin';
+const ADMIN_PASS = process.env.ADMIN_PASS || 'change-me';
+
+const basicAuth = (req, res, next) => {
+  const auth = req.headers.authorization;
+  if (!auth) {
+    res.set('WWW-Authenticate', 'Basic realm="Admin"');
+    return res.status(401).send('Auth required');
+  }
+  try {
+    const [user, pass] = Buffer.from(auth.split(' ')[1], 'base64').toString().split(':');
+    if (user === ADMIN_USER && pass === ADMIN_PASS) return next();
+  } catch (e) {}
+  res.set('WWW-Authenticate', 'Basic realm="Admin"');
+  res.status(401).send('Wrong credentials');
+};
+
+// Mount admin routes with auth
 const adminRoutes = require('./routes/admin');
-app.use('/admin', adminRoutes);
+app.use('/admin', basicAuth, adminRoutes);
 
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
@@ -43,6 +60,8 @@ pool.query(`
     text TEXT,
     image TEXT,
     paymentref TEXT,
+    email TEXT,
+    rejection_reason TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     expires_at TIMESTAMP
   )
@@ -73,6 +92,7 @@ const AD_PRICE = 500;
 const AD_DURATION_DAYS = 7;
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
 app.get('/', (req, res) => {
@@ -543,7 +563,7 @@ app.post('/ads/initiate-payment', async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  const tx_ref = 'jobai_' + Date.now();
+    const tx_ref = 'jobai_' + Date.now();
   const token = crypto.randomBytes(16).toString('hex');
   pendingPayments[tx_ref] = { title, company, location, phone, url, description, type: 'job', token };
 
@@ -571,7 +591,7 @@ app.post('/ads/initiate-payment', async (req, res) => {
       })
     });
 
-        const data = await response.json();
+    const data = await response.json();
     if (data.status === 'success') {
       res.json({ payment_link: data.data.link });
     } else {
