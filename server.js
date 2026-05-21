@@ -1,3 +1,5 @@
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+
 const express = require('express');
 const multer = require('multer');
 const { v2 as cloudinary } = require('cloudinary');
