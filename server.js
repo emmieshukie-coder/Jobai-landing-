@@ -22,7 +22,6 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Create tables if they don't exist
 pool.query(`
   CREATE TABLE IF NOT EXISTS ads (
     id BIGINT PRIMARY KEY,
@@ -45,7 +44,6 @@ pool.query(`
   )
 `).catch(console.error);
 
-// users table for auth
 pool.query(`
   CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
@@ -336,8 +334,8 @@ app.get('/', (req, res) => {
     ' }' +
     ' buttons += "</div>";' +
     ' let actions = "<div class=\\"card-actions\\">";' +
-    ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">✏️</button>";' +
-    ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">🗑️</button>";' +
+    ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\\\\\'user\\\\\',\\\\\'" + j.id + "\\\\\',\\\\\'" + j.token + "\\\\\')\\">✏️</button>";' +
+    ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\\\\\'user\\\\\',\\\\\'" + j.id + "\\\\\',\\\\\'" + j.token + "\\\\\')\\">🗑️</button>";' +
     ' actions += "</div>";' +
     ' return "<div class=\\"job-card\\" style=\\"position:relative\\">"+actions+"<span class=\\"country-tag user-ad-tag\\">Community</span><span class=\\"source-tag\\">"+ timeAgo(j.created_at) +"</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
     ' }).join("");' +
@@ -348,23 +346,23 @@ app.get('/', (req, res) => {
     ' return;' +
     ' }' +
     ' document.getElementById("paidAds").innerHTML = ads.map(function(ad) {' +
-    ' let img = ad.image? \'<img src="\' + ad.image + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
+    ' let img = ad.image? \\\'<img src="\\\' + ad.image + \\\'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\\\' : \\\'\\\';' +
     ' let actions = "<div class=\\"card-actions\\">";' +
-    ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">✏️</button>";' +
-    ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">🗑️</button>";' +
+    ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\\\\\'paid\\\\\',\\\\\'" + ad.id + "\\\\\',\\\\\'" + ad.token + "\\\\\')\\">✏️</button>";' +
+    ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\\\\\'paid\\\\\',\\\\\'" + ad.id + "\\\\\',\\\\\'" + ad.token + "\\\\\')\\">🗑️</button>";' +
     ' actions += "</div>";' +
-    ' return \'<div class="job-card" style="border:2px solid #f57c00;position:relative;">\' +' +
+    ' return \\\'<div class="job-card" style="border:2px solid #f57c00;position:relative;">\\\' +' +
     ' actions +' +
-    ' \'<span class="country-tag user-ad-tag">Sponsored</span>\' +' +
-    ' \'<span class="source-tag">\' + timeAgo(ad.created_at) + \'</span>\' +' +
+    ' \\\'<span class="country-tag user-ad-tag">Sponsored</span>\\\' +' +
+    ' \\\'<span class="source-tag">\\\' + timeAgo(ad.created_at) + \\\'</span>\\\' +' +
     ' img +' +
-    ' \'<h3>\' + ad.business + \'</h3>\' +' +
-    ' \'<p class="job-meta">\' + ad.text + \'</p>\' +' +
-    ' \'<a href="\' + ad.link + \'" target="_blank" class="connect-btn" style="background:#f57c00;">Visit</a>\' +' +
-    ' \'</div>\';' +
+    ' \\\'<h3>\\\' + ad.business + \\\'</h3>\\\' +' +
+    ' \\\'<p class="job-meta">\\\' + ad.text + \\\'</p>\\\' +' +
+    ' \\\'<a href="\\\' + ad.link + \\\'" target="_blank" class="connect-btn" style="background:#f57c00;">Visit</a>\\\' +' +
+    ' \\\'</div>\\\';' +
     ' }).join("");' +
     ' }' +
-    ' function openEdit(type, id, token) {' +
+    function openEdit(type, id, token) {' +
     ' document.getElementById("editType").value = type;' +
     ' document.getElementById("editId").value = id;' +
     ' document.getElementById("editToken").value = token;' +
@@ -383,553 +381,542 @@ app.get('/', (req, res) => {
     ' location: document.getElementById("editLocation").value,' +
     ' company: document.getElementById("editCompany").value,' +
     ' description: document.getElementById("editDesc").value' +
-    ' };' +387 const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";' +
-388 ' const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
-389 ' const result = await res.json();' +
-390 ' if (result.success) {' +
-391 ' closeEdit();' +
-392 ' loadUserAds();' +
-393 ' loadPaidAds();' +
-394 ' alert("Updated successfully");' +
-395 ' } else {' +
-396 ' alert("Update failed");' +
-397 ' }' +
-398 ' }' +
-399 ' async function deleteAd(type, id, token) {' +
-400 ' if (!confirm("Delete this ad?")) return;' +
-401 ' const endpoint = type === "paid"? "/paid-ads/delete" : "/ads/delete";' +
-402 ' const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, token})});' +
-403 ' const result = await res.json();' +
-404 ' if (result.success) {' +
-405 ' loadUserAds();' +
-406 ' loadPaidAds();' +
-407 ' alert("Deleted successfully");' +
-408 ' } else {' +
-409 ' alert("Delete failed");' +
-410 ' }' +
-411 ' }' +
-412 ' async function loadJobs() {' +
-413 ' const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant";' +
-414 ' const days = document.getElementById("dateFilter").value;' +
-415 ' document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading jobs...</div>";' +
-416 ' try {' +
-417 ' const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);' +
-418 ' allJobs = await res.json();' +
-419 ' renderJobs(allJobs);' +
-420 ' } catch (e) {' +
-421 ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs.</div>";' +
-422 ' }' +
-423 ' }' +
-424 ' async function loadUserAds() {' +
-425 ' const res = await fetch("/ads");' +
-426 ' const ads = await res.json();' +
-427 ' renderUserAds(ads);' +
-428 ' }' +
-429 ' async function loadPaidAds() {' +
-430 ' const res = await fetch("/paid-ads");' +
-431 ' const ads = await res.json();' +
-432 ' renderPaidAds(ads);' +
-433 ' }' +
-434 ' async function submitAd() {' +
-435 ' const data = {' +
-436 ' title: document.getElementById("adTitle").value,' +
-437 ' company: document.getElementById("adCompany").value,' +
-438 ' location: document.getElementById("adLocation").value,' +
-439 ' phone: document.getElementById("adPhone").value,' +
-440 ' url: document.getElementById("adUrl").value,' +
-441 ' description: document.getElementById("adDesc").value' +
-442 ' };' +
-443 ' if (!data.title ||!data.company ||!data.location) {' +
-444 ' document.getElementById("adMsg").textContent = "Please fill title, company and location.";' +
-445 ' document.getElementById("adMsg").style.color = "red";' +
-446 ' return;' +
-447 ' }' +
-448 ' document.getElementById("adMsg").textContent = "Redirecting to payment...";' +
-449 ' document.getElementById("adMsg").style.color = "blue";' +
-450 ' const res = await fetch("/ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
-451 ' const result = await res.json();' +
-452 ' if (result.payment_link) {' +
-453 ' window.location.href = result.payment_link;' +
-454 ' } else {' +
-455 ' document.getElementById("adMsg").textContent = "Payment failed. Try again.";' +
-456 ' document.getElementById("adMsg").style.color = "red";' +
-457 ' }' +
-458 ' }' +
-459 ' async function submitPaidAd() {' +
-460 ' const data = {' +
-461 ' business: document.getElementById("adBizName").value,' +
-462 ' link: document.getElementById("adLink").value,' +
-463 ' text: document.getElementById("adText").value,' +
-464 ' image: document.getElementById("adImgUrl").value' +
-465 ' };' +
-466 ' if (!data.business ||!data.link ||!data.text) {' +
-467 ' document.getElementById("adPayMsg").textContent = "Fill business, link and text.";' +
-468 ' document.getElementById("adPayMsg").style.color = "red";' +
-469 ' return;' +
-470 ' }' +
-471 ' document.getElementById("adPayMsg").textContent = "Redirecting to payment...";' +
-472 ' document.getElementById("adPayMsg").style.color = "blue";' +
-473 ' const res = await fetch("/paid-ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
-474 ' const result = await res.json();' +
-475 ' if (result.payment_link) {' +
-476 ' window.location.href = result.payment_link;' +
-477 ' } else {' +
-478 ' document.getElementById("adPayMsg").textContent = "Payment failed. Try again.";' +
-479 ' document.getElementById("adPayMsg").style.color = "red";' +
-480 ' }' +
-481 ' }' +
-482 ' const urlParams = new URLSearchParams(window.location.search);' +
-483 ' if (urlParams.get("payment") === "success") {' +
-484 ' document.getElementById("adMsg").textContent = "Payment successful! Job posted.";' +
-485 ' document.getElementById("adMsg").style.color = "green";' +
-486 ' loadUserAds();' +
-487 ' loadPaidAds();' +
-488 ' }' +
-489 ' if (urlParams.get("payment") === "failed") {' +
-490 ' document.getElementById("adMsg").textContent = "Payment failed or cancelled.";' +
-491 ' document.getElementById("adMsg").style.color = "red";' +
-492 ' }' +
-493 ' document.getElementById("searchBtn").addEventListener("click", loadJobs);' +
-494 ' document.getElementById("dateFilter").addEventListener("change", loadJobs);' +
-495 ' document.getElementById("searchInput").addEventListener("keypress", function(e) {' +
-496 ' if (e.key === "Enter") loadJobs();' +
-497 ' });' +
-498 ' loadJobs();' +
-499 ' loadUserAds();' +
-500 ' loadPaidAds();' +
-501 ' </script>' +
-502 '</body>' +
-503 '</html>'
-504 );
-505 });
-506
-507 app.post('/upload-ad-image', upload.single('image'), (req, res) => {
-508 if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-509 res.json({ url: req.file.path });
-510 });
-511
-512 // ADDED: Auth routes
-513 app.post('/auth/signup', async (req, res) => {
-514 const { firstName, lastName, email, phone, password } = req.body;
-515 if (!firstName ||!lastName ||!email ||!password) {
-516 return res.status(400).json({ success: false, error: 'Missing required fields' });
-517 }
-518 try {
-519 const hash = await bcrypt.hash(password, 10);
-520 const result = await pool.query(
-521 `INSERT INTO users (first_name, last_name, email, phone, password_hash) VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, email`,
-522 [firstName, lastName, email, phone, hash]
-523 );
-524 res.json({ success: true, user: result.rows[0] });
-525 } catch (err) {
-526 if (err.code === '23505') {
-527 res.status(400).json({ success: false, error: 'Email already exists' });
-528 } else {
-529 console.error(err);
-530 res.status(500).json({ success: false, error: 'Signup failed' });
-531 }
-532 }
-533 });
-534
-535 app.post('/auth/login', async (req, res) => {
-536 const { email, password } = req.body;
-537 if (!email ||!password) {
-538 return res.status(400).json({ success: false, error: 'Missing email or password' });
-539 }
-540 try {
-541 const result = await pool.query(`SELECT * FROM users WHERE email = $1`, [email]);
-542 if (result.rows.length === 0) {
-543 return res.status(400).json({ success: false, error: 'Invalid email or password' });
-544 }
-545 const user = result.rows[0];
-546 const match = await bcrypt.compare(password, user.password_hash);
-547 if (!match) {
-548 return res.status(400).json({ success: false, error: 'Invalid email or password' });
-549 }
-550 res.json({ success: true, user: { id: user.id, first_name: user.first_name, last_name: user.last_name, email: user.email } });
-551 } catch (err) {
-552 console.error(err);
-553 res.status(500).json({ success: false, error: 'Login failed' });
-554 }
-555 });
-556
-557 app.post('/auth/logout', (req, res) => {
-558 res.json({ success: true });
-559 });
-560
-561 // Fetch jobs from Adzuna - 20 per country
-562 async function fetchAdzunaJobs(countryCode, countryName, query) {
-563 try {
-564 const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=20&content-type=application/json&max_days_old=7&what=${encodeURIComponent(query)}`;
-565 const response = await fetch(url);
-566 if (!response.ok) return [];
-567 const data = await response.json();
-568 return (data.results || []).map(j => ({
-569 title: j.title || 'Job Title',
-570 company: j.company?.display_name || 'Unknown Company',
-571 location: j.location?.display_name || countryName,
-572 country: countryName,
-573 url: j.redirect_url || '#',
-574 date_posted: j.created,
-575 source: 'Adzuna'
-576 }));
-577 } catch (err) {
-578 return [];
-579 }
-580 }
-581
-582 // Fetch jobs from JSearch via RapidAPI
-583 async function fetchJSearchJobs(query, location) {
-584 try {
-585 const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1&date_posted=week`;
-586 const response = await fetch(url, {
-587 method: 'GET',
-588 headers: {
-589 'X-RapidAPI-Key': RAPIDAPI_KEY,
-590 'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
-591 }
-592 });
-593 if (!response.ok) return [];
-594 const data = await response.json();
-595 return (data.data || []).map(j => ({
-596 title: j.job_title || 'Job Title',
-597 company: j.employer_name || 'Unknown Company',
-598 location: j.job_city || location,
-599 country: location,
-600 url: j.job_apply_link || '#',
-601 date_posted: j.job_posted_at_datetime_utc,
-602 source: j.job_publisher || 'JSearch'
-603 }));
-604 } catch (err) {
-605 return [];
-606 }
-607 }
-608
-609 // Fetch jobs from Jooble
-610 async function fetchJoobleJobs(query, location) {
-611 try {
-612 const response = await fetch(`https://jooble.org/api/${JOOBLE_API_KEY}`, {
-613 method: 'POST',
-614 headers: { 'Content-Type': 'application/json' },
-615 body: JSON.stringify({
-616 keywords: query,
-617 location: location,
-618 page: 1,
-619 resultsOnPage: 20
-620 })
-621 });
-622 if (!response.ok) return [];
-623 const data = await response.json();
-624 return (data.jobs || []).map(j => ({
-625 title: j.title,
-626 company: j.company,
-627 location: j.location,
-628 country: location,
-629 url: j.link,
-630 date_posted: j.updated,
-631 source: 'Jooble'
-632 }));
-633 } catch (err) {
-634 return [];
-635 }
-636 }
-637
-638 // Fetch remote jobs from Remotive
-639 async function fetchRemotiveJobs(query) {
-640 try {
-641 const response = await fetch(`https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}`);
-642 if (!response.ok) return [];
-643 const data = await response.json();
-644 return (data.jobs || []).map(j => ({
-645 title: j.title,
-646 company: j.company_name,
-647 location: 'Remote',
-648 country: 'Global',
-649 url: j.url,
-650 date_posted: j.date,
-651 source: 'Remotive'
-652 }));
-653 } catch (err) {
-654 return [];
-655 }
-656 }
-657
-658 app.get('/jobs', async (req, res) => {
-659 try {
-660 const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
-661 const recentDays = parseInt(req.query.recent) || 7;
-662
-663 const countries = [
-664 { code: 'sa', name: 'Saudi Arabia' },
-665 { code: 'ae', name: 'United Arab Emirates' },
-666 { code: 'gb', name: 'United Kingdom' },
-667 { code: 'in', name: 'India' },
-668 { code: 'ug', name: 'Uganda' },
-669 { code: 'ke', name: 'Kenya' },
-670 { code: 'tz', name: 'Tanzania' },
-671 { code: 'za', name: 'South Africa' },
-672 { code: 'au', name: 'Australia' },
-673 { code: 'us', name: 'United States' },
-674 { code: 'rw', name: 'Rwanda' },
-675 { code: 'bi', name: 'Burundi' }
-676 ];
-677
-678 let allJobs = [];
-679
-680 const promises = [];
-681 for (let i = 0; i < countries.length; i++) {
-682 promises.push(fetchAdzunaJobs(countries[i].code, countries[i].name, query));
-683 promises.push(fetchJSearchJobs(query, countries[i].name));
-684 promises.push(fetchJoobleJobs(query, countries[i].name));
-685 }
-686 promises.push(fetchRemotiveJobs(query));
-687
-688 const results = await Promise.all(promises);
-689 results.forEach(jobs => {
-690 allJobs.push(...jobs);
-691 });
-692
-693 allJobs = allJobs.filter((job, index, self) =>
-694 index === self.findIndex(j => j.url === job.url)
-695 );
-696
-697 if (recentDays > 0 && recentDays!== 'all') {
-698 const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
-699 allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
-700 }
-701
-702 allJobs.sort((a, b) => new Date(b.date_posted) - new Date(a.date_posted));
-703
-704 res.json(allJobs.slice(0, 100));
-705 } catch (err) {
-706 console.error('Jobs fetch error:', err);
-707 res.json([]);
-708 }
-709 });
-710
-711 // Get approved job ads from DB
-712 app.get('/ads', async (req, res) => {
-713 try {
-714 const result = await pool.query(
-715 `SELECT * FROM ads WHERE type = 'job' AND status = 'approved' ORDER BY created_at DESC`
-716 );
-717 res.json(result.rows);
-718 } catch (err) {
-719 res.status(500).json({ error: 'Database error' });
-720 }
-721 });
-722
-723 // Get approved paid ads from DB
-724 app.get('/paid-ads', async (req, res) => {
-725 try {
-726 const result = await pool.query(
-727 `SELECT * FROM ads WHERE type = 'ad' AND status = 'approved' AND expires_at > NOW() ORDER BY created_at DESC`
-728 );
-729 res.json(result.rows);
-730 } catch (err) {
-731 res.status(500).json({ error: 'Database error' });
-732 }
-733 });
-734
-735 // Payment initiation routes
-736 app.post('/ads/initiate-payment', async (req, res) => {
-737 const { title, company, location, phone, url, description } = req.body;
-738 if (!title ||!company ||!location) {
-739 return res.status(400).json({ error: 'Missing required fields' });
-740 }
-741
-742 const tx_ref = 'jobai_' + Date.now();
-743 const token = crypto.randomBytes(16).toString('hex');
-744 pendingPayments[tx_ref] = { title, company, location, phone, url, description, type: 'job', token };
-745
-746 try {
-747 const response = await fetch('https://api.flutterwave.com/v3/payments', {
-748 method: 'POST',
-749 headers: {
-750 'Authorization': `Bearer ${FLW_SECRET_KEY}`,
-751 'Content-Type': 'application/json'
-752 },
-753 body: JSON.stringify({
-754 tx_ref,
-755 amount: 200,
-756 currency: 'KES',
-757 redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
-758 customer: {
-759 email: 'customer@jobai.com',
-760 phonenumber: phone || '0700000',
-761 name: company
-762 },
-763 customizations: {
-764 title: 'Job Post Payment',
-765 description: 'Pay 200 KES to post job on Jobai'
-766 }
-767 })
-768 });
-769
-770 const data = await response.json();
-771 if (data.status === 'success') {
-772 res.json({ payment_link: data.data.link });
-773 } else {
-774 res.status(400).json({ error: 'Failed to create payment' });
-775 }
-776 } catch (err) {
-777 console.error(err);
-778 res.status(500).json({ error: 'Payment error' });
-779 }
-780 });
-781
-782 app.post('/paid-ads/initiate-payment', async (req, res) => {
-783 const { business, link, text, image } = req.body;
-784 if (!business ||!link ||!text) {
-785 return res.status(400).json({ error: 'Missing required fields' });
-786 }
-787
-788 const tx_ref = 'ad_' + Date.now();
-789 const token = crypto.randomBytes(16).toString('hex');
-790 pendingPayments[tx_ref] = { business, link, text, image, type: 'ad', token };
-791
-792 try {
-793 const response = await fetch('https://api.flutterwave.com/v3/payments', {
-794 method: 'POST',
-795 headers: {
-796 'Authorization': `Bearer ${FLW_SECRET_KEY}`,
-797 'Content-Type': 'application/json'
-798 },
-799 body: JSON.stringify({
-800 tx_ref,
-801 amount: AD_PRICE,
-802 currency: 'KES',
-803 redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
-804 customer: {
-805 email: 'advertiser@jobai.com',
-806 name: business
-807 },
-808 customizations: {
-809 title: 'Sponsored Ad Payment',
-810 description: 'Pay ' + AD_PRICE + ' KES for 7 days ad'
-811 }
-812 })
-813 });
-814
-815 const data = await response.json();
-816 if (data.status === 'success') {
-817 res.json({ payment_link: data.data.link });
-818 } else {
-819 res.status(400).json({ error: 'Failed to create payment' });
-820 }
-821 } catch (err) {
-822 console.error(err);
-823 res.status(500).json({ error: 'Payment error' });
-824 }
-825 });
-826
-827 app.get('/payment-callback', async (req, res) => {
-828 const { transaction_id, tx_ref } = req.query;
-829
-830 try {
-831 const response = await fetch(`https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`, {
-832 headers: { 'Authorization': `Bearer ${FLW_SECRET_KEY}` }
-833 });
-834 const data = await response.json();
-835
-836 if (data.status === 'success' && data.data.status === 'successful') {
-837 const jobData = pendingPayments[tx_ref];
-838 if (jobData) {
-839 const id = Date.now() + Math.floor(Math.random() * 1000);
-840 const expires = new Date();
-841 expires.setDate(expires.getDate() + AD_DURATION_DAYS);
-842
-843 if (jobData.type === 'ad') {
-844 await pool.query(
-845 `INSERT INTO ads (id, token, type, status, business, link, text, image, paymentref, expires_at)
-846 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-847 [id, jobData.token, 'ad', 'approved', jobData.business, jobData.link, jobData.text, jobData.image, transaction_id, expires]
-848 );
-849 } else {
-850 await pool.query(
-851 `INSERT INTO ads (id, token, type, status, title, company, location, phone, url, description, paymentref, created_at)
-852 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
-853 [id, jobData.token, 'job', 'approved', jobData.title, jobData.company, jobData.location, jobData.phone, jobData.url, jobData.description, transaction_id]
-854 );
-855 }
-856 delete pendingPayments[tx_ref];
-857 res.redirect('/?payment=success');
-858 } else {
-859 res.redirect('/?payment=failed');
-860 }
-861 } else {
-862 res.redirect('/?payment=failed');
-863 }
-864 } catch (err) {
-865 console.error(err);
-866 res.redirect('/?payment=failed');
-867 }
-868 });
-869
-870 // Edit user ad
-871 app.post('/ads/edit', async (req, res) => {
-872 const { id, token, title, location, company, description } = req.body;
-873 try {
-874 const result = await pool.query(
-875 `UPDATE ads SET title = COALESCE($1, title), location = COALESCE($2, location),
-876 company = COALESCE($3, company), description = COALESCE($4, description)
-877 WHERE id = $5 AND token = $6 AND type = 'job' RETURNING id`,
-878 [title, location, company, description, id, token]
-879 );
-880 res.json({ success: result.rowCount > 0 });
-881 } catch (err) {
-882 console.error(err);
-883 res.json({ success: false });
-884 }
-885 });
-886
-887 // Delete user ad
-888 app.post('/ads/delete', async (req, res) => {
-889 const { id, token } = req.body;
-890 try {
-891 const result = await pool.query(
-892 `DELETE FROM ads WHERE id = $1 AND token = $2 AND type = 'job' RETURNING id`,
-893 [id, token]
-894 );
-895 res.json({ success: result.rowCount > 0 });
-896 } catch (err) {
-897 console.error(err);
-898 res.json({ success: false });
-899 }
-900 });
-901
-902 // Edit paid ad
-903 app.post('/paid-ads/edit', async (req, res) => {
-904 const { id, token, title, location, company, description } = req.body;
-905 try {
-906 const result = await pool.query(
-907 `UPDATE ads SET business = COALESCE($1, business), text = COALESCE($2, text),
-908 location = COALESCE($3, location), company = COALESCE($4, company)
-909 WHERE id = $5 AND token = $6 AND type = 'ad' RETURNING id`,
-910 [title, description, location, company, id, token]
-911 );
-912 res.json({ success: result.rowCount > 0 });
-913 } catch (err) {
-914 console.error(err);
-915 res.json({ success: false });
-916 }
-917 });
-918
-919 // Delete paid ad
-920 app.post('/paid-ads/delete', async (req, res) => {
-921 const { id, token } = req.body;
-922 try {
-923 const result = await pool.query(
-924 `DELETE FROM ads WHERE id = $1 AND token = $2 AND type = 'ad' RETURNING id`,
-925 [id, token]
-926 );
-927 res.json({ success: result.rowCount > 0 });
-928 } catch (err) {
-929 console.error(err);
-930 res.json({ success: false });
-931 }
-932 });
-933
-934 app.listen(PORT, function() {
-935 console.log('Server running on port ' + PORT);
-936 });
+    ' };' +
+    ' const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";' +
+    ' const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
+    ' const result = await res.json();' +
+    ' if (result.success) {' +
+    ' closeEdit();' +
+    ' loadUserAds();' +
+    ' loadPaidAds();' +
+    ' alert("Updated successfully");' +
+    ' } else {' +
+    ' alert("Update failed");' +
+    ' }' +
+    ' }' +
+    ' async function deleteAd(type, id, token) {' +
+    ' if (!confirm("Delete this ad?")) return;' +
+    ' const endpoint = type === "paid"? "/paid-ads/delete" : "/ads/delete";' +
+    ' const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, token})});' +
+    ' const result = await res.json();' +
+    ' if (result.success) {' +
+    ' loadUserAds();' +
+    ' loadPaidAds();' +
+    ' alert("Deleted successfully");' +
+    ' } else {' +
+    ' alert("Delete failed");' +
+    ' }' +
+    ' }' +
+    ' async function loadJobs() {' +
+    ' const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant";' +
+    ' const days = document.getElementById("dateFilter").value;' +
+    ' document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading jobs...</div>";' +
+    ' try {' +
+    ' const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);' +
+    ' allJobs = await res.json();' +
+    ' renderJobs(allJobs);' +
+    ' } catch (e) {' +
+    ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs.</div>";' +
+    ' }' +
+    ' }' +
+    ' async function loadUserAds() {' +
+    ' const res = await fetch("/ads");' +
+    ' const ads = await res.json();' +
+    ' renderUserAds(ads);' +
+    ' }' +
+    ' async function loadPaidAds() {' +
+    ' const res = await fetch("/paid-ads");' +
+    ' const ads = await res.json();' +
+    ' renderPaidAds(ads);' +
+    ' }' +
+    ' async function submitAd() {' +
+    ' const data = {' +
+    ' title: document.getElementById("adTitle").value,' +
+    ' company: document.getElementById("adCompany").value,' +
+    ' location: document.getElementById("adLocation").value,' +
+    ' phone: document.getElementById("adPhone").value,' +
+    ' url: document.getElementById("adUrl").value,' +
+    ' description: document.getElementById("adDesc").value' +
+    ' };' +
+    ' if (!data.title ||!data.company ||!data.location) {' +
+    ' document.getElementById("adMsg").textContent = "Please fill title, company and location.";' +
+    ' document.getElementById("adMsg").style.color = "red";' +
+    ' return;' +
+    ' }' +
+    ' document.getElementById("adMsg").textContent = "Redirecting to payment...";' +
+    ' document.getElementById("adMsg").style.color = "blue";' +
+    ' const res = await fetch("/ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
+    ' const result = await res.json();' +
+    ' if (result.payment_link) {' +
+    ' window.location.href = result.payment_link;' +
+    ' } else {' +
+    ' document.getElementById("adMsg").textContent = "Payment failed. Try again.";' +
+    ' document.getElementById("adMsg").style.color = "red";' +
+    ' }' +
+    ' }' +
+    ' async function submitPaidAd() {' +
+    ' const data = {' +
+    ' business: document.getElementById("adBizName").value,' +
+    ' link: document.getElementById("adLink").value,' +
+    ' text: document.getElementById("adText").value,' +
+    ' image: document.getElementById("adImgUrl").value' +
+    ' };' +
+    ' if (!data.business ||!data.link ||!data.text) {' +
+    ' document.getElementById("adPayMsg").textContent = "Fill business, link and text.";' +
+    ' document.getElementById("adPayMsg").style.color = "red";' +
+    ' return;' +
+    ' }' +
+    ' document.getElementById("adPayMsg").textContent = "Redirecting to payment...";' +
+    ' document.getElementById("adPayMsg").style.color = "blue";' +
+    ' const res = await fetch("/paid-ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
+    ' const result = await res.json();' +
+    ' if (result.payment_link) {' +
+    ' window.location.href = result.payment_link;' +
+    ' } else {' +
+    ' document.getElementById("adPayMsg").textContent = "Payment failed. Try again.";' +
+    ' document.getElementById("adPayMsg").style.color = "red";' +
+    ' }' +
+    ' }' +
+    ' const urlParams = new URLSearchParams(window.location.search);' +
+    ' if (urlParams.get("payment") === "success") {' +
+    ' document.getElementById("adMsg").textContent = "Payment successful! Job posted.";' +
+    ' document.getElementById("adMsg").style.color = "green";' +
+    ' loadUserAds();' +
+    ' loadPaidAds();' +
+    ' }' +
+    ' if (urlParams.get("payment") === "failed") {' +
+    ' document.getElementById("adMsg").textContent = "Payment failed or cancelled.";' +
+    ' document.getElementById("adMsg").style.color = "red";' +
+    ' }' +
+    ' document.getElementById("searchBtn").addEventListener("click", loadJobs);' +
+    ' document.getElementById("dateFilter").addEventListener("change", loadJobs);' +
+    ' document.getElementById("searchInput").addEventListener("keypress", function(e) {' +
+    ' if (e.key === "Enter") loadJobs();' +
+    ' });' +
+    ' loadJobs();' +
+    ' loadUserAds();' +
+    ' loadPaidAds();' +
+    ' </script>' +
+    '</body>' +
+    '</html>'
+  );
+});
+
+app.post('/upload-ad-image', upload.single('image'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+  res.json({ url: req.file.path });
+});
+
+app.post('/auth/signup', async (req, res) => {
+  const { firstName, lastName, email, phone, password } = req.body;
+  if (!firstName ||!lastName ||!email ||!password) {
+    return res.status(400).json({ success: false, error: 'Missing required fields' });
+  }
+  try {
+    const hash = await bcrypt.hash(password, 10);
+    const result = await pool.query(
+      `INSERT INTO users (first_name, last_name, email, phone, password_hash) VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, email`,
+      [firstName, lastName, email, phone, hash]
+    );
+    res.json({ success: true, user: result.rows[0] });
+  } catch (err) {
+    if (err.code === '23505') {
+      res.status(400).json({ success: false, error: 'Email already exists' });
+    } else {
+      console.error(err);
+      res.status(500).json({ success: false, error: 'Signup failed' });
+    }
+  }
+});
+
+app.post('/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email ||!password) {
+    return res.status(400).json({ success: false, error: 'Missing email or password' });
+  }
+  try {
+    const result = await pool.query(`SELECT * FROM users WHERE email = $1`, [email]);
+    if (result.rows.length === 0) {
+      return res.status(400).json({ success: false, error: 'Invalid email or password' });
+    }
+    const user = result.rows[0];
+    const match = await bcrypt.compare(password, user.password_hash);
+    if (!match) {
+      return res.status(400).json({ success: false, error: 'Invalid email or password' });
+    }
+    res.json({ success: true, user: { id: user.id, first_name: user.first_name, last_name: user.last_name, email: user.email } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: 'Login failed' });
+  }
+});
+
+app.post('/auth/logout', (req, res) => {
+  res.json({ success: true });
+});
+
+async function fetchAdzunaJobs(countryCode, countryName, query) {
+  try {
+    const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=20&content-type=application/json&max_days_old=7&what=${encodeURIComponent(query)}`;
+    const response = await fetch(url);
+    if (!response.ok) return [];
+    const data = await response.json();
+    return (data.results || []).map(j => ({
+      title: j.title || 'Job Title',
+      company: j.company?.display_name || 'Unknown Company',
+      location: j.location?.display_name || countryName,
+      country: countryName,
+      url: j.redirect_url || '#',
+      date_posted: j.created,
+      source: 'Adzuna'
+    }));
+  } catch (err) {
+    return [];
+  }
+}
+
+async function fetchJSearchJobs(query, location) {
+  try {
+    const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1&date_posted=week`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-RapidAPI-Key': RAPIDAPI_KEY,
+        'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
+      }
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return (data.data || []).map(j => ({
+      title: j.job_title || 'Job Title',
+      company: j.employer_name || 'Unknown Company',
+      location: j.job_city || location,
+      country: location,
+      url: j.job_apply_link || '#',
+      date_posted: j.job_posted_at_datetime_utc,
+      source: j.job_publisher || 'JSearch'
+    }));
+  } catch (err) {
+    return [];
+  }
+}
+
+async function fetchJoobleJobs(query, location) {
+  try {
+    const response = await fetch(`https://jooble.org/api/${JOOBLE_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        keywords: query,
+        location: location,
+        page: 1,
+        resultsOnPage: 20
+      })
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return (data.jobs || []).map(j => ({
+      title: j.title,
+      company: j.company,
+      location: j.location,
+      country: location,
+      url: j.link,
+      date_posted: j.updated,
+      source: 'Jooble'
+    }));
+  } catch (err) {
+    return [];
+  }
+}
+
+async function fetchRemotiveJobs(query) {
+  try {
+    const response = await fetch(`https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}`);
+    if (!response.ok) return [];
+    const data = await response.json();
+    return (data.jobs || []).map(j => ({
+      title: j.title,
+      company: j.company_name,
+      location: 'Remote',
+      country: 'Global',
+      url: j.url,
+      date_posted: j.date,
+      source: 'Remotive'
+    }));
+  } catch (err) {
+    return [];
+  }
+}
+
+app.get('/jobs', async (req, res) => {
+  try {
+    const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
+    const recentDays = parseInt(req.query.recent) || 7;
+
+    const countries = [
+      { code: 'sa', name: 'Saudi Arabia' },
+      { code: 'ae', name: 'United Arab Emirates' },
+      { code: 'gb', name: 'United Kingdom' },
+      { code: 'in', name: 'India' },
+      { code: 'ug', name: 'Uganda' },
+      { code: 'ke', name: 'Kenya' },
+      { code: 'tz', name: 'Tanzania' },
+      { code: 'za', name: 'South Africa' },
+      { code: 'au', name: 'Australia' },
+      { code: 'us', name: 'United States' },
+      { code: 'rw', name: 'Rwanda' },
+      { code: 'bi', name: 'Burundi' }
+    ];
+
+    let allJobs = [];
+
+    const promises = [];
+    for (let i = 0; i < countries.length; i++) {
+      promises.push(fetchAdzunaJobs(countries[i].code, countries[i].name, query));
+      promises.push(fetchJSearchJobs(query, countries[i].name));
+      promises.push(fetchJoobleJobs(query, countries[i].name));
+    }
+    promises.push(fetchRemotiveJobs(query));
+
+    const results = await Promise.all(promises);
+    results.forEach(jobs => {
+      allJobs.push(...jobs);
+    });
+
+    allJobs = allJobs.filter((job, index, self) =>
+      index === self.findIndex(j => j.url === job.url)
+    );
+
+    if (recentDays > 0 && recentDays!== 'all') {
+      const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
+      allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
+    }
+
+    allJobs.sort((a, b) => new Date(b.date_posted) - new Date(a.date_posted));
+
+    res.json(allJobs.slice(0, 100));
+  } catch (err) {
+    console.error('Jobs fetch error:', err);
+    res.json([]);
+  }
+});
+
+app.get('/ads', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM ads WHERE type = 'job' AND status = 'approved' ORDER BY created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.get('/paid-ads', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM ads WHERE type = 'ad' AND status = 'approved' AND expires_at > NOW() ORDER BY created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.post('/ads/initiate-payment', async (req, res) => {
+  const { title, company, location, phone, url, description } = req.body;
+  if (!title ||!company ||!location) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  const tx_ref = 'jobai_' + Date.now();
+  const token = crypto.randomBytes(16).toString('hex');
+  pendingPayments[tx_ref] = { title, company, location, phone, url, description, type: 'job', token };
+
+  try {
+    const response = await fetch('https://api.flutterwave.com/v3/payments', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${FLW_SECRET_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        tx_ref,
+        amount: 200,
+        currency: 'KES',
+        redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
+        customer: {
+          email: 'customer@jobai.com',
+          phonenumber: phone || '0700000',
+          name: company
+        },
+        customizations: {
+          title: 'Job Post Payment',
+          description: 'Pay 200 KES to post job on Jobai'
+        }
+      })
+    });
+
+    const data = await response.json();
+    if (data.status === 'success') {
+      res.json({ payment_link: data.data.link });
+    } else {
+      res.status(400).json({ error: 'Failed to create payment' });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Payment error' });
+  }
+});
+
+app.post('/paid-ads/initiate-payment', async (req, res) => {
+  const { business, link, text, image } = req.body;
+  if (!business ||!link ||!text) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  const tx_ref = 'ad_' + Date.now();
+  const token = crypto.randomBytes(16).toString('hex');
+  pendingPayments[tx_ref] = { business, link, text, image, type: 'ad', token };
+
+  try {
+    const response = await fetch('https://api.flutterwave.com/v3/payments', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${FLW_SECRET_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        tx_ref,
+        amount: AD_PRICE,
+        currency: 'KES',
+        redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
+        customer: {
+          email: 'advertiser@jobai.com',
+          name: business
+        },
+        customizations: {
+          title: 'Sponsored Ad Payment',
+          description: 'Pay ' + AD_PRICE + ' KES for 7 days ad'
+        }
+      })
+    });
+
+    const data = await response.json();
+    if (data.status === 'success') {
+      res.json({ payment_link: data.data.link });
+    } else {
+      res.status(400).json({ error: 'Failed to create payment' });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Payment error' });
+  }
+});
+
+app.get('/payment-callback', async (req, res) => {
+  const { transaction_id, tx_ref } = req.query;
+
+  try {
+    const response = await fetch(`https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`, {
+      headers: { 'Authorization': `Bearer ${FLW_SECRET_KEY}` }
+    });
+    const data = await response.json();
+
+    if (data.status === 'success' && data.data.status === 'successful') {
+      const jobData = pendingPayments[tx_ref];
+      if (jobData) {
+        const id = Date.now() + Math.floor(Math.random() * 1000);
+        const expires = new Date();
+        expires.setDate(expires.getDate() + AD_DURATION_DAYS);
+
+        if (jobData.type === 'ad') {
+          await pool.query(
+            `INSERT INTO ads (id, token, type, status, business, link, text, image, paymentref, expires_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+            [id, jobData.token, 'ad', 'approved', jobData.business, jobData.link, jobData.text, jobData.image, transaction_id, expires]
+          );
+        } else {
+          await pool.query(
+            `INSERT INTO ads (id, token, type, status, title, company, location, phone, url, description, paymentref, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+            [id, jobData.token, 'job', 'approved', jobData.title, jobData.company, jobData.location, jobData.phone, jobData.url, jobData.description, transaction_id]
+          );
+        }
+        delete pendingPayments[tx_ref];
+        res.redirect('/?payment=success');
+      } else {
+        res.redirect('/?payment=failed');
+      }
+    } else {
+      res.redirect('/?payment=failed');
+    }
+  } catch (err) {
+    console.error(err);
+    res.redirect('/?payment=failed');
+  }
+});
+
+app.post('/ads/edit', async (req, res) => {
+  const { id, token, title, location, company, description } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE ads SET title = COALESCE($1, title), location = COALESCE($2, location),
+       company = COALESCE($3, company), description = COALESCE($4, description)
+       WHERE id = $5 AND token = $6 AND type = 'job' RETURNING id`,
+      [title, location, company, description, id, token]
+    );
+    res.json({ success: result.rowCount > 0 });
+  } catch (err) {
+    console.error(err);
+    res.json({ success: false });
+  }
+});
+
+app.post('/ads/delete', async (req, res) => {
+  const { id, token } = req.body;
+  try {
+    const result = await pool.query(
+      `DELETE FROM ads WHERE id = $1 AND token = $2 AND type = 'job' RETURNING id`,
+      [id, token]
+    );
+    res.json({ success: result.rowCount > 0 });
+  } catch (err) {
+    console.error(err);
+    res.json({ success: false });
+  }
+});
+
+app.post('/paid-ads/edit', async (req, res) => {
+  const { id, token, title, location, company, description } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE ads SET business = COALESCE($1, business), text = COALESCE($2, text),
+       location = COALESCE($3, location), company = COALESCE($4, company)
+       WHERE id = $5 AND token = $6 AND type = 'ad' RETURNING id`,
+      [title, description, location, company, id, token]
+    );
+    res.json({ success: result.rowCount > 0 });
+  } catch (err) {
+    console.error(err);
+    res.json({ success: false });
+  }
+});
+
+app.post('/paid-ads/delete', async (req, res) => {
+  const { id, token } = req.body;
+  try {
+    const result = await pool.query(
+      `DELETE FROM ads WHERE id = $1 AND token = $2 AND type = 'ad' RETURNING id`,
+      [id, token]
+    );
+    res.json({ success: result.rowCount > 0 });
+  } catch (err) {
+    console.error(err);
+    res.json({ success: false });
+  }
+});
+
+app.listen(PORT, function() {
+  console.log('Server running on port ' + PORT);
+});
