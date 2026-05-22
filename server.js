@@ -487,11 +487,18 @@ app.get('/jobs', async (req, res) => {
     const recentDays = parseInt(req.query.recent) || 7;
 
     const countries = [
+      { code: 'sa', name: 'Saudi Arabia' },
+      { code: 'ae', name: 'United Arab Emirates' },
+      { code: 'gb', name: 'United Kingdom' },
+      { code: 'in', name: 'India' },
       { code: 'ug', name: 'Uganda' },
       { code: 'ke', name: 'Kenya' },
       { code: 'tz', name: 'Tanzania' },
-      { code: 'gb', name: 'United Kingdom' },
-      { code: 'in', name: 'India' }
+      { code: 'za', name: 'South Africa' },
+      { code: 'au', name: 'Australia' },
+      { code: 'us', name: 'United States' },
+      { code: 'rw', name: 'Rwanda' },
+      { code: 'bi', name: 'Burundi' }
     ];
 
     let allJobs = [];
@@ -550,7 +557,7 @@ app.post('/ads/initiate-payment', async (req, res) => {
   try {
     const response = await fetch('https://api.flutterwave.com/v3/payments', {
       method: 'POST',
-      headers: {
+            headers: {
         'Authorization': `Bearer ${FLW_SECRET_KEY}`,
         'Content-Type': 'application/json'
       },
