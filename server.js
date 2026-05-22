@@ -295,6 +295,7 @@ app.get('/', (req, res) => {
     ' document.getElementById("adPayMsg").style.color = "red";' +
     ' }' +
     ' });' +
+    // CHANGED: timeAgo now shows minutes/hours/days
     ' function timeAgo(dateStr) {' +
     ' if (!dateStr) return "";' +
     ' const date = new Date(dateStr);' +
@@ -337,6 +338,7 @@ app.get('/', (req, res) => {
     ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\\\\\'user\\\\\',\\\\\'" + j.id + "\\\\\',\\\\\'" + j.token + "\\\\\')\\">✏️</button>";' +
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\\\\\'user\\\\\',\\\\\'" + j.id + "\\\\\',\\\\\'" + j.token + "\\\\\')\\">🗑️</button>";' +
     ' actions += "</div>";' +
+    // CHANGED: added timeAgo for user ads
     ' return "<div class=\\"job-card\\" style=\\"position:relative\\">"+actions+"<span class=\\"country-tag user-ad-tag\\">Community</span><span class=\\"source-tag\\">"+ timeAgo(j.created_at) +"</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
     ' }).join("");' +
     ' }' +
@@ -351,6 +353,7 @@ app.get('/', (req, res) => {
     ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\\\\\'paid\\\\\',\\\\\'" + ad.id + "\\\\\',\\\\\'" + ad.token + "\\\\\')\\">✏️</button>";' +
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\\\\\'paid\\\\\',\\\\\'" + ad.id + "\\\\\',\\\\\'" + ad.token + "\\\\\')\\">🗑️</button>";' +
     ' actions += "</div>";' +
+    // CHANGED: added timeAgo for paid ads
     ' return \\\'<div class="job-card" style="border:2px solid #f57c00;position:relative;">\\\' +' +
     ' actions +' +
     ' \\\'<span class="country-tag user-ad-tag">Sponsored</span>\\\' +' +
@@ -358,12 +361,12 @@ app.get('/', (req, res) => {
     ' img +' +
     ' \\\'<h3>\\\' + ad.business + \\\'</h3>\\\' +' +
     ' \\\'<p class="job-meta">\\\' + ad.text + \\\'</p>\\\' +' +
-    ' \\\'<a href="\\\' + ad.link + \\\'" target="_blank" class="connect-btn" style="background:#f57c00;">Visit</a>\\\' +' +
+    ' \\\'<a href ="\\\' + ad.link + \\\'" target="_blank" class="connect-btn" style="background:#f57c00;">Visit</a>\\\' +' +
     ' \\\'</div>\\\';' +
     ' }).join("");' +
     ' }' +
     ' function openEdit(type, id, token) {' +
-    document.getElementById("editType").value = type;' +
+    ' document.getElementById("editType").value = type;' +
     ' document.getElementById("editId").value = id;' +
     ' document.getElementById("editToken").value = token;' +
     ' document.getElementById("editModal").classList.add("active");' +
