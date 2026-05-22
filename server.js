@@ -3,6 +3,7 @@ import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import crypto from 'crypto';
+import bcrypt from 'bcrypt'; // ADDED
 import pkg from 'pg';
 
 const { Pool } = pkg;
@@ -42,6 +43,19 @@ pool.query(`
     paymentref TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     expires_at TIMESTAMP
+  )
+`).catch(console.error);
+
+// ADDED: users table
+pool.query(`
+  CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    phone TEXT,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
   )
 `).catch(console.error);
 
@@ -125,6 +139,9 @@ app.get('/', (req, res) => {
     '.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }' +
     '.modal.active { display: flex; }' +
     '.modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%; }' +
+    '.auth-form input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }' +
+    '.auth-toggle { text-align:center;margin-top:10px;font-size:13px;color:#666;cursor:pointer; }' +
+    '.logout-btn { display:none; width:100%; margin-top:10px; background:#d32f2f; }' +
     ' </style>' +
     '</head>' +
     '<body>' +
@@ -135,6 +152,29 @@ app.get('/', (req, res) => {
     ' <div style="padding:20px;border-bottom:1px solid #eee;">' +
     ' <h2 style="margin:0;color:#1a73e8;font-size:22px;">Jobai</h2>' +
     ' <p style="margin:6px 0 0;font-size:13px;color:#666;">Get Connected to Jobs & Workers</p>' +
+    ' </div>' +
+    // ADDED: Auth section
+    ' <div id="authSection" style="padding:16px;border-bottom:1px solid #eee;">' +
+    ' <h3 id="authTitle" style="margin:0 0 12px 0;font-size:16px;">Sign Up</h3>' +
+    ' <div id="signupForm" class="auth-form">' +
+    ' <input type="text" id="firstName" placeholder="First Name" required>' +
+    ' <input type="text" id="lastName" placeholder="Last Name" required>' +
+    ' <input type="email" id="signupEmail" placeholder="Email" required>' +
+    ' <input type="tel" id="signupPhone" placeholder="Phone Number">' +
+    ' <input type="password" id="signupPassword" placeholder="Password" required>' +
+    ' <input type="password" id="confirmPassword" placeholder="Confirm Password" required>' +
+    ' <button class="connect-btn" style="width:100%;" onclick="signup()">Create Account</button>' +
+    ' <p id="signupMsg" style="font-size:12px;margin-top:8px;"></p>' +
+    ' </div>' +
+    ' <div id="loginForm" class="auth-form" style="display:none;">' +
+    ' <input type="email" id="loginEmail" placeholder="Email" required>' +
+    ' <input type="password" id="loginPassword" placeholder="Password" required>' +
+    ' <button class="connect-btn" style="width:100%;" onclick="login()">Login</button>' +
+    ' <p id="loginMsg" style="font-size:12px;margin-top:8px;"></p>' +
+    ' </div>' +
+    ' <div class="auth-toggle" onclick="toggleAuth()">Already have an account? <b>Login</b></div>' +
+    ' <button id="logoutBtn" class="connect-btn logout-btn" onclick="logout()">Logout</button>' +
+    ' <p id="userInfo" style="font-size:13px;margin-top:8px;color:#1a73e8;"></p>' +
     ' </div>' +
     ' <div style="padding:8px 0;">' +
     ' <a href="#" onclick="closeMenu();document.getElementById(\'searchInput\')?.focus();" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">🔍 <span>Job Search</span></a>' +
@@ -223,13 +263,19 @@ app.get('/', (req, res) => {
     ' </div>' +
     ' </div>' +
     ' <script>' +
-    // START: Slide drawer JS - ADDED ONLY THIS
+    // START: Slide drawer JS - ADDED ONLY THIS + AUTH JS
     'function openMenu(){document.getElementById(\'sideMenu\').style.left=\'0\';document.getElementById(\'overlay\').style.display=\'block\';document.getElementById(\'sideMenu\').setAttribute(\'aria-hidden\',\'false\');}' +
     'function closeMenu(){document.getElementById(\'sideMenu\').style.left=\'-320px\';document.getElementById(\'overlay\').style.display=\'none\';document.getElementById(\'sideMenu\').setAttribute(\'aria-hidden\',\'true\');}' +
     'function scrollToId(id){closeMenu();const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:\'smooth\',block:\'start\'});}' +
     'function showFavorites(){closeMenu();const fav=JSON.parse(localStorage.getItem(\'jobai_fav\')||\'[]\');if(!fav.length){alert(\'No favorites yet. Click "Connect & Apply" then save the job link.\');return;}renderJobs(fav);document.querySelector(\'.section h2\').textContent=\'Favorites\';}' +
     'function showSalaries(){closeMenu();alert(\'Salaries coming next. We will wire this to Adzuna Salary API.\');}' +
     'function showSubscriptions(){closeMenu();alert(\'Job Alerts coming next. Enter email + keywords and get notified.\');}' +
+    'function toggleAuth(){const s=document.getElementById(\'signupForm\'),l=document.getElementById(\'loginForm\'),t=document.getElementById(\'authTitle\');if(s.style.display===\'none\'){s.style.display=\'block\';l.style.display=\'none\';t.textContent=\'Sign Up\';}else{s.style.display=\'none\';l.style.display=\'block\';t.textContent=\'Login\';}}' +
+    'function updateAuthUI(user){const auth=document.getElementById(\'authSection\');const logout=document.getElementById(\'logoutBtn\');const info=document.getElementById(\'userInfo\');if(user){document.getElementById(\'signupForm\').style.display=\'none\';document.getElementById(\'loginForm\').style.display=\'none\';document.getElementById(\'authTitle\').textContent=\'Account\';logout.style.display=\'block\';info.textContent=\'Logged in as \'+user.first_name+\' \'+user.last_name;}else{document.getElementById(\'signupForm\').style.display=\'block\';document.getElementById(\'loginForm\').style.display=\'none\';document.getElementById(\'authTitle\').textContent=\'Sign Up\';logout.style.display=\'none\';info.textContent=\'\';}}' +
+    'async function signup(){const first=document.getElementById(\'firstName\').value.trim(),last=document.getElementById(\'lastName\').value.trim(),email=document.getElementById(\'signupEmail\').value.trim(),phone=document.getElementById(\'signupPhone\').value.trim(),pass=document.getElementById(\'signupPassword\').value,cpass=document.getElementById(\'confirmPassword\').value;const msg=document.getElementById(\'signupMsg\');if(!first||!last||!email||!pass){msg.textContent=\'Fill all required fields\';msg.style.color=\'red\';return;}if(pass!==cpass){msg.textContent=\'Passwords do not match\';msg.style.color=\'red\';return;}msg.textContent=\'Creating account...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/signup\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({firstName:first,lastName:last,email,phone,password:pass})});const data=await res.json();if(data.success){msg.textContent=\'Account created! You can login now.\';msg.style.color=\'green\';toggleAuth();}else{msg.textContent=data.error||\'Signup failed\';msg.style.color=\'red\';}}' +
+    'async function login(){const email=document.getElementById(\'loginEmail\').value.trim(),pass=document.getElementById(\'loginPassword\').value;const msg=document.getElementById(\'loginMsg\');if(!email||!pass){msg.textContent=\'Enter email and password\';msg.style.color=\'red\';return;}msg.textContent=\'Logging in...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/login\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({email,password:pass})});const data=await res.json();if(data.success){msg.textContent=\'Login successful!\';msg.style.color=\'green\';localStorage.setItem(\'jobai_user\',JSON.stringify(data.user));updateAuthUI(data.user);closeMenu();}else{msg.textContent=data.error||\'Login failed\';msg.style.color=\'red\';}}' +
+    'async function logout(){await fetch(\'/auth/logout\',{method:\'POST\'});localStorage.removeItem(\'jobai_user\');updateAuthUI(null);}' +
+    'window.addEventListener(\'load\',()=>{const user=JSON.parse(localStorage.getItem(\'jobai_user\')||\'null\');updateAuthUI(user);});' +
     'document.getElementById(\'menuBtn\').addEventListener(\'click\',openMenu);' +
     // END: Slide drawer JS
     ' let allJobs = [];' +
@@ -338,129 +384,178 @@ app.get('/', (req, res) => {
     ' company: document.getElementById("editCompany").value,' +
     ' description: document.getElementById("editDesc").value' +
     ' };' +
-    ' const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";' +
-    ' const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
-    ' const result = await res.json();' +
-    ' if (result.success) {' +
-    ' closeEdit();' +
-    ' loadUserAds();' +
-    ' loadPaidAds();' +
-    ' alert("Updated successfully");' +
-    ' } else {' +
-    ' alert("Update failed");' +
-    ' }' +
-    ' }' +
-    ' async function deleteAd(type, id, token) {' +
-    ' if (!confirm("Delete this ad?")) return;' +
-    ' const endpoint = type === "paid"? "/paid-ads/delete" : "/ads/delete";' +
-    ' const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, token})});' +
-    ' const result = await res.json();' +
-    ' if (result.success) {' +
-    ' loadUserAds();' +
-    ' loadPaidAds();' +
-    ' alert("Deleted successfully");' +
-    ' } else {' +
-    ' alert("Delete failed");' +
-    ' }' +
-    ' }' +
-    ' async function loadJobs() {' +
-    ' const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant";' +
-    ' const days = document.getElementById("dateFilter").value;' +
-    ' document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading jobs...</div>";' +
-    ' try {' +
-    ' const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);' +
-    ' allJobs = await res.json();' +
-    ' renderJobs(allJobs);' +
-    ' } catch (e) {' +
-    ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs.</div>";' +
-    ' }' +
-    ' }' +
-    ' async function loadUserAds() {' +
-    ' const res = await fetch("/ads");' +
-    ' const ads = await res.json();' +
-    ' renderUserAds(ads);' +
-    ' }' +
-    ' async function loadPaidAds() {' +
-    ' const res = await fetch("/paid-ads");' +
-    ' const ads = await res.json();' +
-    ' renderPaidAds(ads);' +
-    ' }' +
-    ' async function submitAd() {' +
-    ' const data = {' +
-    ' title: document.getElementById("adTitle").value,' +
-    ' company: document.getElementById("adCompany").value,' +
-    ' location: document.getElementById("adLocation").value,' +
-    ' phone: document.getElementById("adPhone").value,' +
-    ' url: document.getElementById("adUrl").value,' +
-    ' description: document.getElementById("adDesc").value' +
-    ' };' +
-    ' if (!data.title ||!data.company ||!data.location) {' +
-    ' document.getElementById("adMsg").textContent = "Please fill title, company and location.";' +
-    ' document.getElementById("adMsg").style.color = "red";' +
-    ' return;' +
-    ' }' +
-    ' document.getElementById("adMsg").textContent = "Redirecting to payment...";' +
-    ' document.getElementById("adMsg").style.color = "blue";' +
-    ' const res = await fetch("/ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
-    ' const result = await res.json();' +
-    ' if (result.payment_link) {' +
-    ' window.location.href = result.payment_link;' +
-    ' } else {' +
-    ' document.getElementById("adMsg").textContent = "Payment failed. Try again.";' +
-    ' document.getElementById("adMsg").style.color = "red";' +
-    ' }' +
-    ' }' +
-    ' async function submitPaidAd() {' +
-    ' const data = {' +
-    ' business: document.getElementById("adBizName").value,' +
-    ' link: document.getElementById("adLink").value,' +
-    ' text: document.getElementById("adText").value,' +
-    ' image: document.getElementById("adImgUrl").value' +
-    ' };' +
-    ' if (!data.business ||!data.link ||!data.text) {' +
-    ' document.getElementById("adPayMsg").textContent = "Fill business, link and text.";' +
-    ' document.getElementById("adPayMsg").style.color = "red";' +
-    ' return;' +
-    ' }' +
-    ' document.getElementById("adPayMsg").textContent = "Redirecting to payment...";' +
-    ' document.getElementById("adPayMsg").style.color = "blue";' +
-    ' const res = await fetch("/paid-ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
-    ' const result = await res.json();' +
-    ' if (result.payment_link) {' +
-    ' window.location.href = result.payment_link;' +
-    ' } else {' +
-    ' document.getElementById("adPayMsg").textContent = "Payment failed. Try again.";' +
-    ' document.getElementById("adPayMsg").style.color = "red";' +
-    ' }' +
-    ' }' +
-    ' const urlParams = new URLSearchParams(window.location.search);' +
-    ' if (urlParams.get("payment") === "success") {' +
-    ' document.getElementById("adMsg").textContent = "Payment successful! Job posted.";' +
-    ' document.getElementById("adMsg").style.color = "green";' +
-    ' loadUserAds();' +
-    ' loadPaidAds();' +
-    ' }' +
-    ' if (urlParams.get("payment") === "failed") {' +
-    ' document.getElementById("adMsg").textContent = "Payment failed or cancelled.";' +
-    ' document.getElementById("adMsg").style.color = "red";' +
-    ' }' +
-    ' document.getElementById("searchBtn").addEventListener("click", loadJobs);' +
-    ' document.getElementById("dateFilter").addEventListener("change", loadJobs);' +
-    ' document.getElementById("searchInput").addEventListener("keypress", function(e) {' +
-    ' if (e.key === "Enter") loadJobs();' +
-    ' });' +
-    ' loadJobs();' +
-    ' loadUserAds();' +
-    ' loadPaidAds();' +
-    ' </script>' +
-    '</body>' +
-    '</html>'
+    '    const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";
+    const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
+    const result = await res.json();
+    if (result.success) {
+      closeEdit();
+      loadUserAds();
+      loadPaidAds();
+      alert("Updated successfully");
+    } else {
+      alert("Update failed");
+    }
+  }
+  async function deleteAd(type, id, token) {
+    if (!confirm("Delete this ad?")) return;
+    const endpoint = type === "paid"? "/paid-ads/delete" : "/ads/delete";
+    const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, token})});
+    const result = await res.json();
+    if (result.success) {
+      loadUserAds();
+      loadPaidAds();
+      alert("Deleted successfully");
+    } else {
+      alert("Delete failed");
+    }
+  }
+  async function loadJobs() {
+    const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant";
+    const days = document.getElementById("dateFilter").value;
+    document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading jobs...</div>";
+    try {
+      const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);
+      allJobs = await res.json();
+      renderJobs(allJobs);
+    } catch (e) {
+      document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs.</div>";
+    }
+  }
+  async function loadUserAds() {
+    const res = await fetch("/ads");
+    const ads = await res.json();
+    renderUserAds(ads);
+  }
+  async function loadPaidAds() {
+    const res = await fetch("/paid-ads");
+    const ads = await res.json();
+    renderPaidAds(ads);
+  }
+  async function submitAd() {
+    const data = {
+      title: document.getElementById("adTitle").value,
+      company: document.getElementById("adCompany").value,
+      location: document.getElementById("adLocation").value,
+      phone: document.getElementById("adPhone").value,
+      url: document.getElementById("adUrl").value,
+      description: document.getElementById("adDesc").value
+    };
+    if (!data.title ||!data.company ||!data.location) {
+      document.getElementById("adMsg").textContent = "Please fill title, company and location.";
+      document.getElementById("adMsg").style.color = "red";
+      return;
+    }
+    document.getElementById("adMsg").textContent = "Redirecting to payment...";
+    document.getElementById("adMsg").style.color = "blue";
+    const res = await fetch("/ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
+    const result = await res.json();
+    if (result.payment_link) {
+      window.location.href = result.payment_link;
+    } else {
+      document.getElementById("adMsg").textContent = "Payment failed. Try again.";
+      document.getElementById("adMsg").style.color = "red";
+    }
+  }
+  async function submitPaidAd() {
+    const data = {
+      business: document.getElementById("adBizName").value,
+      link: document.getElementById("adLink").value,
+      text: document.getElementById("adText").value,
+      image: document.getElementById("adImgUrl").value
+    };
+    if (!data.business ||!data.link ||!data.text) {
+      document.getElementById("adPayMsg").textContent = "Fill business, link and text.";
+      document.getElementById("adPayMsg").style.color = "red";
+      return;
+    }
+    document.getElementById("adPayMsg").textContent = "Redirecting to payment...";
+    document.getElementById("adPayMsg").style.color = "blue";
+    const res = await fetch("/paid-ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
+    const result = await res.json();
+    if (result.payment_link) {
+      window.location.href = result.payment_link;
+    } else {
+      document.getElementById("adPayMsg").textContent = "Payment failed. Try again.";
+      document.getElementById("adPayMsg").style.color = "red";
+    }
+  }
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get("payment") === "success") {
+    document.getElementById("adMsg").textContent = "Payment successful! Job posted.";
+    document.getElementById("adMsg").style.color = "green";
+    loadUserAds();
+    loadPaidAds();
+  }
+  if (urlParams.get("payment") === "failed") {
+    document.getElementById("adMsg").textContent = "Payment failed or cancelled.";
+    document.getElementById("adMsg").style.color = "red";
+  }
+  document.getElementById("searchBtn").addEventListener("click", loadJobs);
+  document.getElementById("dateFilter").addEventListener("change", loadJobs);
+  document.getElementById("searchInput").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") loadJobs();
+  });
+  loadJobs();
+  loadUserAds();
+  loadPaidAds();
+  </script>
+</body>
+</html>
   );
 });
 
 app.post('/upload-ad-image', upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   res.json({ url: req.file.path });
+});
+
+// ADDED: Auth routes
+app.post('/auth/signup', async (req, res) => {
+  const { firstName, lastName, email, phone, password } = req.body;
+  if (!firstName ||!lastName ||!email ||!password) {
+    return res.status(400).json({ success: false, error: 'Missing required fields' });
+  }
+  try {
+    const hash = await bcrypt.hash(password, 10);
+    const result = await pool.query(
+      `INSERT INTO users (first_name, last_name, email, phone, password_hash) VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, email`,
+      [firstName, lastName, email, phone, hash]
+    );
+    res.json({ success: true, user: result.rows[0] });
+  } catch (err) {
+    if (err.code === '23505') {
+      res.status(400).json({ success: false, error: 'Email already exists' });
+    } else {
+      console.error(err);
+      res.status(500).json({ success: false, error: 'Signup failed' });
+    }
+  }
+});
+
+app.post('/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email ||!password) {
+    return res.status(400).json({ success: false, error: 'Missing email or password' });
+  }
+  try {
+    const result = await pool.query(`SELECT * FROM users WHERE email = $1`, [email]);
+    if (result.rows.length === 0) {
+      return res.status(400).json({ success: false, error: 'Invalid email or password' });
+    }
+    const user = result.rows[0];
+    const match = await bcrypt.compare(password, user.password_hash);
+    if (!match) {
+      return res.status(400).json({ success: false, error: 'Invalid email or password' });
+    }
+    res.json({ success: true, user: { id: user.id, first_name: user.first_name, last_name: user.last_name, email: user.email } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: 'Login failed' });
+  }
+});
+
+app.post('/auth/logout', (req, res) => {
+  res.json({ success: true });
 });
 
 // Fetch jobs from Adzuna - now 20 per country
