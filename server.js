@@ -102,6 +102,199 @@ app.post('/upload-ad-image', (req, res) => {
   });
 });
 
+// ====== SERVE FRONTEND ======
+app.get('/', (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jobai</title>
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#f5f5f5}
+header{background:#1a73e8;color:white;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}
+.menu-btn{font-size:24px;cursor:pointer}
+.container{max-width:900px;margin:20px auto;padding:0 15px}
+.card{background:white;padding:15px;margin-bottom:15px;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+input,textarea,button{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:6px;box-sizing:border-box}
+button{background:#1a73e8;color:white;border:none;cursor:pointer}
+button:hover{background:#1557b0}
+.hidden{display:none}
+.sidenav{height:100%;width:0;position:fixed;top:0;left:0;background:#fff;overflow-x:hidden;transition:0.3s;padding-top:60px;box-shadow:2px 0 5px rgba(0,0,0,0.2)}
+.sidenav a{padding:12px 30px;display:block;color:#333;text-decoration:none}
+.sidenav a:hover{background:#f0f0f0}
+.sidenav.closebtn{position:absolute;top:0;right:20px;font-size:36px}
+.job-card h4{margin:0 0 5px}
+.job-meta{color:#666;font-size:14px}
+</style>
+</head>
+<body>
+<div id="sidenav" class="sidenav">
+  <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+  <a href="#" onclick="showSection('home')">Home</a>
+  <a href="#" onclick="showSection('postJob')">Post Job</a>
+  <a href="#" onclick="showSection('postAd')">Post Ad</a>
+  <a href="#" onclick="showSection('login')">Login/Signup</a>
+</div>
+
+<header>
+  <span class="menu-btn" onclick="openNav()">&#9776;</span>
+  <h2>Jobai</h2>
+  <div id="userInfo"></div>
+</header>
+
+<div class="container">
+  <div id="home">
+    <div class="card">
+      <input type="text" id="searchInput" placeholder="Search jobs...">
+      <button onclick="loadJobs()">Search</button>
+    </div>
+    <div id="adsContainer"></div>
+    <div id="jobsContainer"></div>
+  </div>
+
+  <div id="postJob" class="hidden">
+    <div class="card">
+      <h3>Post a Job</h3>
+      <input id="jobTitle" placeholder="Job Title">
+      <input id="jobCompany" placeholder="Company">
+      <input id="jobLocation" placeholder="Location">
+      <textarea id="jobDesc" placeholder="Description"></textarea>
+      <input id="jobPhone" placeholder="Phone">
+      <button onclick="submitJob()">Pay & Post Job - 200 KES</button>
+    </div>
+  </div>
+
+  <div id="postAd" class="hidden">
+    <div class="card">
+      <h3>Post Sponsored Ad</h3>
+      <input id="adBusiness" placeholder="Business Name">
+      <input id="adLink" placeholder="Website Link">
+      <textarea id="adText" placeholder="Ad Text"></textarea>
+      <input type="file" id="adImage" accept="image/*">
+      <button onclick="submitAd()">Pay & Post Ad - 500 KES</button>
+    </div>
+  </div>
+
+  <div id="login" class="hidden">
+    <div class="card">
+      <h3>Login</h3>
+      <input id="loginEmail" type="email" placeholder="Email">
+      <input id="loginPassword" type="password" placeholder="Password">
+      <button onclick="login()">Login</button>
+      <p><a href="#" onclick="showForgot()">Forgot Password?</a></p>
+    </div>
+    <div class="card">
+      <h3>Signup</h3>
+      <input id="signupFirst" placeholder="First Name">
+      <input id="signupLast" placeholder="Last Name">
+      <input id="signupEmail" type="email" placeholder="Email">
+      <input id="signupPhone" placeholder="Phone">
+      <input id="signupPassword" type="password" placeholder="Password">
+      <button onclick="signup()">Signup</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openNav(){document.getElementById("sidenav").style.width="250px"}
+function closeNav(){document.getElementById("sidenav").style.width="0"}
+function showSection(id){
+  document.querySelectorAll('.container > div').forEach(d=>d.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  closeNav();
+}
+
+async function loadJobs(){
+  const q=document.getElementById('searchInput').value||'';
+  const res=await fetch('/jobs?q='+encodeURIComponent(q));
+  const jobs=await res.json();
+  document.getElementById('jobsContainer').innerHTML=jobs.map(j=>\`
+    <div class="card job-card">
+      <h4>\${j.title}</h4>
+      <div class="job-meta">\${j.company} - \${j.location}</div>
+      <a href="\${j.url}" target="_blank">Apply</a>
+    </div>
+  \`).join('');
+
+  const ads=await fetch('/paid-ads').then(r=>r.json());
+  document.getElementById('adsContainer').innerHTML=ads.map(a=>\`
+    <div class="card" style="border-left:4px solid #fbbc04">
+      <h4>\${a.business}</h4>
+      <p>\${a.text}</p>
+      \${a.image?'<img src="'+a.image+'" style="max-width:100%">':''}
+      <a href="\${a.link}" target="_blank">Visit</a>
+    </div>
+  \`).join('');
+}
+
+async function signup(){
+  const body={
+    firstName:document.getElementById('signupFirst').value,
+    lastName:document.getElementById('signupLast').value,
+    email:document.getElementById('signupEmail').value,
+    phone:document.getElementById('signupPhone').value,
+    password:document.getElementById('signupPassword').value
+  };
+  const res=await fetch('/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const data=await res.json();
+  alert(data.success?'Signup successful':'Error: '+data.error);
+}
+
+async function login(){
+  const body={
+    email:document.getElementById('loginEmail').value,
+    password:document.getElementById('loginPassword').value
+  };
+  const res=await fetch('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const data=await res.json();
+  if(data.success){
+    localStorage.setItem('user',JSON.stringify(data.user));
+    document.getElementById('userInfo').innerText=data.user.first_name;
+    showSection('home');
+  }else alert('Error: '+data.error);
+}
+
+async function submitJob(){
+  const body={
+    title:document.getElementById('jobTitle').value,
+    company:document.getElementById('jobCompany').value,
+    location:document.getElementById('jobLocation').value,
+    description:document.getElementById('jobDesc').value,
+    phone:document.getElementById('jobPhone').value
+  };
+  const res=await fetch('/ads/initiate-payment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const data=await res.json();
+  if(data.payment_link)window.location=data.payment_link;
+}
+
+async function submitAd(){
+  const file=document.getElementById('adImage').files[0];
+  let imageUrl='';
+  if(file){
+    const form=new FormData();
+    form.append('image',file);
+    const up=await fetch('/upload-ad-image',{method:'POST',body:form});
+    const upData=await up.json();
+    imageUrl=upData.url;
+  }
+  const body={
+    business:document.getElementById('adBusiness').value,
+    link:document.getElementById('adLink').value,
+    text:document.getElementById('adText').value,
+    image:imageUrl
+  };
+  const res=await fetch('/paid-ads/initiate-payment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const data=await res.json();
+  if(data.payment_link)window.location=data.payment_link;
+}
+
+loadJobs();
+</script>
+</body>
+</html>`);
+});
+
 // ========== AUTH ROUTES ==========
 app.post('/auth/signup', async (req, res) => {
   const { firstName, lastName, email, phone, password } = req.body;
@@ -230,7 +423,6 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
   }
 }
 
-// Fetch jobs from JSearch via RapidAPI
 async function fetchJSearchJobs(query, location) {
   try {
     const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1&date_posted=week`;
@@ -257,7 +449,6 @@ async function fetchJSearchJobs(query, location) {
   }
 }
 
-// Fetch jobs from Jooble
 async function fetchJoobleJobs(query, location) {
   try {
     const response = await fetch(`https://jooble.org/api/${JOOBLE_API_KEY}`, {
@@ -286,7 +477,6 @@ async function fetchJoobleJobs(query, location) {
   }
 }
 
-// Fetch remote jobs from Remotive
 async function fetchRemotiveJobs(query) {
   try {
     const response = await fetch(`https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}`);
@@ -308,7 +498,7 @@ async function fetchRemotiveJobs(query) {
 
 app.get('/jobs', async (req, res) => {
   try {
-    const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
+    const query = req.query.q || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
     const recentDays = parseInt(req.query.recent) || 7;
 
     const countries = [
