@@ -16,7 +16,6 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Create tables
 pool.query(`
   CREATE TABLE IF NOT EXISTS ads (
     id BIGINT PRIMARY KEY,
@@ -47,8 +46,6 @@ pool.query(`
     email TEXT UNIQUE NOT NULL,
     phone TEXT,
     password_hash TEXT NOT NULL,
-    reset_token TEXT,
-    reset_expires TIMESTAMP,
     created_at TIMESTAMP DEFAULT NOW()
   )
 `).catch(console.error);
@@ -77,7 +74,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// ========== FRONTEND ==========
 app.get('/', (req, res) => {
   res.send(
     '<!DOCTYPE html>' +
@@ -131,17 +127,8 @@ app.get('/', (req, res) => {
     ' <div id="loginForm" class="auth-form" style="display:none;">' +
     ' <input type="email" id="loginEmail" placeholder="Email" required>' +
     ' <input type="password" id="loginPassword" placeholder="Password" required>' +
-    ' <div style="text-align:right;margin-bottom:10px;">' +
-    ' <span style="font-size:13px;color:#1a73e8;cursor:pointer;" onclick="showForgot()">Forgot password?</span>' +
-    ' </div>' +
     ' <button class="connect-btn" style="width:100%;" onclick="login()">Login</button>' +
     ' <p id="loginMsg" style="font-size:12px;margin-top:8px;"></p>' +
-    ' </div>' +
-    ' <div id="forgotForm" class="auth-form" style="display:none;">' +
-    ' <input type="email" id="forgotEmail" placeholder="Enter your email" required>' +
-    ' <button class="connect-btn" style="width:100%;" onclick="sendReset()">Send Reset Link</button>' +
-    ' <p id="forgotMsg" style="font-size:12px;margin-top:8px;"></p>' +
-    ' <div class="auth-toggle" onclick="toggleAuth()">Back to Login</div>' +
     ' </div>' +
     ' <div class="auth-toggle" onclick="toggleAuth()">Already have an account? <b>Login</b></div>' +
     ' <button id="logoutBtn" class="connect-btn logout-btn" onclick="logout()">Logout</button>' +
@@ -185,13 +172,11 @@ app.get('/', (req, res) => {
     ' <script>' +
     'function openMenu(){document.getElementById(\'sideMenu\').style.left=\'0\';document.getElementById(\'overlay\').style.display=\'block\';}' +
     'function closeMenu(){document.getElementById(\'sideMenu\').style.left=\'-320px\';document.getElementById(\'overlay\').style.display=\'none\';}' +
-    'function toggleAuth(){const s=document.getElementById(\'signupForm\'),l=document.getElementById(\'loginForm\'),f=document.getElementById(\'forgotForm\'),t=document.getElementById(\'authTitle\');s.style.display=\'block\';l.style.display=\'none\';f.style.display=\'none\';t.textContent=\'Sign Up\';}' +
-    'function showForgot(){document.getElementById(\'loginForm\').style.display=\'none\';document.getElementById(\'forgotForm\').style.display=\'block\';document.getElementById(\'authTitle\').textContent=\'Reset Password\';}' +
+    'function toggleAuth(){const s=document.getElementById(\'signupForm\'),l=document.getElementById(\'loginForm\'),t=document.getElementById(\'authTitle\');if(s.style.display===\'none\'){s.style.display=\'block\';l.style.display=\'none\';t.textContent=\'Sign Up\';}else{s.style.display=\'none\';l.style.display=\'block\';t.textContent=\'Login\';}}' +
     'async function signup(){const first=document.getElementById(\'firstName\').value.trim(),last=document.getElementById(\'lastName\').value.trim(),email=document.getElementById(\'signupEmail\').value.trim(),phone=document.getElementById(\'signupPhone\').value.trim(),pass=document.getElementById(\'signupPassword\').value,cpass=document.getElementById(\'confirmPassword\').value;const msg=document.getElementById(\'signupMsg\');if(!first||!last||!email||!pass){msg.textContent=\'Fill all required fields\';msg.style.color=\'red\';return;}if(pass!==cpass){msg.textContent=\'Passwords do not match\';msg.style.color=\'red\';return;}msg.textContent=\'Creating account...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/signup\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({firstName:first,lastName:last,email,phone,password:pass})});const data=await res.json();if(data.success){msg.textContent=\'Account created! You can login now.\';msg.style.color=\'green\';toggleAuth();}else{msg.textContent=data.error||\'Signup failed\';msg.style.color=\'red\';}}' +
     'async function login(){const email=document.getElementById(\'loginEmail\').value.trim(),pass=document.getElementById(\'loginPassword\').value;const msg=document.getElementById(\'loginMsg\');if(!email||!pass){msg.textContent=\'Enter email and password\';msg.style.color=\'red\';return;}msg.textContent=\'Logging in...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/login\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({email,password:pass})});const data=await res.json();if(data.success){msg.textContent=\'Login successful!\';msg.style.color=\'green\';localStorage.setItem(\'jobai_user\',JSON.stringify(data.user));updateAuthUI(data.user);closeMenu();}else{msg.textContent=data.error||\'Login failed\';msg.style.color=\'red\';}}' +
-    'async function sendReset(){const email=document.getElementById(\'forgotEmail\').value.trim();const msg=document.getElementById(\'forgotMsg\');if(!email){msg.textContent=\'Enter email\';msg.style.color=\'red\';return;}msg.textContent=\'Sending...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/forgot\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({email})});const data=await res.json();msg.textContent=data.message;msg.style.color=data.success?\'green\':\'red\';}' +
     'async function logout(){await fetch(\'/auth/logout\',{method:\'POST\'});localStorage.removeItem(\'jobai_user\');updateAuthUI(null);}' +
-    'function updateAuthUI(user){const logout=document.getElementById(\'logoutBtn\');const info=document.getElementById(\'userInfo\');if(user){document.getElementById(\'signupForm\').style.display=\'none\';document.getElementById(\'loginForm\').style.display=\'none\';document.getElementById(\'forgotForm\').style.display=\'none\';document.getElementById(\'authTitle\').textContent=\'Account\';logout.style.display=\'block\';info.textContent=\'Logged in as \'+user.first_name+\' \'+user.last_name;}else{document.getElementById(\'signupForm\').style.display=\'block\';document.getElementById(\'loginForm\').style.display=\'none\';document.getElementById(\'forgotForm\').style.display=\'none\';document.getElementById(\'authTitle\').textContent=\'Sign Up\';logout.style.display=\'none\';info.textContent=\'\';}}' +
+    'function updateAuthUI(user){const logout=document.getElementById(\'logoutBtn\');const info=document.getElementById(\'userInfo\');if(user){document.getElementById(\'signupForm\').style.display=\'none\';document.getElementById(\'loginForm\').style.display=\'none\';document.getElementById(\'authTitle\').textContent=\'Account\';logout.style.display=\'block\';info.textContent=\'Logged in as \'+user.first_name+\' \'+user.last_name;}else{document.getElementById(\'signupForm\').style.display=\'block\';document.getElementById(\'loginForm\').style.display=\'none\';document.getElementById(\'authTitle\').textContent=\'Sign Up\';logout.style.display=\'none\';info.textContent=\'\';}}' +
     'window.addEventListener(\'load\',()=>{const user=JSON.parse(localStorage.getItem(\'jobai_user\')||\'null\');updateAuthUI(user);});' +
     'document.getElementById(\'menuBtn\').addEventListener(\'click\',openMenu);' +
     'document.getElementById(\'searchBtn\').addEventListener(\'click\', function(){document.getElementById("jobs").innerHTML="<div class=\\"loading\\">Loading jobs...</div>";});' +
@@ -202,7 +187,6 @@ app.get('/', (req, res) => {
   );
 });
 
-// ========== AUTH ROUTES ==========
 app.post('/auth/signup', async (req, res) => {
   const { firstName, lastName, email, phone, password } = req.body;
   if (!firstName ||!lastName ||!email ||!password) {
@@ -251,64 +235,7 @@ app.post('/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
-// ========== FORGOT PASSWORD ==========
-app.post('/auth/forgot', async (req, res) => {
-  const { email } = req.body;
-  try {
-    const result = await pool.query(`SELECT id FROM users WHERE email=$1`, [email]);
-    if(result.rows.length===0){
-      return res.json({success:false,message:'Email not found'});
-    }
-
-    const token = crypto.randomBytes(20).toString('hex');
-    const expires = new Date(Date.now() + 3600000); // 1 hour
-
-    await pool.query(`UPDATE users SET reset_token=$1, reset_expires=$2 WHERE email=$3`,
-      [token, expires, email]);
-
-    const resetLink = `${req.protocol}://${req.get('host')}/reset/${token}`;
-    console.log('RESET LINK:', resetLink);
-
-    res.json({success:true,message:'Reset link generated. Check Render Logs for the link.'});
-  } catch(err){
-    console.error(err);
-    res.json({success:false,message:'Error occurred'});
-  }
-});
-
-app.get('/reset/:token', async (req, res) => {
-  const { token } = req.params;
-  const result = await pool.query(`SELECT id FROM users WHERE reset_token=$1 AND reset_expires>NOW()`, [token]);
-
-  if(result.rows.length===0){
-    return res.send('<h3>Link expired or invalid</h3>');
-  }
-
-  res.send(`
-    <html>
-    <body style="font-family:Arial;padding:40px;text-align:center;">
-      <h2>Reset Password</h2>
-      <form method="POST" action="/auth/reset">
-        <input type="hidden" name="token" value="${token}">
-        <input type="password" name="password" placeholder="New password" required style="padding:10px;width:250px;margin:10px;">
-        <br>
-        <button type="submit" style="padding:10px 20px;background:#1a73e8;color:white;border:none;border-radius:8px;">Reset Password</button>
-      </form>
-    </body>
-    </html>
-  `);
-});
-
-app.post('/auth/reset', async (req, res) => {
-  const { token, password } = req.body;
-  const hash = await bcrypt.hash(password, 10);
-
-  await pool.query(`UPDATE users SET password_hash=$1, reset_token=NULL, reset_expires=NULL
-    WHERE reset_token=$2 AND reset_expires>NOW()`, [hash, token]);
-
-  res.send('<h3>Password reset successful. You can now login.</h3>');
-});
-
 app.listen(PORT, function() {
   console.log('Server running on port ' + PORT);
 });
+
