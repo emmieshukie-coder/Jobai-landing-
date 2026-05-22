@@ -301,8 +301,9 @@ app.get('/', (req, res) => {
     ' });' +
     // CHANGED: timeAgo now shows minutes/hours/days
     ' function timeAgo(dateStr) {' +
-    ' if (!dateStr) return "";' +
+    ' if (!dateStr) return "just now";' +
     ' const date = new Date(dateStr);' +
+    ' if (isNaN(date)) return "just now";' +
     ' const now = new Date();' +
     ' const diffMs = now - date;' +
     ' const diffSec = Math.floor(diffMs / 1000);' +
@@ -387,7 +388,7 @@ app.get('/', (req, res) => {
     ' title: document.getElementById("editTitle").value,' +
     ' location: document.getElementById("editLocation").value,' +
     ' company: document.getElementById("editCompany").value,' +
-    ' description: document.getElementById("editDesc").value
+    description: document.getElementById("editDesc").value
     };
     const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";
     const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
@@ -711,10 +712,14 @@ app.get('/jobs', async (req, res) => {
 app.get('/ads', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT * FROM ads WHERE type = 'job' AND status = 'approved' ORDER BY created_at DESC`
+      `SELECT *, COALESCE(created_at, NOW()) as created_at
+       FROM ads
+       WHERE type = 'job' AND status = 'approved'
+       ORDER BY created_at DESC`
     );
     res.json(result.rows);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Database error' });
   }
 });
@@ -722,10 +727,14 @@ app.get('/ads', async (req, res) => {
 app.get('/paid-ads', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT * FROM ads WHERE type = 'ad' AND status = 'approved' AND expires_at > NOW() ORDER BY created_at DESC`
+      `SELECT *, COALESCE(created_at, NOW()) as created_at
+       FROM ads
+       WHERE type = 'ad' AND status = 'approved' AND expires_at > NOW()
+       ORDER BY created_at DESC`
     );
     res.json(result.rows);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Database error' });
   }
 });
