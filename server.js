@@ -14,10 +14,9 @@ const PORT = process.env.PORT || 3000;
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
-const JOOBLE_API_KEY = 'YOUR_JOOBLE_KEY'; // get free key at jooble.org/api
+const JOOBLE_API_KEY = 'YOUR_JOOBLE_KEY';
 const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X';
 
-// Use env var in Render. Don't hardcode the URL.
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
@@ -55,8 +54,6 @@ pool.query(`
     email TEXT UNIQUE NOT NULL,
     phone TEXT,
     password_hash TEXT NOT NULL,
-    reset_token TEXT,
-    reset_expires TIMESTAMP,
     created_at TIMESTAMP DEFAULT NOW()
   )
 `).catch(console.error);
@@ -89,7 +86,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// [Your HTML route stays exactly the same]
 app.get('/', (req, res) => {
   res.send(
     '<!DOCTYPE html>' +
@@ -141,6 +137,9 @@ app.get('/', (req, res) => {
     '.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }' +
     '.modal.active { display: flex; }' +
     '.modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%; }' +
+    '.auth-form input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }' +
+    '.auth-toggle { text-align:center;margin-top:10px;font-size:13px;color:#666;cursor:pointer; }' +
+    '.logout-btn { display:none; width:100%; margin-top:10px; background:#d32f2f; }' +
     ' </style>' +
     '</head>' +
     '<body>' +
@@ -150,6 +149,29 @@ app.get('/', (req, res) => {
     ' <div style="padding:20px;border-bottom:1px solid #eee;">' +
     ' <h2 style="margin:0;color:#1a73e8;font-size:22px;">Jobai</h2>' +
     ' <p style="margin:6px 0 0;font-size:13px;color:#666;">Get Connected to Jobs & Workers</p>' +
+    ' </div>' +
+    // ADDED: Auth section in side menu
+    ' <div id="authSection" style="padding:16px;border-bottom:1px solid #eee;">' +
+    ' <h3 id="authTitle" style="margin:0 0 12px 0;font-size:16px;">Sign Up</h3>' +
+    ' <div id="signupForm" class="auth-form">' +
+    ' <input type="text" id="firstName" placeholder="First Name" required>' +
+    ' <input type="text" id="lastName" placeholder="Last Name" required>' +
+    ' <input type="email" id="signupEmail" placeholder="Email" required>' +
+    ' <input type="tel" id="signupPhone" placeholder="Phone Number">' +
+    ' <input type="password" id="signupPassword" placeholder="Password" required>' +
+    ' <input type="password" id="confirmPassword" placeholder="Confirm Password" required>' +
+    ' <button class="connect-btn" style="width:100%;" onclick="signup()">Create Account</button>' +
+    ' <p id="signupMsg" style="font-size:12px;margin-top:8px;"></p>' +
+    ' </div>' +
+    ' <div id="loginForm" class="auth-form" style="display:none;">' +
+    ' <input type="email" id="loginEmail" placeholder="Email" required>' +
+    ' <input type="password" id="loginPassword" placeholder="Password" required>' +
+    ' <button class="connect-btn" style="width:100%;" onclick="login()">Login</button>' +
+    ' <p id="loginMsg" style="font-size:12px;margin-top:8px;"></p>' +
+    ' </div>' +
+    ' <div class="auth-toggle" onclick="toggleAuth()">Already have an account? <b>Login</b></div>' +
+    ' <button id="logoutBtn" class="connect-btn logout-btn" onclick="logout()">Logout</button>' +
+    ' <p id="userInfo" style="font-size:13px;margin-top:8px;color:#1a73e8;"></p>' +
     ' </div>' +
     ' <div style="padding:8px 0;">' +
     ' <a href="#" onclick="closeMenu();document.getElementById(\'searchInput\')?.focus();" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">🔍 <span>Job Search</span></a>' +
@@ -243,6 +265,13 @@ app.get('/', (req, res) => {
     'function showFavorites(){closeMenu();const fav=JSON.parse(localStorage.getItem(\'jobai_fav\')||\'[]\');if(!fav.length){alert(\'No favorites yet. Click "Connect & Apply" then save the job link.\');return;}renderJobs(fav);document.querySelector(\'.section h2\').textContent=\'Favorites\';}' +
     'function showSalaries(){closeMenu();alert(\'Salaries coming next. We will wire this to Adzuna Salary API.\');}' +
     'function showSubscriptions(){closeMenu();alert(\'Job Alerts coming next. Enter email + keywords and get notified.\');}' +
+    // ADDED: Auth functions
+    'function toggleAuth(){const s=document.getElementById(\'signupForm\'),l=document.getElementById(\'loginForm\'),t=document.getElementById(\'authTitle\');if(s.style.display===\'none\'){s.style.display=\'block\';l.style.display=\'none\';t.textContent=\'Sign Up\';}else{s.style.display=\'none\';l.style.display=\'block\';t.textContent=\'Login\';}}' +
+    'async function signup(){const first=document.getElementById(\'firstName\').value.trim(),last=document.getElementById(\'lastName\').value.trim(),email=document.getElementById(\'signupEmail\').value.trim(),phone=document.getElementById(\'signupPhone\').value.trim(),pass=document.getElementById(\'signupPassword\').value,cpass=document.getElementById(\'confirmPassword\').value;const msg=document.getElementById(\'signupMsg\');if(!first||!last||!email||!pass){msg.textContent=\'Fill all required fields\';msg.style.color=\'red\';return;}if(pass!==cpass){msg.textContent=\'Passwords do not match\';msg.style.color=\'red\';return;}msg.textContent=\'Creating account...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/signup\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({firstName:first,lastName:last,email,phone,password:pass})});const data=await res.json();if(data.success){msg.textContent=\'Account created! You can login now.\';msg.style.color=\'green\';toggleAuth();}else{msg.textContent=data.error||\'Signup failed\';msg.style.color=\'red\';}}' +
+    'async function login(){const email=document.getElementById(\'loginEmail\').value.trim(),pass=document.getElementById(\'loginPassword\').value;const msg=document.getElementById(\'loginMsg\');if(!email||!pass){msg.textContent=\'Enter email and password\';msg.style.color=\'red\';return;}msg.textContent=\'Logging in...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/login\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({email,password:pass})});const data=await res.json();if(data.success){msg.textContent=\'Login successful!\';msg.style.color=\'green\';localStorage.setItem(\'jobai_user\',JSON.stringify(data.user));updateAuthUI(data.user);closeMenu();}else{msg.textContent=data.error||\'Login failed\';msg.style.color=\'red\';}}' +
+    'async function logout(){await fetch(\'/auth/logout\',{method:\'POST\'});localStorage.removeItem(\'jobai_user\');updateAuthUI(null);}' +
+    'function updateAuthUI(user){const logout=document.getElementById(\'logoutBtn\');const info=document.getElementById(\'userInfo\');if(user){document.getElementById(\'signupForm\').style.display=\'none\';document.getElementById(\'loginForm\').style.display=\'none\';document.getElementById(\'authTitle\').textContent=\'Account\';logout.style.display=\'block\';info.textContent=\'Logged in as \'+user.first_name+\' \'+user.last_name;}else{document.getElementById(\'signupForm\').style.display=\'block\';document.getElementById(\'loginForm\').style.display=\'none\';document.getElementById(\'authTitle\').textContent=\'Sign Up\';logout.style.display=\'none\';info.textContent=\'\';}}' +
+    'window.addEventListener(\'load\',()=>{const user=JSON.parse(localStorage.getItem(\'jobai_user\')||\'null\');updateAuthUI(user);});' +
     'document.getElementById(\'menuBtn\').addEventListener(\'click\',openMenu);' +
     ' let allJobs = [];' +
     ' document.getElementById("adImgFile").addEventListener("change", async function(e) {' +
@@ -524,64 +553,7 @@ app.post('/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/auth/forgot', async (req, res) => {
-  const { email } = req.body;
-  try {
-    const result = await pool.query(`SELECT id FROM users WHERE email=$1`, [email]);
-    if (result.rows.length === 0) {
-      return res.json({ success: false, message: 'Email not found' });
-    }
-
-    const token = crypto.randomBytes(20).toString('hex');
-    const expires = new Date(Date.now() + 3600000);
-
-    await pool.query(`UPDATE users SET reset_token=$1, reset_expires=$2 WHERE email=$3`,
-      [token, expires, email]);
-
-    const resetLink = `${req.protocol}://${req.get('host')}/reset/${token}`;
-    console.log('RESET LINK:', resetLink);
-
-    res.json({ success: true, message: 'Reset link generated. Check Render Logs for the link.' });
-  } catch (err) {
-    console.error(err);
-    res.json({ success: false, message: 'Error occurred' });
-  }
-});
-
-app.get('/reset/:token', async (req, res) => {
-  const { token } = req.params;
-  const result = await pool.query(`SELECT id FROM users WHERE reset_token=$1 AND reset_expires>NOW()`, [token]);
-
-  if (result.rows.length === 0) {
-    return res.send('<h3 style="font-family:Arial;text-align:center;padding:40px;">Link expired or invalid</h3>');
-  }
-
-  res.send(`
-    <html>
-    <body style="font-family:Arial;padding:40px;text-align:center;">
-      <h2>Reset Password</h2>
-      <form method="POST" action="/auth/reset">
-        <input type="hidden" name="token" value="${token}">
-        <input type="password" name="password" placeholder="New password" required style="padding:10px;width:250px;margin:10px;border:1px solid #ddd;border-radius:8px;">
-        <br>
-        <button type="submit" style="padding:10px 20px;background:#1a73e8;color:white;border:none;border-radius:8px;cursor:pointer;">Reset Password</button>
-      </form>
-    </body>
-    </html>
-  `);
-});
-
-app.post('/auth/reset', async (req, res) => {
-  const { token, password } = req.body;
-  const hash = await bcrypt.hash(password, 10);
-
-  await pool.query(`UPDATE users SET password_hash=$1, reset_token=NULL, reset_expires=NULL
-    WHERE reset_token=$2 AND reset_expires>NOW()`, [hash, token]);
-
-  res.send('<h3 style="font-family:Arial;text-align:center;padding:40px;">Password reset successful. You can now login.</h3>');
-});
-
-// Fetch jobs from Adzuna - now 20 per country
+// Fetch jobs from Adzuna - 20 per country
 async function fetchAdzunaJobs(countryCode, countryName, query) {
   try {
     const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=20&content-type=application/json&max_days_old=7&what=${encodeURIComponent(query)}`;
@@ -700,24 +672,19 @@ app.get('/jobs', async (req, res) => {
 
     let allJobs = [];
 
-    // Run all API calls in parallel for speed
     const promises = [];
-
     for (let i = 0; i < countries.length; i++) {
       promises.push(fetchAdzunaJobs(countries[i].code, countries[i].name, query));
       promises.push(fetchJSearchJobs(query, countries[i].name));
       promises.push(fetchJoobleJobs(query, countries[i].name));
     }
-
     promises.push(fetchRemotiveJobs(query));
 
     const results = await Promise.all(promises);
-
     results.forEach(jobs => {
       allJobs.push(...jobs);
     });
 
-    // Remove duplicates by URL
     allJobs = allJobs.filter((job, index, self) =>
       index === self.findIndex(j => j.url === job.url)
     );
@@ -727,7 +694,6 @@ app.get('/jobs', async (req, res) => {
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
 
-    // Sort by date descending
     allJobs.sort((a, b) => new Date(b.date_posted) - new Date(a.date_posted));
 
     res.json(allJobs.slice(0, 100));
