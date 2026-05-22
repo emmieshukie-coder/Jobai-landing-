@@ -384,7 +384,7 @@ app.get('/', (req, res) => {
     ' company: document.getElementById("editCompany").value,' +
     ' description: document.getElementById("editDesc").value' +
     ' };' +
-    '    const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";
+    const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";
     const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
     const result = await res.json();
     if (result.success) {
