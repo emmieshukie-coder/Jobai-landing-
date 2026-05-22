@@ -362,7 +362,7 @@ app.get('/', (req, res) => {
     ' \\\'</div>\\\';' +
     ' }).join("");' +
     ' }' +
-    function openEdit(type, id, token) {' +
+    'function openEdit(type, id, token) {' +
     ' document.getElementById("editType").value = type;' +
     ' document.getElementById("editId").value = id;' +
     ' document.getElementById("editToken").value = token;' +
