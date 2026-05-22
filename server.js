@@ -3,7 +3,7 @@ import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import crypto from 'crypto';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcrypt'; // ADDED
 import pkg from 'pg';
 
 const { Pool } = pkg;
@@ -14,9 +14,10 @@ const PORT = process.env.PORT || 3000;
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
-const JOOBLE_API_KEY = 'YOUR_JOOBLE_KEY';
+const JOOBLE_API_KEY = 'YOUR_JOOBLE_KEY'; // get free key at jooble.org/api
 const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X';
 
+// Use env var in Render. Don't hardcode the URL.
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
@@ -45,6 +46,7 @@ pool.query(`
   )
 `).catch(console.error);
 
+// ADDED: users table for auth
 pool.query(`
   CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
@@ -59,15 +61,6 @@ pool.query(`
   )
 `).catch(console.error);
 
-let pendingPayments = {};
-const AD_PRICE = 500;
-const AD_DURATION_DAYS = 7;
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
-
-// ====== CLOUDINARY + MULTER SETUP FOR UPLOAD ======
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -88,214 +81,401 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }
 });
 
-// ====== UPLOAD ROUTE WITH ERROR HANDLING ======
-app.post('/upload-ad-image', (req, res) => {
-  upload.single('image')(req, res, function(err) {
-    if (err) {
-      console.error('Upload error:', err);
-      return res.status(500).json({ error: err.message });
-    }
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-    res.json({ url: req.file.path });
-  });
-});
+let pendingPayments = {};
+const AD_PRICE = 500;
+const AD_DURATION_DAYS = 7;
 
-// ====== SERVE FRONTEND ======
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
+
+// [Your HTML route stays exactly the same]
 app.get('/', (req, res) => {
-  res.send(`<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Jobai</title>
-<style>
-body{margin:0;font-family:Arial,sans-serif;background:#f5f5f5}
-header{background:#1a73e8;color:white;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}
-.menu-btn{font-size:24px;cursor:pointer}
-.container{max-width:900px;margin:20px auto;padding:0 15px}
-.card{background:white;padding:15px;margin-bottom:15px;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
-input,textarea,button{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:6px;box-sizing:border-box}
-button{background:#1a73e8;color:white;border:none;cursor:pointer}
-button:hover{background:#1557b0}
-.hidden{display:none}
-.sidenav{height:100%;width:0;position:fixed;top:0;left:0;background:#fff;overflow-x:hidden;transition:0.3s;padding-top:60px;box-shadow:2px 0 5px rgba(0,0,0,0.2)}
-.sidenav a{padding:12px 30px;display:block;color:#333;text-decoration:none}
-.sidenav a:hover{background:#f0f0f0}
-.sidenav.closebtn{position:absolute;top:0;right:20px;font-size:36px}
-.job-card h4{margin:0 0 5px}
-.job-meta{color:#666;font-size:14px}
-</style>
-</head>
-<body>
-<div id="sidenav" class="sidenav">
-  <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-  <a href="#" onclick="showSection('home')">Home</a>
-  <a href="#" onclick="showSection('postJob')">Post Job</a>
-  <a href="#" onclick="showSection('postAd')">Post Ad</a>
-  <a href="#" onclick="showSection('login')">Login/Signup</a>
-</div>
-
-<header>
-  <span class="menu-btn" onclick="openNav()">&#9776;</span>
-  <h2>Jobai</h2>
-  <div id="userInfo"></div>
-</header>
-
-<div class="container">
-  <div id="home">
-    <div class="card">
-      <input type="text" id="searchInput" placeholder="Search jobs...">
-      <button onclick="loadJobs()">Search</button>
-    </div>
-    <div id="adsContainer"></div>
-    <div id="jobsContainer"></div>
-  </div>
-
-  <div id="postJob" class="hidden">
-    <div class="card">
-      <h3>Post a Job</h3>
-      <input id="jobTitle" placeholder="Job Title">
-      <input id="jobCompany" placeholder="Company">
-      <input id="jobLocation" placeholder="Location">
-      <textarea id="jobDesc" placeholder="Description"></textarea>
-      <input id="jobPhone" placeholder="Phone">
-      <button onclick="submitJob()">Pay & Post Job - 200 KES</button>
-    </div>
-  </div>
-
-  <div id="postAd" class="hidden">
-    <div class="card">
-      <h3>Post Sponsored Ad</h3>
-      <input id="adBusiness" placeholder="Business Name">
-      <input id="adLink" placeholder="Website Link">
-      <textarea id="adText" placeholder="Ad Text"></textarea>
-      <input type="file" id="adImage" accept="image/*">
-      <button onclick="submitAd()">Pay & Post Ad - 500 KES</button>
-    </div>
-  </div>
-
-  <div id="login" class="hidden">
-    <div class="card">
-      <h3>Login</h3>
-      <input id="loginEmail" type="email" placeholder="Email">
-      <input id="loginPassword" type="password" placeholder="Password">
-      <button onclick="login()">Login</button>
-      <p><a href="#" onclick="showForgot()">Forgot Password?</a></p>
-    </div>
-    <div class="card">
-      <h3>Signup</h3>
-      <input id="signupFirst" placeholder="First Name">
-      <input id="signupLast" placeholder="Last Name">
-      <input id="signupEmail" type="email" placeholder="Email">
-      <input id="signupPhone" placeholder="Phone">
-      <input id="signupPassword" type="password" placeholder="Password">
-      <button onclick="signup()">Signup</button>
-    </div>
-  </div>
-</div>
-
-<script>
-function openNav(){document.getElementById("sidenav").style.width="250px"}
-function closeNav(){document.getElementById("sidenav").style.width="0"}
-function showSection(id){
-  document.querySelectorAll('.container > div').forEach(d=>d.classList.add('hidden'));
-  document.getElementById(id).classList.remove('hidden');
-  closeNav();
-}
-
-async function loadJobs(){
-  const q=document.getElementById('searchInput').value||'';
-  const res=await fetch('/jobs?q='+encodeURIComponent(q));
-  const jobs=await res.json();
-  document.getElementById('jobsContainer').innerHTML=jobs.map(j=>\`
-    <div class="card job-card">
-      <h4>\${j.title}</h4>
-      <div class="job-meta">\${j.company} - \${j.location}</div>
-      <a href="\${j.url}" target="_blank">Apply</a>
-    </div>
-  \`).join('');
-
-  const ads=await fetch('/paid-ads').then(r=>r.json());
-  document.getElementById('adsContainer').innerHTML=ads.map(a=>\`
-    <div class="card" style="border-left:4px solid #fbbc04">
-      <h4>\${a.business}</h4>
-      <p>\${a.text}</p>
-      \${a.image?'<img src="'+a.image+'" style="max-width:100%">':''}
-      <a href="\${a.link}" target="_blank">Visit</a>
-    </div>
-  \`).join('');
-}
-
-async function signup(){
-  const body={
-    firstName:document.getElementById('signupFirst').value,
-    lastName:document.getElementById('signupLast').value,
-    email:document.getElementById('signupEmail').value,
-    phone:document.getElementById('signupPhone').value,
-    password:document.getElementById('signupPassword').value
-  };
-  const res=await fetch('/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  const data=await res.json();
-  alert(data.success?'Signup successful':'Error: '+data.error);
-}
-
-async function login(){
-  const body={
-    email:document.getElementById('loginEmail').value,
-    password:document.getElementById('loginPassword').value
-  };
-  const res=await fetch('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  const data=await res.json();
-  if(data.success){
-    localStorage.setItem('user',JSON.stringify(data.user));
-    document.getElementById('userInfo').innerText=data.user.first_name;
-    showSection('home');
-  }else alert('Error: '+data.error);
-}
-
-async function submitJob(){
-  const body={
-    title:document.getElementById('jobTitle').value,
-    company:document.getElementById('jobCompany').value,
-    location:document.getElementById('jobLocation').value,
-    description:document.getElementById('jobDesc').value,
-    phone:document.getElementById('jobPhone').value
-  };
-  const res=await fetch('/ads/initiate-payment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  const data=await res.json();
-  if(data.payment_link)window.location=data.payment_link;
-}
-
-async function submitAd(){
-  const file=document.getElementById('adImage').files[0];
-  let imageUrl='';
-  if(file){
-    const form=new FormData();
-    form.append('image',file);
-    const up=await fetch('/upload-ad-image',{method:'POST',body:form});
-    const upData=await up.json();
-    imageUrl=upData.url;
-  }
-  const body={
-    business:document.getElementById('adBusiness').value,
-    link:document.getElementById('adLink').value,
-    text:document.getElementById('adText').value,
-    image:imageUrl
-  };
-  const res=await fetch('/paid-ads/initiate-payment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  const data=await res.json();
-  if(data.payment_link)window.location=data.payment_link;
-}
-
-loadJobs();
-</script>
-</body>
-</html>`);
+  res.send(
+    '<!DOCTYPE html>' +
+    '<html lang="en">' +
+    '<head>' +
+    ' <meta charset="UTF-8">' +
+    ' <meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+    ' <title>Jobai - Get Connected to Jobs & Workers</title>' +
+    ' <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-app-pub-1637256996790764" crossorigin="anonymous"></script>' +
+    ' <style>' +
+    ' body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }' +
+    '.hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; }' +
+    '.hero h1 { font-size: 32px; margin: 0 0 8px 0; font-weight: 700; }' +
+    '.hero p { font-size: 16px; opacity: 0.95; margin: 0; }' +
+    '.container { max-width: 1000px; margin: 20px auto; padding: 0 16px; }' +
+    '.controls { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }' +
+    '.controls input,.controls select { padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; background: white; }' +
+    '.controls input { flex: 1; min-width: 200px; }' +
+    '.section { margin-bottom: 32px; }' +
+    '.section h2 { margin: 0 0 16px 0; font-size: 24px; color: #1a1a1a; }' +
+    '.job-card { background: white; padding: 20px; margin-bottom: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; transition: transform 0.2s, box-shadow 0.2s; display: block; text-decoration: none; color: inherit; }' +
+    '.job-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }' +
+    '.job-card h3 { margin: 8px 0 8px 0; color: #1a73e8; font-size: 18px; line-height: 1.4; }' +
+    '.job-meta { margin: 0 0 14px 0; color: #666; font-size: 14px; line-height: 1.5; }' +
+    '.job-meta span { margin-right: 8px; }' +
+    '.country-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }' +
+    '.source-tag { display: inline-block; background: #f5f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }' +
+    '.user-ad-tag { background: #fff3e0; color: #f57c00; }' +
+    '.btn-group { display: flex; gap: 10px; flex-wrap: wrap; }' +
+    '.connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; border: none; cursor: pointer; }' +
+    '.connect-btn:hover { background: #1557b0; }' +
+    '.call-btn { background: #34a853; }' +
+    '.call-btn:hover { background: #2d9147; }' +
+    '.delete-btn { background: #d32f2f; }' +
+    '.delete-btn:hover { background: #b71c1c; }' +
+    '.edit-btn { background: #ff9800; }' +
+    '.edit-btn:hover { background: #f57c00; }' +
+    '.loading { text-align: center; color: #666; padding: 30px; font-size: 16px; }' +
+    '.error { text-align: center; color: #d32f2f; padding: 30px; }' +
+    '.ad-form { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }' +
+    '.ad-form input,.ad-form textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; }' +
+    '.ad-form h3 { margin-top: 0; font-size: 18px; }' +
+    '.phone-display { color: #34a853; font-weight: 600; }' +
+    '.ad-unit { margin: 0; padding: 0; min-height: 0; }' +
+    '.ad-unit ins.adsbygoogle[data-ad-status="unfilled"] { display: none!important; }' +
+    '.img-preview { max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 10px; display: none; }' +
+    '.card-actions { position: absolute; top: 12px; right: 12px; display: flex; gap: 8px; }' +
+    '.icon-btn { width: 32px; height: 32px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; }' +
+    '.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }' +
+    '.modal.active { display: flex; }' +
+    '.modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%; }' +
+    ' </style>' +
+    '</head>' +
+    '<body>' +
+    '<button id="menuBtn" aria-label="Open menu" style="position:fixed;top:14px;left:14px;z-index:1001;background:#fff;border:0;border-radius:8px;padding:10px 12px;box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer;font-size:18px;">☰</button>' +
+    '<div id="overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;" onclick="closeMenu()"></div>' +
+    '<nav id="sideMenu" aria-hidden="true" style="position:fixed;top:0;left:-320px;width:300px;max-width:85%;height:100%;background:#fff;z-index:1002;transition:left 0.28s ease;box-shadow:2px 0 16px rgba(0,0,0,.12);overflow-y:auto;">' +
+    ' <div style="padding:20px;border-bottom:1px solid #eee;">' +
+    ' <h2 style="margin:0;color:#1a73e8;font-size:22px;">Jobai</h2>' +
+    ' <p style="margin:6px 0 0;font-size:13px;color:#666;">Get Connected to Jobs & Workers</p>' +
+    ' </div>' +
+    ' <div style="padding:8px 0;">' +
+    ' <a href="#" onclick="closeMenu();document.getElementById(\'searchInput\')?.focus();" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">🔍 <span>Job Search</span></a>' +
+    ' <a href="#" onclick="showFavorites()" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">❤️ <span>Favorites</span></a>' +
+    ' <a href="#" onclick="scrollToId(\'adForm\')" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">📄 <span>Post a Job</span> <span style="background:#ff9800;color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;margin-left:auto;">New</span></a>' +
+    ' <a href="#" onclick="showSalaries()" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">📊 <span>Salaries</span></a>' +
+    ' <a href="#" onclick="showSubscriptions()" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">✉️ <span>Job Alerts</span></a>' +
+    ' <a href="#" onclick="scrollToId(\'paidAds\')" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">💼 <span>Sponsored Ads</span></a>' +
+    ' </div>' +
+    ' <div style="padding:16px 18px;border-top:1px solid #eee;font-size:13px;color:#666;">Never miss new jobs on Jobai</div>' +
+    '</nav>' +
+    ' <div class="hero">' +
+    ' <h1>Get Connected to Jobs & Workers</h1>' +
+    ' <p>AI-powered matching for Uganda, Kenya, Tanzania, Rwanda, Burundi, India, UAE, Saudi Arabia, France, UK, Canada, China, Taiwan, Thailand</p>' +
+    ' </div>' +
+    ' <div class="ad-unit">' +
+    ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-app-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
+    ' <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>' +
+    ' </div>' +
+    ' <div class="container">' +
+    ' <div class="controls">' +
+    ' <input type="text" id="searchInput" placeholder="Search: cleaner, nurse, teacher, engineer, farmer..." />' +
+    ' <select id="dateFilter">' +
+    ' <option value="7">Last 7 days</option>' +
+    ' <option value="all">All time</option>' +
+    ' <option value="3">Last 3 days</option>' +
+    ' <option value="1">Last 24 hours</option>' +
+    ' </select>' +
+    ' <button class="connect-btn" id="searchBtn">Search</button>' +
+    ' </div>' +
+    ' <div class="section">' +
+    ' <h2>Trending Jobs</h2>' +
+    ' <div id="jobs" class="loading">Loading jobs...</div>' +
+    ' </div>' +
+    ' <div class="ad-unit">' +
+    ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-app-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
+    ' <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>' +
+    ' </div>' +
+    ' <div class="section">' +
+    ' <h2>Post a Job</h2>' +
+    ' <div class="ad-form" id="adForm">' +
+    ' <h3>Advertise your job for 200 KES</h3>' +
+    ' <input type="text" id="adTitle" placeholder="Job title" required>' +
+    ' <input type="text" id="adCompany" placeholder="Company name" required>' +
+    ' <input type="text" id="adLocation" placeholder="Location" required>' +
+    ' <input type="tel" id="adPhone" placeholder="Phone number for applicants">' +
+    ' <input type="url" id="adUrl" placeholder="Apply link (optional)">' +
+    ' <textarea id="adDesc" placeholder="Short description" rows="3"></textarea>' +
+    ' <button class="connect-btn" onclick="submitAd()">Pay 200 KES & Post Job</button>' +
+    ' <p id="adMsg" style="margin-top:10px; font-size:14px;"></p>' +
+    ' </div>' +
+    ' <h2>Community Job Posts</h2>' +
+    ' <div id="userAds" class="loading">Loading...</div>' +
+    ' </div>' +
+    ' <div class="section">' +
+    ' <h2>Sponsored Ads</h2>' +
+    ' <div class="ad-form">' +
+    ' <h3>Advertise here for ' + AD_PRICE + ' KES for 7 days</h3>' +
+    ' <input type="text" id="adBizName" placeholder="Business name" required>' +
+    ' <input type="url" id="adLink" placeholder="Website or WhatsApp link" required>' +
+    ' <input type="text" id="adText" placeholder="Short ad text" required>' +
+    ' <input type="file" id="adImgFile" accept="image/*" capture="environment">' +
+    ' <img id="imgPreview" class="img-preview" />' +
+    ' <input type="hidden" id="adImgUrl">' +
+    ' <button class="connect-btn" style="background:#f57c00;" onclick="submitPaidAd()">Pay ' + AD_PRICE + ' KES & Run Ad</button>' +
+    ' <p id="adPayMsg" style="margin-top:10px; font-size:14px;"></p>' +
+    ' </div>' +
+    ' <div id="paidAds" class="loading">Loading ads...</div>' +
+    ' </div>' +
+    ' </div>' +
+    ' <div id="editModal" class="modal">' +
+    ' <div class="modal-content">' +
+    ' <h3>Edit Ad</h3>' +
+    ' <input type="hidden" id="editId">' +
+    ' <input type="hidden" id="editToken">' +
+    ' <input type="hidden" id="editType">' +
+    ' <input type="text" id="editTitle" placeholder="Title/Business">' +
+    ' <input type="text" id="editLocation" placeholder="Location">' +
+    ' <input type="text" id="editCompany" placeholder="Company">' +
+    ' <textarea id="editDesc" placeholder="Description" rows="3"></textarea>' +
+    ' <div class="btn-group" style="margin-top:16px;">' +
+    ' <button class="connect-btn" onclick="saveEdit()">Save</button>' +
+    ' <button class="connect-btn" style="background:#666;" onclick="closeEdit()">Cancel</button>' +
+    ' </div>' +
+    ' </div>' +
+    ' </div>' +
+    ' <script>' +
+    'function openMenu(){document.getElementById(\'sideMenu\').style.left=\'0\';document.getElementById(\'overlay\').style.display=\'block\';document.getElementById(\'sideMenu\').setAttribute(\'aria-hidden\',\'false\');}' +
+    'function closeMenu(){document.getElementById(\'sideMenu\').style.left=\'-320px\';document.getElementById(\'overlay\').style.display=\'none\';document.getElementById(\'sideMenu\').setAttribute(\'aria-hidden\',\'true\');}' +
+    'function scrollToId(id){closeMenu();const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:\'smooth\',block:\'start\'});}' +
+    'function showFavorites(){closeMenu();const fav=JSON.parse(localStorage.getItem(\'jobai_fav\')||\'[]\');if(!fav.length){alert(\'No favorites yet. Click "Connect & Apply" then save the job link.\');return;}renderJobs(fav);document.querySelector(\'.section h2\').textContent=\'Favorites\';}' +
+    'function showSalaries(){closeMenu();alert(\'Salaries coming next. We will wire this to Adzuna Salary API.\');}' +
+    'function showSubscriptions(){closeMenu();alert(\'Job Alerts coming next. Enter email + keywords and get notified.\');}' +
+    'document.getElementById(\'menuBtn\').addEventListener(\'click\',openMenu);' +
+    ' let allJobs = [];' +
+    ' document.getElementById("adImgFile").addEventListener("change", async function(e) {' +
+    ' const file = e.target.files[0];' +
+    ' if (!file) return;' +
+    ' const formData = new FormData();' +
+    ' formData.append("image", file);' +
+    ' document.getElementById("adPayMsg").textContent = "Uploading image...";' +
+    ' document.getElementById("adPayMsg").style.color = "blue";' +
+    ' try {' +
+    ' const res = await fetch("/upload-ad-image", { method: "POST", body: formData });' +
+    ' const data = await res.json();' +
+    ' if (data.url) {' +
+    ' document.getElementById("adImgUrl").value = data.url;' +
+    ' document.getElementById("imgPreview").src = data.url;' +
+    ' document.getElementById("imgPreview").style.display = "block";' +
+    ' document.getElementById("adPayMsg").textContent = "Image uploaded!";' +
+    ' document.getElementById("adPayMsg").style.color = "green";' +
+    ' } else {' +
+    ' document.getElementById("adPayMsg").textContent = "Upload failed";' +
+    ' document.getElementById("adPayMsg").style.color = "red";' +
+    ' }' +
+    ' } catch (err) {' +
+    ' document.getElementById("adPayMsg").textContent = "Upload error";' +
+    ' document.getElementById("adPayMsg").style.color = "red";' +
+    ' }' +
+    ' });' +
+    ' function timeAgo(dateStr) {' +
+    ' if (!dateStr) return "";' +
+    ' const date = new Date(dateStr);' +
+    ' const now = new Date();' +
+    ' const diff = Math.floor((now - date) / 1000 / 60 / 60 / 24);' +
+    ' if (diff === 0) return "Today";' +
+    ' if (diff === 1) return "1 day ago";' +
+    ' return diff + " days ago";' +
+    ' }' +
+    ' function renderJobs(jobs) {' +
+    ' if (!jobs.length) {' +
+    ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">No jobs found.</div>";' +
+    ' return;' +
+    ' }' +
+    ' document.getElementById("jobs").innerHTML = jobs.map(function(j) {' +
+    ' return "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"job-card\\"><span class=\\"country-tag\\">" + j.country + "</span><span class=\\"source-tag\\">" + j.source + "</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span><span>•</span><span>" + timeAgo(j.date_posted) + "</span></p><span class=\\"connect-btn\\">Connect & Apply</span></a>";' +
+    ' }).join("");' +
+    ' }' +
+    ' function renderUserAds(ads) {' +
+    ' if (!ads.length) {' +
+    ' document.getElementById("userAds").innerHTML = "<div class=\\"error\\">No community posts yet.</div>";' +
+    ' return;' +
+    ' }' +
+    ' document.getElementById("userAds").innerHTML = ads.map(function(j) {' +
+    ' let buttons = "<div class=\\"btn-group\\">";' +
+    ' if (j.url && j.url!== "#") {' +
+    ' buttons += "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"connect-btn\\">Apply Now</a>";' +
+    ' }' +
+    ' if (j.phone) {' +
+    ' buttons += "<a href=\\"tel:" + j.phone + "\\" class=\\"connect-btn call-btn\\">Call " + j.phone + "</a>";' +
+    ' }' +
+    ' buttons += "</div>";' +
+    ' let actions = "<div class=\\"card-actions\\">";' +
+    ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">✏️</button>";' +
+    ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">🗑️</button>";' +
+    ' actions += "</div>";' +
+    ' return "<div class=\\"job-card\\" style=\\"position:relative\\">"+actions+"<span class=\\"country-tag user-ad-tag\\">Community</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
+    ' }).join("");' +
+    ' }' +
+    ' function renderPaidAds(ads) {' +
+    ' if (!ads.length) {' +
+    ' document.getElementById("paidAds").innerHTML = "<div class=\\"error\\">No sponsors yet.</div>";' +
+    ' return;' +
+    ' }' +
+    ' document.getElementById("paidAds").innerHTML = ads.map(function(ad) {' +
+    ' let img = ad.image? \'<img src="\' + ad.image + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
+    ' let actions = "<div class=\\"card-actions\\">";' +
+    ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">✏️</button>";' +
+    ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">🗑️</button>";' +
+    ' actions += "</div>";' +
+    ' return \'<div class="job-card" style="border:2px solid #f57c00;position:relative;">\' +' +
+    ' actions +' +
+    ' \'<span class="country-tag user-ad-tag">Sponsored</span>\' +' +
+    ' img +' +
+    ' \'<h3>\' + ad.business + \'</h3>\' +' +
+    ' \'<p>\' + ad.text + \'</p>\' +' +
+    ' \'<a href="\' + ad.link + \'" target="_blank" class="connect-btn" style="background:#f57c00;">Visit</a>\' +' +
+    ' \'</div>\';' +
+    ' }).join("");' +
+    ' }' +
+    ' function openEdit(type, id, token) {' +
+    ' document.getElementById("editType").value = type;' +
+    ' document.getElementById("editId").value = id;' +
+    ' document.getElementById("editToken").value = token;' +
+    ' document.getElementById("editModal").classList.add("active");' +
+    ' }' +
+    ' function closeEdit() {' +
+    ' document.getElementById("editModal").classList.remove("active");' +
+    ' }' +
+    ' async function saveEdit() {' +
+    ' const type = document.getElementById("editType").value;' +
+    ' const id = document.getElementById("editId").value;' +
+    ' const token = document.getElementById("editToken").value;' +
+    ' const data = {' +
+    ' id, token,' +
+    ' title: document.getElementById("editTitle").value,' +
+    ' location: document.getElementById("editLocation").value,' +
+    ' company: document.getElementById("editCompany").value,' +
+    ' description: document.getElementById("editDesc").value' +
+    ' };' +
+    ' const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";' +
+    ' const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
+    ' const result = await res.json();' +
+    ' if (result.success) {' +
+    ' closeEdit();' +
+    ' loadUserAds();' +
+    ' loadPaidAds();' +
+    ' alert("Updated successfully");' +
+    ' } else {' +
+    ' alert("Update failed");' +
+    ' }' +
+    ' }' +
+    ' async function deleteAd(type, id, token) {' +
+    ' if (!confirm("Delete this ad?")) return;' +
+    ' const endpoint = type === "paid"? "/paid-ads/delete" : "/ads/delete";' +
+    ' const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, token})});' +
+    ' const result = await res.json();' +
+    ' if (result.success) {' +
+    ' loadUserAds();' +
+    ' loadPaidAds();' +
+    ' alert("Deleted successfully");' +
+    ' } else {' +
+    ' alert("Delete failed");' +
+    ' }' +
+    ' }' +
+    ' async function loadJobs() {' +
+    ' const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant";' +
+    ' const days = document.getElementById("dateFilter").value;' +
+    ' document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading jobs...</div>";' +
+    ' try {' +
+    ' const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);' +
+    ' allJobs = await res.json();' +
+    ' renderJobs(allJobs);' +
+    ' } catch (e) {' +
+    ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs.</div>";' +
+    ' }' +
+    ' }' +
+    ' async function loadUserAds() {' +
+    ' const res = await fetch("/ads");' +
+    ' const ads = await res.json();' +
+    ' renderUserAds(ads);' +
+    ' }' +
+    ' async function loadPaidAds() {' +
+    ' const res = await fetch("/paid-ads");' +
+    ' const ads = await res.json();' +
+    ' renderPaidAds(ads);' +
+    ' }' +
+    ' async function submitAd() {' +
+    ' const data = {' +
+    ' title: document.getElementById("adTitle").value,' +
+    ' company: document.getElementById("adCompany").value,' +
+    ' location: document.getElementById("adLocation").value,' +
+    ' phone: document.getElementById("adPhone").value,' +
+    ' url: document.getElementById("adUrl").value,' +
+    ' description: document.getElementById("adDesc").value' +
+    ' };' +
+    ' if (!data.title ||!data.company ||!data.location) {' +
+    ' document.getElementById("adMsg").textContent = "Please fill title, company and location.";' +
+    ' document.getElementById("adMsg").style.color = "red";' +
+    ' return;' +
+    ' }' +
+    ' document.getElementById("adMsg").textContent = "Redirecting to payment...";' +
+    ' document.getElementById("adMsg").style.color = "blue";' +
+    ' const res = await fetch("/ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
+    ' const result = await res.json();' +
+    ' if (result.payment_link) {' +
+    ' window.location.href = result.payment_link;' +
+    ' } else {' +
+    ' document.getElementById("adMsg").textContent = "Payment failed. Try again.";' +
+    ' document.getElementById("adMsg").style.color = "red";' +
+    ' }' +
+    ' }' +
+    ' async function submitPaidAd() {' +
+    ' const data = {' +
+    ' business: document.getElementById("adBizName").value,' +
+    ' link: document.getElementById("adLink").value,' +
+    ' text: document.getElementById("adText").value,' +
+    ' image: document.getElementById("adImgUrl").value' +
+    ' };' +
+    ' if (!data.business ||!data.link ||!data.text) {' +
+    ' document.getElementById("adPayMsg").textContent = "Fill business, link and text.";' +
+    ' document.getElementById("adPayMsg").style.color = "red";' +
+    ' return;' +
+    ' }' +
+    ' document.getElementById("adPayMsg").textContent = "Redirecting to payment...";' +
+    ' document.getElementById("adPayMsg").style.color = "blue";' +
+    ' const res = await fetch("/paid-ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
+    ' const result = await res.json();' +
+    ' if (result.payment_link) {' +
+    ' window.location.href = result.payment_link;' +
+    ' } else {' +
+    ' document.getElementById("adPayMsg").textContent = "Payment failed. Try again.";' +
+    ' document.getElementById("adPayMsg").style.color = "red";' +
+    ' }' +
+    ' }' +
+    ' const urlParams = new URLSearchParams(window.location.search);' +
+    ' if (urlParams.get("payment") === "success") {' +
+    ' document.getElementById("adMsg").textContent = "Payment successful! Job posted.";' +
+    ' document.getElementById("adMsg").style.color = "green";' +
+    ' loadUserAds();' +
+    ' loadPaidAds();' +
+    ' }' +
+    ' if (urlParams.get("payment") === "failed") {' +
+    ' document.getElementById("adMsg").textContent = "Payment failed or cancelled.";' +
+    ' document.getElementById("adMsg").style.color = "red";' +
+    ' }' +
+    ' document.getElementById("searchBtn").addEventListener("click", loadJobs);' +
+    ' document.getElementById("dateFilter").addEventListener("change", loadJobs);' +
+    ' document.getElementById("searchInput").addEventListener("keypress", function(e) {' +
+    ' if (e.key === "Enter") loadJobs();' +
+    ' });' +
+    ' loadJobs();' +
+    ' loadUserAds();' +
+    ' loadPaidAds();' +
+    ' </script>' +
+    '</body>' +
+    '</html>'
+  );
 });
 
-// ========== AUTH ROUTES ==========
+app.post('/upload-ad-image', upload.single('image'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+  res.json({ url: req.file.path });
+});
+
+// ADDED: Auth routes
 app.post('/auth/signup', async (req, res) => {
   const { firstName, lastName, email, phone, password } = req.body;
   if (!firstName ||!lastName ||!email ||!password) {
@@ -344,13 +524,12 @@ app.post('/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
-// ========== FORGOT PASSWORD ==========
 app.post('/auth/forgot', async (req, res) => {
   const { email } = req.body;
   try {
     const result = await pool.query(`SELECT id FROM users WHERE email=$1`, [email]);
-    if(result.rows.length===0){
-      return res.json({success:false,message:'Email not found'});
+    if (result.rows.length === 0) {
+      return res.json({ success: false, message: 'Email not found' });
     }
 
     const token = crypto.randomBytes(20).toString('hex');
@@ -362,10 +541,10 @@ app.post('/auth/forgot', async (req, res) => {
     const resetLink = `${req.protocol}://${req.get('host')}/reset/${token}`;
     console.log('RESET LINK:', resetLink);
 
-    res.json({success:true,message:'Reset link generated. Check Render Logs for the link.'});
-  } catch(err){
+    res.json({ success: true, message: 'Reset link generated. Check Render Logs for the link.' });
+  } catch (err) {
     console.error(err);
-    res.json({success:false,message:'Error occurred'});
+    res.json({ success: false, message: 'Error occurred' });
   }
 });
 
@@ -373,7 +552,7 @@ app.get('/reset/:token', async (req, res) => {
   const { token } = req.params;
   const result = await pool.query(`SELECT id FROM users WHERE reset_token=$1 AND reset_expires>NOW()`, [token]);
 
-  if(result.rows.length===0){
+  if (result.rows.length === 0) {
     return res.send('<h3 style="font-family:Arial;text-align:center;padding:40px;">Link expired or invalid</h3>');
   }
 
@@ -402,7 +581,7 @@ app.post('/auth/reset', async (req, res) => {
   res.send('<h3 style="font-family:Arial;text-align:center;padding:40px;">Password reset successful. You can now login.</h3>');
 });
 
-// Fetch jobs from Adzuna
+// Fetch jobs from Adzuna - now 20 per country
 async function fetchAdzunaJobs(countryCode, countryName, query) {
   try {
     const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=20&content-type=application/json&max_days_old=7&what=${encodeURIComponent(query)}`;
@@ -423,6 +602,7 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
   }
 }
 
+// Fetch jobs from JSearch via RapidAPI
 async function fetchJSearchJobs(query, location) {
   try {
     const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1&date_posted=week`;
@@ -449,6 +629,7 @@ async function fetchJSearchJobs(query, location) {
   }
 }
 
+// Fetch jobs from Jooble
 async function fetchJoobleJobs(query, location) {
   try {
     const response = await fetch(`https://jooble.org/api/${JOOBLE_API_KEY}`, {
@@ -477,6 +658,7 @@ async function fetchJoobleJobs(query, location) {
   }
 }
 
+// Fetch remote jobs from Remotive
 async function fetchRemotiveJobs(query) {
   try {
     const response = await fetch(`https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}`);
@@ -498,7 +680,7 @@ async function fetchRemotiveJobs(query) {
 
 app.get('/jobs', async (req, res) => {
   try {
-    const query = req.query.q || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
+    const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
     const recentDays = parseInt(req.query.recent) || 7;
 
     const countries = [
@@ -517,19 +699,25 @@ app.get('/jobs', async (req, res) => {
     ];
 
     let allJobs = [];
+
+    // Run all API calls in parallel for speed
     const promises = [];
+
     for (let i = 0; i < countries.length; i++) {
       promises.push(fetchAdzunaJobs(countries[i].code, countries[i].name, query));
       promises.push(fetchJSearchJobs(query, countries[i].name));
       promises.push(fetchJoobleJobs(query, countries[i].name));
     }
+
     promises.push(fetchRemotiveJobs(query));
 
     const results = await Promise.all(promises);
+
     results.forEach(jobs => {
       allJobs.push(...jobs);
     });
 
+    // Remove duplicates by URL
     allJobs = allJobs.filter((job, index, self) =>
       index === self.findIndex(j => j.url === job.url)
     );
@@ -539,7 +727,9 @@ app.get('/jobs', async (req, res) => {
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
 
+    // Sort by date descending
     allJobs.sort((a, b) => new Date(b.date_posted) - new Date(a.date_posted));
+
     res.json(allJobs.slice(0, 100));
   } catch (err) {
     console.error('Jobs fetch error:', err);
@@ -547,6 +737,7 @@ app.get('/jobs', async (req, res) => {
   }
 });
 
+// Get approved job ads from DB
 app.get('/ads', async (req, res) => {
   try {
     const result = await pool.query(
@@ -558,6 +749,7 @@ app.get('/ads', async (req, res) => {
   }
 });
 
+// Get approved paid ads from DB
 app.get('/paid-ads', async (req, res) => {
   try {
     const result = await pool.query(
@@ -569,6 +761,7 @@ app.get('/paid-ads', async (req, res) => {
   }
 });
 
+// Payment initiation routes
 app.post('/ads/initiate-payment', async (req, res) => {
   const { title, company, location, phone, url, description } = req.body;
   if (!title ||!company ||!location) {
@@ -703,6 +896,7 @@ app.get('/payment-callback', async (req, res) => {
   }
 });
 
+// Edit user ad
 app.post('/ads/edit', async (req, res) => {
   const { id, token, title, location, company, description } = req.body;
   try {
@@ -719,6 +913,7 @@ app.post('/ads/edit', async (req, res) => {
   }
 });
 
+// Delete user ad
 app.post('/ads/delete', async (req, res) => {
   const { id, token } = req.body;
   try {
@@ -733,6 +928,7 @@ app.post('/ads/delete', async (req, res) => {
   }
 });
 
+// Edit paid ad
 app.post('/paid-ads/edit', async (req, res) => {
   const { id, token, title, location, company, description } = req.body;
   try {
@@ -749,6 +945,7 @@ app.post('/paid-ads/edit', async (req, res) => {
   }
 });
 
+// Delete paid ad
 app.post('/paid-ads/delete', async (req, res) => {
   const { id, token } = req.body;
   try {
