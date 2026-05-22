@@ -299,14 +299,21 @@ app.get('/', (req, res) => {
     ' document.getElementById("adPayMsg").style.color = "red";' +
     ' }' +
     ' });' +
+    // CHANGED: timeAgo now shows minutes/hours/days
     ' function timeAgo(dateStr) {' +
     ' if (!dateStr) return "";' +
     ' const date = new Date(dateStr);' +
     ' const now = new Date();' +
-    ' const diff = Math.floor((now - date) / 1000 / 60 / 60 / 24);' +
-    ' if (diff === 0) return "Today";' +
-    ' if (diff === 1) return "1 day ago";' +
-    ' return diff + " days ago";' +
+    ' const diffMs = now - date;' +
+    ' const diffSec = Math.floor(diffMs / 1000);' +
+    ' const diffMin = Math.floor(diffSec / 60);' +
+    ' const diffHr = Math.floor(diffMin / 60);' +
+    ' const diffDay = Math.floor(diffHr / 24);' +
+    ' if (diffSec < 60) return "just now";' +
+    ' if (diffMin < 60) return diffMin + "m ago";' +
+    ' if (diffHr < 24) return diffHr + "h ago";' +
+    ' if (diffDay === 1) return "1d ago";' +
+    ' return diffDay + "d ago";' +
     ' }' +
     ' function renderJobs(jobs) {' +
     ' if (!jobs.length) {' +
@@ -335,7 +342,8 @@ app.get('/', (req, res) => {
     ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">✏️</button>";' +
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">🗑️</button>";' +
     ' actions += "</div>";' +
-    ' return "<div class=\\"job-card\\" style=\\"position:relative\\">"+actions+"<span class=\\"country-tag user-ad-tag\\">Community</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
+    // CHANGED: added timeAgo for user ads
+    ' return "<div class=\\"job-card\\" style=\\"position:relative\\">"+actions+"<span class=\\"country-tag user-ad-tag\\">Community</span><span class=\\"source-tag\\">"+ timeAgo(j.created_at) +"</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
     ' }).join("");' +
     ' }' +
     ' function renderPaidAds(ads) {' +
@@ -349,9 +357,11 @@ app.get('/', (req, res) => {
     ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">✏️</button>";' +
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">🗑️</button>";' +
     ' actions += "</div>";' +
+    // CHANGED: added timeAgo for paid ads
     ' return \'<div class="job-card" style="border:2px solid #f57c00;position:relative;">\' +' +
     ' actions +' +
     ' \'<span class="country-tag user-ad-tag">Sponsored</span>\' +' +
+    ' \'<span class="source-tag">\' + timeAgo(ad.created_at) + \'</span>\' +' +
     ' img +' +
     ' \'<h3>\' + ad.business + \'</h3>\' +' +
     ' \'<p>\' + ad.text + \'</p>\' +' +
@@ -377,125 +387,125 @@ app.get('/', (req, res) => {
     ' title: document.getElementById("editTitle").value,' +
     ' location: document.getElementById("editLocation").value,' +
     ' company: document.getElementById("editCompany").value,' +
-    ' description: document.getElementById("editDesc").value' +
-    ' };' +
-    ' const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";' +
-    ' const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
-    ' const result = await res.json();' +
-    ' if (result.success) {' +
-    ' closeEdit();' +
-    ' loadUserAds();' +
-    ' loadPaidAds();' +
-    ' alert("Updated successfully");' +
-    ' } else {' +
-    ' alert("Update failed");' +
-    ' }' +
-    ' }' +
-    ' async function deleteAd(type, id, token) {' +
-    ' if (!confirm("Delete this ad?")) return;' +
-    ' const endpoint = type === "paid"? "/paid-ads/delete" : "/ads/delete";' +
-    ' const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, token})});' +
-    ' const result = await res.json();' +
-    ' if (result.success) {' +
-    ' loadUserAds();' +
-    ' loadPaidAds();' +
-    ' alert("Deleted successfully");' +
-    ' } else {' +
-    ' alert("Delete failed");' +
-    ' }' +
-    ' }' +
-    ' async function loadJobs() {' +
-    ' const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant";' +
-    ' const days = document.getElementById("dateFilter").value;' +
-    ' document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading jobs...</div>";' +
-    ' try {' +
-    ' const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);' +
-    ' allJobs = await res.json();' +
-    ' renderJobs(allJobs);' +
-    ' } catch (e) {' +
-    ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs.</div>";' +
-    ' }' +
-    ' }' +
-    ' async function loadUserAds() {' +
-    ' const res = await fetch("/ads");' +
-    ' const ads = await res.json();' +
-    ' renderUserAds(ads);' +
-    ' }' +
-    ' async function loadPaidAds() {' +
-    ' const res = await fetch("/paid-ads");' +
-    ' const ads = await res.json();' +
-    ' renderPaidAds(ads);' +
-    ' }' +
-    ' async function submitAd() {' +
-    ' const data = {' +
-    ' title: document.getElementById("adTitle").value,' +
-    ' company: document.getElementById("adCompany").value,' +
-    ' location: document.getElementById("adLocation").value,' +
-    ' phone: document.getElementById("adPhone").value,' +
-    ' url: document.getElementById("adUrl").value,' +
-    ' description: document.getElementById("adDesc").value' +
-    ' };' +
-    ' if (!data.title ||!data.company ||!data.location) {' +
-    ' document.getElementById("adMsg").textContent = "Please fill title, company and location.";' +
-    ' document.getElementById("adMsg").style.color = "red";' +
-    ' return;' +
-    ' }' +
-    ' document.getElementById("adMsg").textContent = "Redirecting to payment...";' +
-    ' document.getElementById("adMsg").style.color = "blue";' +
-    ' const res = await fetch("/ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
-    ' const result = await res.json();' +
-    ' if (result.payment_link) {' +
-    ' window.location.href = result.payment_link;' +
-    ' } else {' +
-    ' document.getElementById("adMsg").textContent = "Payment failed. Try again.";' +
-    ' document.getElementById("adMsg").style.color = "red";' +
-    ' }' +
-    ' }' +
-    ' async function submitPaidAd() {' +
-    ' const data = {' +
-    ' business: document.getElementById("adBizName").value,' +
-    ' link: document.getElementById("adLink").value,' +
-    ' text: document.getElementById("adText").value,' +
-    ' image: document.getElementById("adImgUrl").value' +
-    ' };' +
-    ' if (!data.business ||!data.link ||!data.text) {' +
-    ' document.getElementById("adPayMsg").textContent = "Fill business, link and text.";' +
-    ' document.getElementById("adPayMsg").style.color = "red";' +
-    ' return;' +
-    ' }' +
-    ' document.getElementById("adPayMsg").textContent = "Redirecting to payment...";' +
-    ' document.getElementById("adPayMsg").style.color = "blue";' +
-    ' const res = await fetch("/paid-ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
-    ' const result = await res.json();' +
-    ' if (result.payment_link) {' +
-    ' window.location.href = result.payment_link;' +
-    ' } else {' +
-    ' document.getElementById("adPayMsg").textContent = "Payment failed. Try again.";' +
-    ' document.getElementById("adPayMsg").style.color = "red";' +
-    ' }' +
-    ' }' +
-    ' const urlParams = new URLSearchParams(window.location.search);' +
-    ' if (urlParams.get("payment") === "success") {' +
-    ' document.getElementById("adMsg").textContent = "Payment successful! Job posted.";' +
-    ' document.getElementById("adMsg").style.color = "green";' +
-    ' loadUserAds();' +
-    ' loadPaidAds();' +
-    ' }' +
-    ' if (urlParams.get("payment") === "failed") {' +
-    ' document.getElementById("adMsg").textContent = "Payment failed or cancelled.";' +
-    ' document.getElementById("adMsg").style.color = "red";' +
-    ' }' +
-    ' document.getElementById("searchBtn").addEventListener("click", loadJobs);' +
-    ' document.getElementById("dateFilter").addEventListener("change", loadJobs);' +
-    ' document.getElementById("searchInput").addEventListener("keypress", function(e) {' +
-    ' if (e.key === "Enter") loadJobs();' +
-    ' });' +
-    ' loadJobs();' +
-    ' loadUserAds();' +
-    ' loadPaidAds();' +
-    ' </script>' +
-    '</body>' +
-    '</html>'
+    ' description: document.getElementById("editDesc").value
+    };
+    const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";
+    const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
+    const result = await res.json();
+    if (result.success) {
+    closeEdit();
+    loadUserAds();
+    loadPaidAds();
+    alert("Updated successfully");
+    } else {
+    alert("Update failed");
+    }
+    }
+    async function deleteAd(type, id, token) {
+    if (!confirm("Delete this ad?")) return;
+    const endpoint = type === "paid"? "/paid-ads/delete" : "/ads/delete";
+    const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, token})});
+    const result = await res.json();
+    if (result.success) {
+    loadUserAds();
+    loadPaidAds();
+    alert("Deleted successfully");
+    } else {
+    alert("Delete failed");
+    }
+    }
+    async function loadJobs() {
+    const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant";
+    const days = document.getElementById("dateFilter").value;
+    document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading jobs...</div>";
+    try {
+    const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);
+    allJobs = await res.json();
+    renderJobs(allJobs);
+    } catch (e) {
+    document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs.</div>";
+    }
+    }
+    async function loadUserAds() {
+    const res = await fetch("/ads");
+    const ads = await res.json();
+    renderUserAds(ads);
+    }
+    async function loadPaidAds() {
+    const res = await fetch("/paid-ads");
+    const ads = await res.json();
+    renderPaidAds(ads);
+    }
+    async function submitAd() {
+    const data = {
+    title: document.getElementById("adTitle").value,
+    company: document.getElementById("adCompany").value,
+    location: document.getElementById("adLocation").value,
+    phone: document.getElementById("adPhone").value,
+    url: document.getElementById("adUrl").value,
+    description: document.getElementById("adDesc").value
+    };
+    if (!data.title ||!data.company ||!data.location) {
+    document.getElementById("adMsg").textContent = "Please fill title, company and location.";
+    document.getElementById("adMsg").style.color = "red";
+    return;
+    }
+    document.getElementById("adMsg").textContent = "Redirecting to payment...";
+    document.getElementById("adMsg").style.color = "blue";
+    const res = await fetch("/ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
+    const result = await res.json();
+    if (result.payment_link) {
+    window.location.href = result.payment_link;
+    } else {
+    document.getElementById("adMsg").textContent = "Payment failed. Try again.";
+    document.getElementById("adMsg").style.color = "red";
+    }
+    }
+    async function submitPaidAd() {
+    const data = {
+    business: document.getElementById("adBizName").value,
+    link: document.getElementById("adLink").value,
+    text: document.getElementById("adText").value,
+    image: document.getElementById("adImgUrl").value
+    };
+    if (!data.business ||!data.link ||!data.text) {
+    document.getElementById("adPayMsg").textContent = "Fill business, link and text.";
+    document.getElementById("adPayMsg").style.color = "red";
+    return;
+    }
+    document.getElementById("adPayMsg").textContent = "Redirecting to payment...";
+    document.getElementById("adPayMsg").style.color = "blue";
+    const res = await fetch("/paid-ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
+    const result = await res.json();
+    if (result.payment_link) {
+    window.location.href = result.payment_link;
+    } else {
+    document.getElementById("adPayMsg").textContent = "Payment failed. Try again.";
+    document.getElementById("adPayMsg").style.color = "red";
+    }
+    }
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("payment") === "success") {
+    document.getElementById("adMsg").textContent = "Payment successful! Job posted.";
+    document.getElementById("adMsg").style.color = "green";
+    loadUserAds();
+    loadPaidAds();
+    }
+    if (urlParams.get("payment") === "failed") {
+    document.getElementById("adMsg").textContent = "Payment failed or cancelled.";
+    document.getElementById("adMsg").style.color = "red";
+    }
+    document.getElementById("searchBtn").addEventListener("click", loadJobs);
+    document.getElementById("dateFilter").addEventListener("change", loadJobs);
+    document.getElementById("searchInput").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") loadJobs();
+    });
+    loadJobs();
+    loadUserAds();
+    loadPaidAds();
+    </script>
+</body>
+</html>'
   );
 });
 
@@ -504,7 +514,6 @@ app.post('/upload-ad-image', upload.single('image'), (req, res) => {
   res.json({ url: req.file.path });
 });
 
-// ADDED: Auth routes
 app.post('/auth/signup', async (req, res) => {
   const { firstName, lastName, email, phone, password } = req.body;
   if (!firstName ||!lastName ||!email ||!password) {
@@ -553,7 +562,6 @@ app.post('/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
-// Fetch jobs from Adzuna - 20 per country
 async function fetchAdzunaJobs(countryCode, countryName, query) {
   try {
     const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=20&content-type=application/json&max_days_old=7&what=${encodeURIComponent(query)}`;
@@ -574,7 +582,6 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
   }
 }
 
-// Fetch jobs from JSearch via RapidAPI
 async function fetchJSearchJobs(query, location) {
   try {
     const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1&date_posted=week`;
@@ -601,7 +608,6 @@ async function fetchJSearchJobs(query, location) {
   }
 }
 
-// Fetch jobs from Jooble
 async function fetchJoobleJobs(query, location) {
   try {
     const response = await fetch(`https://jooble.org/api/${JOOBLE_API_KEY}`, {
@@ -630,7 +636,6 @@ async function fetchJoobleJobs(query, location) {
   }
 }
 
-// Fetch remote jobs from Remotive
 async function fetchRemotiveJobs(query) {
   try {
     const response = await fetch(`https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}`);
@@ -703,7 +708,6 @@ app.get('/jobs', async (req, res) => {
   }
 });
 
-// Get approved job ads from DB
 app.get('/ads', async (req, res) => {
   try {
     const result = await pool.query(
@@ -715,7 +719,6 @@ app.get('/ads', async (req, res) => {
   }
 });
 
-// Get approved paid ads from DB
 app.get('/paid-ads', async (req, res) => {
   try {
     const result = await pool.query(
@@ -727,7 +730,6 @@ app.get('/paid-ads', async (req, res) => {
   }
 });
 
-// Payment initiation routes
 app.post('/ads/initiate-payment', async (req, res) => {
   const { title, company, location, phone, url, description } = req.body;
   if (!title ||!company ||!location) {
@@ -862,7 +864,6 @@ app.get('/payment-callback', async (req, res) => {
   }
 });
 
-// Edit user ad
 app.post('/ads/edit', async (req, res) => {
   const { id, token, title, location, company, description } = req.body;
   try {
@@ -879,7 +880,6 @@ app.post('/ads/edit', async (req, res) => {
   }
 });
 
-// Delete user ad
 app.post('/ads/delete', async (req, res) => {
   const { id, token } = req.body;
   try {
@@ -894,7 +894,6 @@ app.post('/ads/delete', async (req, res) => {
   }
 });
 
-// Edit paid ad
 app.post('/paid-ads/edit', async (req, res) => {
   const { id, token, title, location, company, description } = req.body;
   try {
@@ -911,7 +910,6 @@ app.post('/paid-ads/edit', async (req, res) => {
   }
 });
 
-// Delete paid ad
 app.post('/paid-ads/delete', async (req, res) => {
   const { id, token } = req.body;
   try {
