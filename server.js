@@ -14,10 +14,9 @@ const PORT = process.env.PORT || 3000;
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
-const JOOBLE_API_KEY = 'YOUR_JOOBLE_KEY'; // get free key at jooble.org/api
+const JOOBLE_API_KEY = 'YOUR_JOOBLE_KEY';
 const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X';
 
-// Use env var in Render. Don't hardcode the URL.
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
@@ -87,7 +86,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// [Your HTML route stays exactly the same]
 app.get('/', (req, res) => {
   res.send(
     '<!DOCTYPE html>' +
@@ -146,7 +144,6 @@ app.get('/', (req, res) => {
     ' </style>' +
     '</head>' +
     '<body>' +
-    // START: Slide drawer HTML - ADDED ONLY THIS
     '<button id="menuBtn" aria-label="Open menu" style="position:fixed;top:14px;left:14px;z-index:1001;background:#fff;border:0;border-radius:8px;padding:10px 12px;box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer;font-size:18px;">☰</button>' +
     '<div id="overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;" onclick="closeMenu()"></div>' +
     '<nav id="sideMenu" aria-hidden="true" style="position:fixed;top:0;left:-320px;width:300px;max-width:85%;height:100%;background:#fff;z-index:1002;transition:left 0.28s ease;box-shadow:2px 0 16px rgba(0,0,0,.12);overflow-y:auto;">' +
@@ -187,7 +184,6 @@ app.get('/', (req, res) => {
     ' </div>' +
     ' <div style="padding:16px 18px;border-top:1px solid #eee;font-size:13px;color:#666;">Never miss new jobs on Jobai</div>' +
     '</nav>' +
-    // END: Slide drawer HTML
     ' <div class="hero">' +
     ' <h1>Get Connected to Jobs & Workers</h1>' +
     ' <p>AI-powered matching for Uganda, Kenya, Tanzania, Rwanda, Burundi, India, UAE, Saudi Arabia, France, UK, Canada, China, Taiwan, Thailand</p>' +
@@ -264,7 +260,6 @@ app.get('/', (req, res) => {
     ' </div>' +
     ' </div>' +
     ' <script>' +
-    // START: Slide drawer JS - AUTH ADDED
     'function openMenu(){document.getElementById(\'sideMenu\').style.left=\'0\';document.getElementById(\'overlay\').style.display=\'block\';document.getElementById(\'sideMenu\').setAttribute(\'aria-hidden\',\'false\');}' +
     'function closeMenu(){document.getElementById(\'sideMenu\').style.left=\'-320px\';document.getElementById(\'overlay\').style.display=\'none\';document.getElementById(\'sideMenu\').setAttribute(\'aria-hidden\',\'true\');}' +
     'function scrollToId(id){closeMenu();const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:\'smooth\',block:\'start\'});}' +
@@ -279,7 +274,6 @@ app.get('/', (req, res) => {
     'async function logout(){await fetch(\'/auth/logout\',{method:\'POST\'});localStorage.removeItem(\'jobai_user\');updateAuthUI(null);}' +
     'window.addEventListener(\'load\',()=>{const user=JSON.parse(localStorage.getItem(\'jobai_user\')||\'null\');updateAuthUI(user);});' +
     'document.getElementById(\'menuBtn\').addEventListener(\'click\',openMenu);' +
-    // END: Slide drawer JS
     ' let allJobs = [];' +
     ' document.getElementById("adImgFile").addEventListener("change", async function(e) {' +
     ' const file = e.target.files[0];' +
@@ -386,19 +380,19 @@ app.get('/', (req, res) => {
     ' company: document.getElementById("editCompany").value,' +
     ' description: document.getElementById("editDesc").value' +
     ' };' +
-        const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";
-    const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
-    const result = await res.json();
-    if (result.success) {
-      closeEdit();
-      loadUserAds();
-      loadPaidAds();
-      alert("Updated successfully");
-    } else {
-      alert("Update failed");
-    }
-  }
-  async function deleteAd(type, id, token) {
+    ' const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";' +
+    ' const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
+    ' const result = await res.json();' +
+    ' if (result.success) {' +
+    ' closeEdit();' +
+    ' loadUserAds();' +
+    ' loadPaidAds();' +
+    ' alert("Updated successfully");' +
+    ' } else {' +
+    ' alert("Update failed");' +
+    ' }' +
+    ' }' +
+    async function deleteAd(type, id, token) {
     if (!confirm("Delete this ad?")) return;
     const endpoint = type === "paid"? "/paid-ads/delete" : "/ads/delete";
     const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, token})});
