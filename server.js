@@ -389,7 +389,7 @@ app.get('/', (req, res) => {
     ' }' +
     ' async function deleteAd(type, id, token) {' +
     ' if (!confirm(\\"Delete this ad?\\")) return;' +
-    const endpoint = type === \\"paid\\"? \\"/paid-ads/edit\\" : \\"/ads/edit\\";' +
+    ' const endpoint = type === \\"paid\\"? \\"/paid-ads/edit\\" : \\"/ads/edit\\";' +
     ' const res = await fetch(endpoint, {method: \\"POST\\", headers: {\\"Content-Type\\": \\"application/json\\"}, body: JSON.stringify(data)});' +
     ' const result = await res.json();' +
     ' if (result.success) {' +
