@@ -13,6 +13,7 @@ const PORT = process.env.PORT || 3000;
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
+const JOOBLE_API_KEY = 'YOUR_JOOBLE_KEY'; // get free key at jooble.org/api
 const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X';
 
 // Use env var in Render. Don't hardcode the URL.
@@ -434,7 +435,28 @@ app.post('/upload-ad-image', upload.single('image'), (req, res) => {
   res.json({ url: req.file.path });
 });
 
-// [All job fetching functions stay the same]
+// Fetch jobs from Adzuna - now 20 per country
+async function fetchAdzunaJobs(countryCode, countryName, query) {
+  try {
+    const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=20&content-type=application/json&max_days_old=7&what=${encodeURIComponent(query)}`;
+    const response = await fetch(url);
+    if (!response.ok) return [];
+    const data = await response.json();
+    return (data.results || []).map(j => ({
+      title: j.title || 'Job Title',
+      company: j.company?.display_name || 'Unknown Company',
+      location: j.location?.display_name || countryName,
+      country: countryName,
+      url: j.redirect_url || '#',
+      date_posted: j.created,
+      source: 'Adzuna'
+    }));
+  } catch (err) {
+    return [];
+  }
+}
+
+// Fetch jobs from JSearch via RapidAPI
 async function fetchJSearchJobs(query, location) {
   try {
     const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1&date_posted=week`;
@@ -461,20 +483,49 @@ async function fetchJSearchJobs(query, location) {
   }
 }
 
-async function fetchAdzunaJobs(countryCode, countryName, query) {
+// Fetch jobs from Jooble
+async function fetchJoobleJobs(query, location) {
   try {
-    const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=5&content-type=application/json&max_days_old=7&what=${encodeURIComponent(query)}`;
-    const response = await fetch(url);
+    const response = await fetch(`https://jooble.org/api/${JOOBLE_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        keywords: query,
+        location: location,
+        page: 1,
+        resultsOnPage: 20
+      })
+    });
     if (!response.ok) return [];
     const data = await response.json();
-    return (data.results || []).map(j => ({
-      title: j.title || 'Job Title',
-      company: j.company?.display_name || 'Unknown Company',
-      location: j.location?.display_name || countryName,
-      country: countryName,
-      url: j.redirect_url || '#',
-      date_posted: j.created,
-      source: 'Adzuna'
+    return (data.jobs || []).map(j => ({
+      title: j.title,
+      company: j.company,
+      location: j.location,
+      country: location,
+      url: j.link,
+      date_posted: j.updated,
+      source: 'Jooble'
+    }));
+  } catch (err) {
+    return [];
+  }
+}
+
+// Fetch remote jobs from Remotive
+async function fetchRemotiveJobs(query) {
+  try {
+    const response = await fetch(`https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}`);
+    if (!response.ok) return [];
+    const data = await response.json();
+    return (data.jobs || []).map(j => ({
+      title: j.title,
+      company: j.company_name,
+      location: 'Remote',
+      country: 'Global',
+      url: j.url,
+      date_posted: j.date,
+      source: 'Remotive'
     }));
   } catch (err) {
     return [];
@@ -502,19 +553,40 @@ app.get('/jobs', async (req, res) => {
     ];
 
     let allJobs = [];
+
+    // Run all API calls in parallel for speed
+    const promises = [];
+
     for (let i = 0; i < countries.length; i++) {
-      const jsearchJobs = await fetchJSearchJobs(query, countries[i].name);
-      const adzunaJobs = await fetchAdzunaJobs(countries[i].code, countries[i].name, query);
-      allJobs.push(...jsearchJobs,...adzunaJobs);
+      promises.push(fetchAdzunaJobs(countries[i].code, countries[i].name, query));
+      promises.push(fetchJSearchJobs(query, countries[i].name));
+      promises.push(fetchJoobleJobs(query, countries[i].name));
     }
 
-    if (recentDays > 0 && recentDays!== 'all') {
+    promises.push(fetchRemotiveJobs(query));
+
+    const results = await Promise.all(promises);
+
+    results.forEach(jobs => {
+      allJobs.push(...jobs);
+    });
+
+    // Remove duplicates by URL
+    allJobs = allJobs.filter((job, index, self) =>
+      index === self.findIndex(j => j.url === job.url)
+    );
+
+    if (recentDays > 0 && recentDays !== 'all') {
       const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
 
-    res.json(allJobs.slice(0, 50));
+    // Sort by date descending
+    allJobs.sort((a, b) => new Date(b.date_posted) - new Date(a.date_posted));
+
+    res.json(allJobs.slice(0, 100));
   } catch (err) {
+    console.error('Jobs fetch error:', err);
     res.json([]);
   }
 });
@@ -543,10 +615,10 @@ app.get('/paid-ads', async (req, res) => {
   }
 });
 
-// Payment initiation routes stay the same
+// Payment initiation routes
 app.post('/ads/initiate-payment', async (req, res) => {
   const { title, company, location, phone, url, description } = req.body;
-  if (!title ||!company ||!location) {
+  if (!title || !company || !location) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
@@ -557,7 +629,7 @@ app.post('/ads/initiate-payment', async (req, res) => {
   try {
     const response = await fetch('https://api.flutterwave.com/v3/payments', {
       method: 'POST',
-            headers: {
+      headers: {
         'Authorization': `Bearer ${FLW_SECRET_KEY}`,
         'Content-Type': 'application/json'
       },
@@ -592,7 +664,7 @@ app.post('/ads/initiate-payment', async (req, res) => {
 
 app.post('/paid-ads/initiate-payment', async (req, res) => {
   const { business, link, text, image } = req.body;
-  if (!business ||!link ||!text) {
+  if (!business || !link || !text) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
