@@ -394,7 +394,7 @@ app.get('/', (req, res) => {
     } else {
       alert("Update failed");
     }
-  }
+  );
 
   async function deleteAd(type, id, token) {
     if (!confirm("Delete this ad?")) return;
