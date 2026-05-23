@@ -377,8 +377,8 @@ app.get('/', (req, res) => {
     ' }' +
     ' async function saveEdit() {' +
     ' const type = document.getElementById("editType").value;' +
-    const id = document.getElementById("editId").value;
-    const token = document.getElementById("editToken").value;
+    ' const id = document.getElementById("editId").value;' +
+        const token = document.getElementById("editToken").value;
     const data = {
       id, token,
       title: document.getElementById("editTitle").value,
@@ -387,7 +387,7 @@ app.get('/', (req, res) => {
       description: document.getElementById("editDesc").value
     };
     const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";
-    const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
     const result = await res.json();
     if (result.success) {
       closeEdit();
@@ -398,11 +398,10 @@ app.get('/', (req, res) => {
       alert("Update failed");
     }
   }
-
   async function deleteAd(type, id, token) {
     if (!confirm("Delete this ad?")) return;
     const endpoint = type === "paid"? "/paid-ads/delete" : "/ads/delete";
-    const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, token }) });
+    const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, token})});
     const result = await res.json();
     if (result.success) {
       loadUserAds();
@@ -412,32 +411,28 @@ app.get('/', (req, res) => {
       alert("Delete failed");
     }
   }
-
   async function loadJobs() {
     const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant";
     const days = document.getElementById("dateFilter").value;
-    document.getElementById("jobs").innerHTML = "<div class=\"loading\">Loading jobs...</div>";
+    document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading jobs...</div>";
     try {
       const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);
       allJobs = await res.json();
       renderJobs(allJobs);
     } catch (e) {
-      document.getElementById("jobs").innerHTML = "<div class=\"error\">Failed to load jobs.</div>";
+      document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs.</div>";
     }
   }
-
   async function loadUserAds() {
     const res = await fetch("/ads");
     const ads = await res.json();
     renderUserAds(ads);
   }
-
   async function loadPaidAds() {
     const res = await fetch("/paid-ads");
     const ads = await res.json();
     renderPaidAds(ads);
   }
-
   async function submitAd() {
     const data = {
       title: document.getElementById("adTitle").value,
@@ -454,7 +449,7 @@ app.get('/', (req, res) => {
     }
     document.getElementById("adMsg").textContent = "Redirecting to payment...";
     document.getElementById("adMsg").style.color = "blue";
-    const res = await fetch("/ads/initiate-payment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    const res = await fetch("/ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
     const result = await res.json();
     if (result.payment_link) {
       window.location.href = result.payment_link;
@@ -463,7 +458,6 @@ app.get('/', (req, res) => {
       document.getElementById("adMsg").style.color = "red";
     }
   }
-
   async function submitPaidAd() {
     const data = {
       business: document.getElementById("adBizName").value,
@@ -478,7 +472,7 @@ app.get('/', (req, res) => {
     }
     document.getElementById("adPayMsg").textContent = "Redirecting to payment...";
     document.getElementById("adPayMsg").style.color = "blue";
-    const res = await fetch("/paid-ads/initiate-payment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    const res = await fetch("/paid-ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
     const result = await res.json();
     if (result.payment_link) {
       window.location.href = result.payment_link;
@@ -487,7 +481,6 @@ app.get('/', (req, res) => {
       document.getElementById("adPayMsg").style.color = "red";
     }
   }
-
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get("payment") === "success") {
     document.getElementById("adMsg").textContent = "Payment successful! Job posted.";
@@ -499,13 +492,11 @@ app.get('/', (req, res) => {
     document.getElementById("adMsg").textContent = "Payment failed or cancelled.";
     document.getElementById("adMsg").style.color = "red";
   }
-
   document.getElementById("searchBtn").addEventListener("click", loadJobs);
   document.getElementById("dateFilter").addEventListener("change", loadJobs);
   document.getElementById("searchInput").addEventListener("keypress", function(e) {
     if (e.key === "Enter") loadJobs();
   });
-
   loadJobs();
   loadUserAds();
   loadPaidAds();
@@ -717,11 +708,10 @@ app.get('/jobs', async (req, res) => {
 app.get('/ads', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT *, COALESCE(created_at, NULL) as created_at FROM ads WHERE type = 'job' AND status = 'approved' ORDER BY created_at DESC`
+      `SELECT * FROM ads WHERE type = 'job' AND status = 'approved' ORDER BY created_at DESC`
     );
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: 'Database error' });
   }
 });
@@ -729,11 +719,10 @@ app.get('/ads', async (req, res) => {
 app.get('/paid-ads', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT *, COALESCE(created_at, NULL) as created_at FROM ads WHERE type = 'ad' AND status = 'approved' AND expires_at > NOW() ORDER BY created_at DESC`
+      `SELECT * FROM ads WHERE type = 'ad' AND status = 'approved' AND expires_at > NOW() ORDER BY created_at DESC`
     );
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: 'Database error' });
   }
 });
