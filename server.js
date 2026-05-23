@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3000;
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
-const JOOBLE_API_KEY = 'YOUR_JOOBLE_KEY'; // replace with real key to test Jooble
+const JOOBLE_API_KEY = 'YOUR_JOOBLE_KEY';
 const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X';
 
 const pool = new Pool({
@@ -22,7 +22,6 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Keep your tables
 pool.query(`
   CREATE TABLE IF NOT EXISTS ads (
     id BIGINT PRIMARY KEY,
@@ -78,7 +77,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// YOUR ORIGINAL UI - unchanged
 app.get('/', (req, res) => {
   res.send(
     '<!DOCTYPE html>' +
@@ -105,7 +103,7 @@ app.get('/', (req, res) => {
     '.job-meta { margin: 0 0 14px 0; color: #666; font-size: 14px; line-height: 1.5; }' +
     '.job-meta span { margin-right: 8px; }' +
     '.country-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }' +
-    '.source-tag { display: inline-block; background: #f5f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }' +
+    '.source-tag { display: inline-block; background: #f5f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; padding-right: 75px; }' +
     '.user-ad-tag { background: #fff3e0; color: #f57c00; }' +
     '.btn-group { display: flex; gap: 10px; flex-wrap: wrap; }' +
     '.connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; border: none; cursor: pointer; }' +
@@ -125,7 +123,7 @@ app.get('/', (req, res) => {
     '.ad-unit { margin: 0; padding: 0; min-height: 0; }' +
     '.ad-unit ins.adsbygoogle[data-ad-status="unfilled"] { display: none!important; }' +
     '.img-preview { max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 10px; display: none; }' +
-    '.card-actions { position: absolute; top: 12px; right: 12px; display: flex; gap: 8px; }' +
+    '.card-actions { position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; }' +
     '.icon-btn { width: 32px; height: 32px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; }' +
     '.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }' +
     '.modal.active { display: flex; }' +
@@ -290,16 +288,18 @@ app.get('/', (req, res) => {
     ' document.getElementById("adPayMsg").style.color = "red";' +
     ' }' +
     ' });' +
-    // NEW timeAgo - hides time after 2 days
     ' function timeAgo(dateStr) {' +
     ' if (!dateStr) return "";' +
-    ' const date = new Date(dateStr);' +
-    ' if (isNaN(date.getTime())) return "";' +
+    ' let date = new Date(dateStr);' +
+    ' if (isNaN(date.getTime()) && typeof dateStr === "number") {' +
+    ' date = new Date(dateStr * 1000);' +
+    ' }' +
+    ' if (isNaN(date.getTime())) return "recently";' +
     ' const now = new Date();' +
     ' const diffMs = now - date;' +
+    ' if (diffMs < 0) return "recently";' +
     ' const diffDay = Math.floor(diffMs / (1000*60*60*24));' +
     ' if (diffDay > 2) return "";' +
-    ' if (diffMs < 0) return "";' +
     ' const diffSec = Math.floor(diffMs/1000);' +
     ' const diffMin = Math.floor(diffSec/60);' +
     ' const diffHr = Math.floor(diffMin/60);' +
@@ -309,7 +309,6 @@ app.get('/', (req, res) => {
     ' if (diffDay === 1) return "1d ago";' +
     ' return diffDay + "d ago";' +
     ' }' +
-    // UPDATED renderJobs - adds time only if recent
     ' function renderJobs(jobs) {' +
     ' if (!jobs.length) {' +
     ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">No jobs found.</div>";' +
@@ -321,7 +320,6 @@ app.get('/', (req, res) => {
     ' return "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"job-card\\"><span class=\\"country-tag\\">" + j.country + "</span><span class=\\"source-tag\\">" + j.source + "</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span>" + timePart + "</p><span class=\\"connect-btn\\">Connect & Apply</span></a>";' +
     ' }).join("");' +
     ' }' +
-    // UPDATED renderUserAds - adds time tag
     ' function renderUserAds(ads) {' +
     ' if (!ads.length) {' +
     ' document.getElementById("userAds").innerHTML = "<div class=\\"error\\">No community posts yet.</div>";' +
@@ -337,8 +335,8 @@ app.get('/', (req, res) => {
     ' }' +
     ' buttons += "</div>";' +
     ' let actions = "<div class=\\"card-actions\\">";' +
-    ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">✏️</button>";' +
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">🗑️</button>";' +
+    ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">✏️</button>";' +
     ' actions += "</div>";' +
     ' const timeStr = timeAgo(j.created_at);' +
     ' const timeHtml = timeStr? `<span class="source-tag">${timeStr}</span>` : "";' +
@@ -353,8 +351,8 @@ app.get('/', (req, res) => {
     ' document.getElementById("paidAds").innerHTML = ads.map(function(ad) {' +
     ' let img = ad.image? \'<img src="\' + ad.image + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
     ' let actions = "<div class=\\"card-actions\\">";' +
-    ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">✏️</button>";' +
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">🗑️</button>";' +
+    ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">✏️</button>";' +
     ' actions += "</div>";' +
     ' return \'<div class="job-card" style="border:2px solid #f57c00;position:relative;">\' +' +
     ' actions +' +
@@ -382,8 +380,8 @@ app.get('/', (req, res) => {
     ' const data = {' +
     ' id, token,' +
     ' title: document.getElementById("editTitle").value,' +
-    ' location: document.getElementById("editLocation").value,' +
-    ' company: document.getElementById("editCompany").value,' +
+    ' location: document.getElementById("editLocation").value,'
+' company: document.getElementById("editCompany").value,' +
     ' description: document.getElementById("editDesc").value' +
     ' };' +
     ' const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";' +
@@ -506,13 +504,11 @@ app.get('/', (req, res) => {
   );
 });
 
-// Upload image route
 app.post('/upload-ad-image', upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   res.json({ url: req.file.path });
 });
 
-// Auth routes
 app.post('/auth/signup', async (req, res) => {
   const { firstName, lastName, email, phone, password } = req.body;
   if (!firstName ||!lastName ||!email ||!password) {
@@ -561,7 +557,6 @@ app.post('/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
-// Job API fetchers
 async function fetchAdzunaJobs(countryCode, countryName, query) {
   try {
     const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=20&content-type=application/json&max_days_old=7&what=${encodeURIComponent(query)}`;
@@ -574,7 +569,7 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
       location: j.location?.display_name || countryName,
       country: countryName,
       url: j.redirect_url || '#',
-      date_posted: j.created,
+      date_posted: j.created || null,
       source: 'Adzuna'
     }));
   } catch (err) {
@@ -600,7 +595,7 @@ async function fetchJSearchJobs(query, location) {
       location: j.job_city || location,
       country: location,
       url: j.job_apply_link || '#',
-      date_posted: j.job_posted_at_datetime_utc,
+      date_posted: j.job_posted_at_datetime_utc || j.job_posted_at_timestamp? new Date(j.job_posted_at_timestamp * 1000).toISOString() : null,
       source: j.job_publisher || 'JSearch'
     }));
   } catch (err) {
@@ -629,7 +624,7 @@ async function fetchJoobleJobs(query, location) {
       location: j.location,
       country: location,
       url: j.link,
-      date_posted: j.updated,
+      date_posted: j.updated || j.created || null,
       source: 'Jooble'
     }));
   } catch (err) {
@@ -656,7 +651,6 @@ async function fetchRemotiveJobs(query) {
   }
 }
 
-// Jobs route - FIXED query parsing
 app.get('/jobs', async (req, res) => {
   try {
     const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
@@ -714,7 +708,6 @@ app.get('/jobs', async (req, res) => {
   }
 });
 
-// Ads routes
 app.get('/ads', async (req, res) => {
   try {
     const result = await pool.query(
@@ -737,7 +730,6 @@ app.get('/paid-ads', async (req, res) => {
   }
 });
 
-// Payment routes
 app.post('/ads/initiate-payment', async (req, res) => {
   const { title, company, location, phone, url, description } = req.body;
   if (!title ||!company ||!location) {
@@ -859,7 +851,6 @@ app.get('/payment-callback', async (req, res) => {
   }
 });
 
-// Edit/Delete routes
 app.post('/ads/edit', async (req, res) => {
   const { id, token, title, location, company, description } = req.body;
   try {
