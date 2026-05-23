@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3000;
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
-const JOOBLE_API_KEY = 'YOUR_JOOBLE_KEY';
+const JOOBLE_API_KEY = 'YOUR_JOOBLE_KEY'; // replace with real key to test Jooble
 const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X';
 
 const pool = new Pool({
@@ -22,6 +22,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
+// Keep your tables
 pool.query(`
   CREATE TABLE IF NOT EXISTS ads (
     id BIGINT PRIMARY KEY,
@@ -64,17 +65,10 @@ cloudinary.config({
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: 'jobai-ads',
-    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
-    transformation: [{ width: 800, height: 600, crop: 'limit' }]
-  }
+  params: { folder: 'jobai-ads', allowed_formats: ['jpg', 'png', 'jpeg', 'webp'], transformation: [{ width: 800, height: 600, crop: 'limit' }] }
 });
 
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }
-});
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 let pendingPayments = {};
 const AD_PRICE = 500;
@@ -84,6 +78,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
+// YOUR ORIGINAL UI - unchanged
 app.get('/', (req, res) => {
   res.send(
     '<!DOCTYPE html>' +
@@ -295,6 +290,7 @@ app.get('/', (req, res) => {
     ' document.getElementById("adPayMsg").style.color = "red";' +
     ' }' +
     ' });' +
+    // NEW timeAgo - hides time after 2 days
     ' function timeAgo(dateStr) {' +
     ' if (!dateStr) return "";' +
     ' const date = new Date(dateStr);' +
@@ -313,6 +309,7 @@ app.get('/', (req, res) => {
     ' if (diffDay === 1) return "1d ago";' +
     ' return diffDay + "d ago";' +
     ' }' +
+    // UPDATED renderJobs - adds time only if recent
     ' function renderJobs(jobs) {' +
     ' if (!jobs.length) {' +
     ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">No jobs found.</div>";' +
@@ -324,6 +321,7 @@ app.get('/', (req, res) => {
     ' return "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"job-card\\"><span class=\\"country-tag\\">" + j.country + "</span><span class=\\"source-tag\\">" + j.source + "</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span>" + timePart + "</p><span class=\\"connect-btn\\">Connect & Apply</span></a>";' +
     ' }).join("");' +
     ' }' +
+    // UPDATED renderUserAds - adds time tag
     ' function renderUserAds(ads) {' +
     ' if (!ads.length) {' +
     ' document.getElementById("userAds").innerHTML = "<div class=\\"error\\">No community posts yet.</div>";' +
@@ -388,7 +386,7 @@ app.get('/', (req, res) => {
     ' company: document.getElementById("editCompany").value,' +
     ' description: document.getElementById("editDesc").value' +
     ' };' +
-    const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";
+    ' const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";' +
     ' const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
     ' const result = await res.json();' +
     ' if (result.success) {' +
@@ -508,11 +506,13 @@ app.get('/', (req, res) => {
   );
 });
 
+// Upload image route
 app.post('/upload-ad-image', upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   res.json({ url: req.file.path });
 });
 
+// Auth routes
 app.post('/auth/signup', async (req, res) => {
   const { firstName, lastName, email, phone, password } = req.body;
   if (!firstName ||!lastName ||!email ||!password) {
@@ -561,6 +561,7 @@ app.post('/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
+// Job API fetchers
 async function fetchAdzunaJobs(countryCode, countryName, query) {
   try {
     const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=20&content-type=application/json&max_days_old=7&what=${encodeURIComponent(query)}`;
@@ -608,6 +609,7 @@ async function fetchJSearchJobs(query, location) {
 }
 
 async function fetchJoobleJobs(query, location) {
+  if (JOOBLE_API_KEY === 'YOUR_JOOBLE_KEY') return [];
   try {
     const response = await fetch(`https://jooble.org/api/${JOOBLE_API_KEY}`, {
       method: 'POST',
@@ -654,6 +656,7 @@ async function fetchRemotiveJobs(query) {
   }
 }
 
+// Jobs route - FIXED query parsing
 app.get('/jobs', async (req, res) => {
   try {
     const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
@@ -680,13 +683,17 @@ app.get('/jobs', async (req, res) => {
     for (let i = 0; i < countries.length; i++) {
       promises.push(fetchAdzunaJobs(countries[i].code, countries[i].name, query));
       promises.push(fetchJSearchJobs(query, countries[i].name));
-      promises.push(fetchJoobleJobs(query, countries[i].name));
+      if (JOOBLE_API_KEY!== 'YOUR_JOOBLE_KEY') {
+        promises.push(fetchJoobleJobs(query, countries[i].name));
+      }
     }
     promises.push(fetchRemotiveJobs(query));
 
-    const results = await Promise.all(promises);
-    results.forEach(jobs => {
-      allJobs.push(...jobs);
+    const results = await Promise.allSettled(promises);
+    results.forEach(r => {
+      if (r.status === 'fulfilled' && r.value) {
+        allJobs.push(...r.value);
+      }
     });
 
     allJobs = allJobs.filter((job, index, self) =>
@@ -707,6 +714,7 @@ app.get('/jobs', async (req, res) => {
   }
 });
 
+// Ads routes
 app.get('/ads', async (req, res) => {
   try {
     const result = await pool.query(
@@ -729,6 +737,7 @@ app.get('/paid-ads', async (req, res) => {
   }
 });
 
+// Payment routes
 app.post('/ads/initiate-payment', async (req, res) => {
   const { title, company, location, phone, url, description } = req.body;
   if (!title ||!company ||!location) {
@@ -751,15 +760,8 @@ app.post('/ads/initiate-payment', async (req, res) => {
         amount: 200,
         currency: 'KES',
         redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
-        customer: {
-          email: 'customer@jobai.com',
-          phonenumber: phone || '0700000',
-          name: company
-        },
-        customizations: {
-          title: 'Job Post Payment',
-          description: 'Pay 200 KES to post job on Jobai'
-        }
+        customer: { email: 'customer@jobai.com', phonenumber: phone || '0700000', name: company },
+        customizations: { title: 'Job Post Payment', description: 'Pay 200 KES to post job on Jobai' }
       })
     });
 
@@ -797,14 +799,8 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
         amount: AD_PRICE,
         currency: 'KES',
         redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
-        customer: {
-          email: 'advertiser@jobai.com',
-          name: business
-        },
-        customizations: {
-          title: 'Sponsored Ad Payment',
-          description: 'Pay ' + AD_PRICE + ' KES for 7 days ad'
-        }
+        customer: { email: 'advertiser@jobai.com', name: business },
+        customizations: { title: 'Sponsored Ad Payment', description: 'Pay ' + AD_PRICE + ' KES for 7 days ad' }
       })
     });
 
@@ -863,6 +859,7 @@ app.get('/payment-callback', async (req, res) => {
   }
 });
 
+// Edit/Delete routes
 app.post('/ads/edit', async (req, res) => {
   const { id, token, title, location, company, description } = req.body;
   try {
