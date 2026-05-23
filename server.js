@@ -375,17 +375,29 @@ app.get('/', (req, res) => {
     ' function closeEdit() {' +
     ' document.getElementById("editModal").classList.remove("active");' +
     ' }' +
-    ' async function saveEdit() {' +
-    ' const type = document.getElementById("editType").value;' +
-    ' const id = document.getElementById("editId").value;' +
-    ' const token = document.getElementById("editToken").value;' +
-    ' const data = {' +
-    ' id, token,' +
-    ' title: document.getElementById("editTitle").value,' +
-    ' location: document.getElementById("editLocation").value,' +
-    ' company: document.getElementById("editCompany").value,' +
-    ' description: document.getElementById("editDesc").value' +
-    ' };' +
+    async function saveEdit() {
+  const type = document.getElementById("editType").value;
+  const id = document.getElementById("editId").value;
+  const token = document.getElementById("editToken").value;
+  const data = {
+    id, token,
+    title: document.getElementById("editTitle").value,
+    location: document.getElementById("editLocation").value,
+    company: document.getElementById("editCompany").value,
+    description: document.getElementById("editDesc").value
+  };
+  const endpoint = type === "paid" ? "/paid-ads/edit" : "/ads/edit";
+  const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
+  const result = await res.json();
+  if (result.success) {
+    closeEdit();
+    loadUserAds();
+    loadPaidAds();
+    alert("Updated successfully");
+  } else {
+    alert("Update failed");
+  }
+  };
     const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";
     const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
     const result = await res.json();
