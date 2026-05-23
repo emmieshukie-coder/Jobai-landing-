@@ -296,11 +296,12 @@ app.get('/', (req, res) => {
     ' }' +
     ' });' +
     ' function timeAgo(dateStr) {' +
-    ' if (!dateStr) return "just now";' +
+    ' if (!dateStr) return "";' +
     ' const date = new Date(dateStr);' +
-    ' if (isNaN(date)) return "just now";' +
+    ' if (isNaN(date.getTime())) return "";' +
     ' const now = new Date();' +
     ' const diffMs = now - date;' +
+    ' if (diffMs < 0) return "";' +
     ' const diffSec = Math.floor(diffMs / 1000);' +
     ' const diffMin = Math.floor(diffSec / 60);' +
     ' const diffHr = Math.floor(diffMin / 60);' +
@@ -338,7 +339,8 @@ app.get('/', (req, res) => {
     ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">✏️</button>";' +
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">🗑️</button>";' +
     ' actions += "</div>";' +
-    ' return "<div class=\\"job-card\\" style=\\"position:relative\\">"+actions+"<span class=\\"country-tag user-ad-tag\\">Community</span><span class=\\"source-tag\\">"+ timeAgo(j.created_at) +"</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
+    ' let timeHtml = timeAgo(j.created_at)? \'<span class="source-tag">\' + timeAgo(j.created_at) + \'</span>\' : \'\';' +
+    ' return "<div class=\\"job-card\\" style=\\"position:relative\\">"+actions+"<span class=\\"country-tag user-ad-tag\\">Community</span>"+timeHtml+"<h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
     ' }).join("");' +
     ' }' +
     ' function renderPaidAds(ads) {' +
@@ -352,10 +354,11 @@ app.get('/', (req, res) => {
     ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">✏️</button>";' +
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">🗑️</button>";' +
     ' actions += "</div>";' +
+    ' let timeHtml = timeAgo(ad.created_at)? \'<span class="source-tag">\' + timeAgo(ad.created_at) + \'</span>\' : \'\';' +
     ' return \'<div class="job-card" style="border:2px solid #f57c00;position:relative;">\' +' +
     ' actions +' +
     ' \'<span class="country-tag user-ad-tag">Sponsored</span>\' +' +
-    ' \'<span class="source-tag">\' + timeAgo(ad.created_at) + \'</span>\' +' +
+    ' timeHtml +' +
     ' img +' +
     ' \'<h3>\' + ad.business + \'</h3>\' +' +
     ' \'<p>\' + ad.text + \'</p>\' +' +
@@ -374,17 +377,17 @@ app.get('/', (req, res) => {
     ' }' +
     ' async function saveEdit() {' +
     ' const type = document.getElementById("editType").value;' +
-    ' const id = document.getElementById("editId").value;' +
-    ' const token = document.getElementById("editToken").value;' +
-    ' const data = {' +
-    ' id, token,' +
-    ' title: document.getElementById("editTitle").value,' +
-    ' location: document.getElementById("editLocation").value,' +
-    ' company: document.getElementById("editCompany").value,' +
-    ' description: document.getElementById("editDesc").value' +
-    ' };' +
-    ' const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";' +
-    const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
+    const id = document.getElementById("editId").value;
+    const token = document.getElementById("editToken").value;
+    const data = {
+      id, token,
+      title: document.getElementById("editTitle").value,
+      location: document.getElementById("editLocation").value,
+      company: document.getElementById("editCompany").value,
+      description: document.getElementById("editDesc").value
+    };
+    const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";
+    const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
     const result = await res.json();
     if (result.success) {
       closeEdit();
@@ -394,12 +397,12 @@ app.get('/', (req, res) => {
     } else {
       alert("Update failed");
     }
-  );
+  }
 
   async function deleteAd(type, id, token) {
     if (!confirm("Delete this ad?")) return;
     const endpoint = type === "paid"? "/paid-ads/delete" : "/ads/delete";
-    const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, token})});
+    const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, token }) });
     const result = await res.json();
     if (result.success) {
       loadUserAds();
@@ -451,7 +454,7 @@ app.get('/', (req, res) => {
     }
     document.getElementById("adMsg").textContent = "Redirecting to payment...";
     document.getElementById("adMsg").style.color = "blue";
-    const res = await fetch("/ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
+    const res = await fetch("/ads/initiate-payment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
     const result = await res.json();
     if (result.payment_link) {
       window.location.href = result.payment_link;
@@ -475,7 +478,7 @@ app.get('/', (req, res) => {
     }
     document.getElementById("adPayMsg").textContent = "Redirecting to payment...";
     document.getElementById("adPayMsg").style.color = "blue";
-    const res = await fetch("/paid-ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
+    const res = await fetch("/paid-ads/initiate-payment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
     const result = await res.json();
     if (result.payment_link) {
       window.location.href = result.payment_link;
@@ -714,10 +717,7 @@ app.get('/jobs', async (req, res) => {
 app.get('/ads', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT *, COALESCE(created_at, NOW()) as created_at
-       FROM ads
-       WHERE type = 'job' AND status = 'approved'
-       ORDER BY created_at DESC`
+      `SELECT *, COALESCE(created_at, NULL) as created_at FROM ads WHERE type = 'job' AND status = 'approved' ORDER BY created_at DESC`
     );
     res.json(result.rows);
   } catch (err) {
@@ -729,10 +729,7 @@ app.get('/ads', async (req, res) => {
 app.get('/paid-ads', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT *, COALESCE(created_at, NOW()) as created_at
-       FROM ads
-       WHERE type = 'ad' AND status = 'approved' AND expires_at > NOW()
-       ORDER BY created_at DESC`
+      `SELECT *, COALESCE(created_at, NULL) as created_at FROM ads WHERE type = 'ad' AND status = 'approved' AND expires_at > NOW() ORDER BY created_at DESC`
     );
     res.json(result.rows);
   } catch (err) {
