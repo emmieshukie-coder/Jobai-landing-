@@ -353,26 +353,26 @@ app.get('/', (req, res) => {
     ' let img = ad.image? \'<img src="\' + ad.image + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
     ' let actions = "<div class=\\"card-actions\\">";' +
     ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">✏️</button>";' +
-    actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">🗑️</button>";
-    actions += "</div>";
-    let timeHtml = timeAgo(ad.created_at)? \'<span class="source-tag">\' + timeAgo(ad.created_at) + \'</span>\' : \'\';
-    return \'<div class="job-card" style="border:2px solid #f57c00;position:relative;">\' +
-    actions +
-    \'<span class="country-tag user-ad-tag">Sponsored</span>\' +
-    timeHtml +
-    img +
-    \'<h3>\' + ad.business + \'</h3>\' +
-    \'<p>\' + ad.text + \'</p>\' +
-    \'<a href="\' + ad.link + \'" target="_blank" class="connect-btn" style="background:#f57c00;">Visit</a>\' +
-    \'</div>\';
-    }).join("");
-    }
-    function openEdit(type, id, token) {
-    document.getElementById("editType").value = type;
-    document.getElementById("editId").value = id;
-    document.getElementById("editToken").value = token;
-    document.getElementById("editModal").classList.add("active");
-    }
+    ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">🗑️</button>";' +
+    ' actions += "</div>";' +
+    ' let timeHtml = timeAgo(ad.created_at)? \'<span class="source-tag">\' + timeAgo(ad.created_at) + \'</span>\' : \'\';' +
+    ' return \'<div class="job-card" style="border:2px solid #f57c00;position:relative;">\' +' +
+    ' actions +' +
+    ' \'<span class="country-tag user-ad-tag">Sponsored</span>\' +' +
+    ' timeHtml +' +
+    ' img +' +
+    ' \'<h3>\' + ad.business + \'</h3>\' +' +
+    ' \'<p>\' + ad.text + \'</p>\' +' +
+    ' \'<a href="\' + ad.link + \'" target="_blank" class="connect-btn" style="background:#f57c00;">Visit</a>\' +' +
+    ' \'</div>\';' +
+    ' }).join("");' +
+    ' }' +
+    ' function openEdit(type, id, token) {' +
+    ' document.getElementById("editType").value = type;' +
+    ' document.getElementById("editId").value = id;' +
+    ' document.getElementById("editToken").value = token;' +
+    ' document.getElementById("editModal").classList.add("active");' +
+    ' }' +
     function closeEdit() {
     document.getElementById("editModal").classList.remove("active");
     }
