@@ -296,12 +296,12 @@ app.get('/', (req, res) => {
     ' }' +
     ' });' +
     ' function timeAgo(dateStr) {' +
-    ' if (!dateStr) return "";' +
+    ' if (!dateStr) return "Posted";' +
     ' const date = new Date(dateStr);' +
-    ' if (isNaN(date.getTime())) return "";' +
+    ' if (isNaN(date.getTime())) return "Posted";' +
     ' const now = new Date();' +
     ' const diffMs = now - date;' +
-    ' if (diffMs < 0) return "";' +
+    ' if (diffMs < 0) return "Posted";' +
     ' const diffSec = Math.floor(diffMs / 1000);' +
     ' const diffMin = Math.floor(diffSec / 60);' +
     ' const diffHr = Math.floor(diffMin / 60);' +
@@ -339,7 +339,7 @@ app.get('/', (req, res) => {
     ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">✏️</button>";' +
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">🗑️</button>";' +
     ' actions += "</div>";' +
-    ' let timeHtml = timeAgo(j.created_at)? \'<span class="source-tag">\' + timeAgo(j.created_at) + \'</span>\' : \'\';' +
+    ' let timeHtml = \'<span class="source-tag">\' + timeAgo(j.created_at) + \'</span>\';' +
     ' return "<div class=\\"job-card\\" style=\\"position:relative\\">"+actions+"<span class=\\"country-tag user-ad-tag\\">Community</span>"+timeHtml+"<h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
     ' }).join("");' +
     ' }' +
@@ -354,7 +354,7 @@ app.get('/', (req, res) => {
     ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">✏️</button>";' +
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">🗑️</button>";' +
     ' actions += "</div>";' +
-    ' let timeHtml = timeAgo(ad.created_at)? \'<span class="source-tag">\' + timeAgo(ad.created_at) + \'</span>\' : \'\';' +
+    ' let timeHtml = \'<span class="source-tag">\' + timeAgo(ad.created_at) + \'</span>\';' +
     ' return \'<div class="job-card" style="border:2px solid #f57c00;position:relative;">\' +' +
     ' actions +' +
     ' \'<span class="country-tag user-ad-tag">Sponsored</span>\' +' +
@@ -378,14 +378,14 @@ app.get('/', (req, res) => {
     ' async function saveEdit() {' +
     ' const type = document.getElementById("editType").value;' +
     ' const id = document.getElementById("editId").value;' +
-        const token = document.getElementById("editToken").value;
-    const data = {
-      id, token,
-      title: document.getElementById("editTitle").value,
-      location: document.getElementById("editLocation").value,
-      company: document.getElementById("editCompany").value,
-      description: document.getElementById("editDesc").value
-    };
+    ' const token = document.getElementById("editToken").value;' +
+    ' const data = {' +
+    ' id, token,' +
+    ' title: document.getElementById("editTitle").value,' +
+    ' location: document.getElementById("editLocation").value,' +
+    ' company: document.getElementById("editCompany").value,' +
+    ' description: document.getElementById("editDesc").value' +
+    ' };' +
     const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";
     const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
     const result = await res.json();
