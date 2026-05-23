@@ -345,6 +345,7 @@ app.get('/', (req, res) => {
     ' return "<div class=\\"job-card\\" style=\\"position:relative\\">"+actions+"<span class=\\"country-tag user-ad-tag\\">Community</span>"+timeHtml+"<h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
     ' }).join("");' +
     ' }' +
+    // UPDATED renderPaidAds - now shows time
     ' function renderPaidAds(ads) {' +
     ' if (!ads.length) {' +
     ' document.getElementById("paidAds").innerHTML = "<div class=\\"error\\">No sponsors yet.</div>";' +
@@ -356,9 +357,12 @@ app.get('/', (req, res) => {
     ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">✏️</button>";' +
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">🗑️</button>";' +
     ' actions += "</div>";' +
+    ' const timeStr = timeAgo(ad.created_at);' +
+    ' const timeHtml = timeStr? `<span class="source-tag">${timeStr}</span>` : "";' +
     ' return \'<div class="job-card" style="border:2px solid #f57c00;position:relative;">\' +' +
     ' actions +' +
     ' \'<span class="country-tag user-ad-tag">Sponsored</span>\' +' +
+    ' timeHtml +' +
     ' img +' +
     ' \'<h3>\' + ad.business + \'</h3>\' +' +
     ' \'<p>\' + ad.text + \'</p>\' +' +
@@ -376,7 +380,6 @@ app.get('/', (req, res) => {
     ' document.getElementById("editModal").classList.remove("active");' +
     ' }' +
     ' async function saveEdit() {' +
-    ' const type = document.getElementById("editType").value;' +
     ' const id = document.getElementById("editId").value;' +
     ' const token = document.getElementById("editToken").value;' +
     ' const data = {' +
@@ -656,7 +659,7 @@ async function fetchRemotiveJobs(query) {
   }
 }
 
-// Jobs route - FIXED query parsing
+// Jobs route
 app.get('/jobs', async (req, res) => {
   try {
     const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
