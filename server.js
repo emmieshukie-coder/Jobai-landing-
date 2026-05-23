@@ -296,16 +296,17 @@ app.get('/', (req, res) => {
     ' }' +
     ' });' +
     ' function timeAgo(dateStr) {' +
-    ' if (!dateStr) return "Posted";' +
+    ' if (!dateStr) return "";' +
     ' const date = new Date(dateStr);' +
-    ' if (isNaN(date.getTime())) return "Posted";' +
+    ' if (isNaN(date.getTime())) return "";' +
     ' const now = new Date();' +
     ' const diffMs = now - date;' +
-    ' if (diffMs < 0) return "Posted";' +
+    ' const diffDay = Math.floor(diffMs / (1000 * 60 * 60 * 24));' +
+    ' if (diffDay > 2) return "";' +
+    ' if (diffMs < 0) return "";' +
     ' const diffSec = Math.floor(diffMs / 1000);' +
     ' const diffMin = Math.floor(diffSec / 60);' +
     ' const diffHr = Math.floor(diffMin / 60);' +
-    ' const diffDay = Math.floor(diffHr / 24);' +
     ' if (diffSec < 60) return "just now";' +
     ' if (diffMin < 60) return diffMin + "m ago";' +
     ' if (diffHr < 24) return diffHr + "h ago";' +
@@ -339,7 +340,7 @@ app.get('/', (req, res) => {
     ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">✏️</button>";' +
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">🗑️</button>";' +
     ' actions += "</div>";' +
-    ' let timeHtml = \'<span class="source-tag">\' + timeAgo(j.created_at) + \'</span>\';' +
+    ' let timeHtml = timeAgo(j.created_at)? \'<span class="source-tag">\' + timeAgo(j.created_at) + \'</span>\' : \'\';' +
     ' return "<div class=\\"job-card\\" style=\\"position:relative\\">"+actions+"<span class=\\"country-tag user-ad-tag\\">Community</span>"+timeHtml+"<h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
     ' }).join("");' +
     ' }' +
@@ -352,576 +353,575 @@ app.get('/', (req, res) => {
     ' let img = ad.image? \'<img src="\' + ad.image + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
     ' let actions = "<div class=\\"card-actions\\">";' +
     ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">✏️</button>";' +
-    ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">🗑️</button>";' +
-    ' actions += "</div>";' +
-    ' let timeHtml = \'<span class="source-tag">\' + timeAgo(ad.created_at) + \'</span>\';' +
-    ' return \'<div class="job-card" style="border:2px solid #f57c00;position:relative;">\' +' +
-    ' actions +' +
-    ' \'<span class="country-tag user-ad-tag">Sponsored</span>\' +' +
-    ' timeHtml +' +
-    ' img +' +
-    ' \'<h3>\' + ad.business + \'</h3>\' +' +
-    ' \'<p>\' + ad.text + \'</p>\' +' +
-    ' \'<a href="\' + ad.link + \'" target="_blank" class="connect-btn" style="background:#f57c00;">Visit</a>\' +' +
-    ' \'</div>\';' +
-    ' }).join("");' +
-    ' }' +
-    ' function openEdit(type, id, token) {' +
-    ' document.getElementById("editType").value = type;' +
-    ' document.getElementById("editId").value = id;' +
-    ' document.getElementById("editToken").value = token;' +
-    ' document.getElementById("editModal").classList.add("active");' +
-    ' }' +
-    ' function closeEdit() {' +
-    ' document.getElementById("editModal").classList.remove("active");' +
-    ' }' +
-    });
-async function saveEdit() {
-  const type = document.getElementById("editType").value;
-  const id = document.getElementById("editId").value;
-  const token = document.getElementById("editToken").value;
-  const data = {
+    actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">🗑️</button>";
+    actions += "</div>";
+    let timeHtml = timeAgo(ad.created_at)? \'<span class="source-tag">\' + timeAgo(ad.created_at) + \'</span>\' : \'\';
+    return \'<div class="job-card" style="border:2px solid #f57c00;position:relative;">\' +
+    actions +
+    \'<span class="country-tag user-ad-tag">Sponsored</span>\' +
+    timeHtml +
+    img +
+    \'<h3>\' + ad.business + \'</h3>\' +
+    \'<p>\' + ad.text + \'</p>\' +
+    \'<a href="\' + ad.link + \'" target="_blank" class="connect-btn" style="background:#f57c00;">Visit</a>\' +
+    \'</div>\';
+    }).join("");
+    }
+    function openEdit(type, id, token) {
+    document.getElementById("editType").value = type;
+    document.getElementById("editId").value = id;
+    document.getElementById("editToken").value = token;
+    document.getElementById("editModal").classList.add("active");
+    }
+    function closeEdit() {
+    document.getElementById("editModal").classList.remove("active");
+    }
+    async function saveEdit() {
+    const type = document.getElementById("editType").value;
+    const id = document.getElementById("editId").value;
+    const token = document.getElementById("editToken").value;
+    const data = {
     id, token,
     title: document.getElementById("editTitle").value,
     location: document.getElementById("editLocation").value,
     company: document.getElementById("editCompany").value,
     description: document.getElementById("editDesc").value
-  };
-  const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";
-  const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
-  const result = await res.json();
-  if (result.success) {
+    };
+    const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";
+    const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
+    const result = await res.json();
+    if (result.success) {
     closeEdit();
     loadUserAds();
     loadPaidAds();
     alert("Updated successfully");
-  } else {
+    } else {
     alert("Update failed");
-  }
-}
-async function deleteAd(type, id, token) {
-  if (!confirm("Delete this ad?")) return;
-  const endpoint = type === "paid"? "/paid-ads/delete" : "/ads/delete";
-  const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, token})});
-  const result = await res.json();
-  if (result.success) {
+    }
+    }
+    async function deleteAd(type, id, token) {
+    if (!confirm("Delete this ad?")) return;
+    const endpoint = type === "paid"? "/paid-ads/delete" : "/ads/delete";
+    const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, token})});
+    const result = await res.json();
+    if (result.success) {
     loadUserAds();
     loadPaidAds();
     alert("Deleted successfully");
-  } else {
+    } else {
     alert("Delete failed");
-  }
-}
-async function loadJobs() {
-  const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant";
-  const days = document.getElementById("dateFilter").value;
-  document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading jobs...</div>";
-  try {
+    }
+    }
+    async function loadJobs() {
+    const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant";
+    const days = document.getElementById("dateFilter").value;
+    document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading jobs...</div>";
+    try {
     const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);
     allJobs = await res.json();
     renderJobs(allJobs);
-  } catch (e) {
+    } catch (e) {
     document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs.</div>";
-  }
-}
-async function loadUserAds() {
-  const res = await fetch("/ads");
-  const ads = await res.json();
-  renderUserAds(ads);
-}
-async function loadPaidAds() {
-  const res = await fetch("/paid-ads");
-  const ads = await res.json();
-  renderPaidAds(ads);
-}
-async function submitAd() {
-  const data = {
+    }
+    }
+    async function loadUserAds() {
+    const res = await fetch("/ads");
+    const ads = await res.json();
+    renderUserAds(ads);
+    }
+    async function loadPaidAds() {
+    const res = await fetch("/paid-ads");
+    const ads = await res.json();
+    renderPaidAds(ads);
+    }
+    async function submitAd() {
+    const data = {
     title: document.getElementById("adTitle").value,
     company: document.getElementById("adCompany").value,
     location: document.getElementById("adLocation").value,
     phone: document.getElementById("adPhone").value,
     url: document.getElementById("adUrl").value,
     description: document.getElementById("adDesc").value
-  };
-  if (!data.title ||!data.company ||!data.location) {
+    };
+    if (!data.title ||!data.company ||!data.location) {
     document.getElementById("adMsg").textContent = "Please fill title, company and location.";
     document.getElementById("adMsg").style.color = "red";
     return;
-  }
-  document.getElementById("adMsg").textContent = "Redirecting to payment...";
-  document.getElementById("adMsg").style.color = "blue";
-  const res = await fetch("/ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
-  const result = await res.json();
-  if (result.payment_link) {
+    }
+    document.getElementById("adMsg").textContent = "Redirecting to payment...";
+    document.getElementById("adMsg").style.color = "blue";
+    const res = await fetch("/ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
+    const result = await res.json();
+    if (result.payment_link) {
     window.location.href = result.payment_link;
-  } else {
+    } else {
     document.getElementById("adMsg").textContent = "Payment failed. Try again.";
     document.getElementById("adMsg").style.color = "red";
-  }
-}
-async function submitPaidAd() {
-  const data = {
+    }
+    }
+    async function submitPaidAd() {
+    const data = {
     business: document.getElementById("adBizName").value,
     link: document.getElementById("adLink").value,
     text: document.getElementById("adText").value,
     image: document.getElementById("adImgUrl").value
-  };
-  if (!data.business ||!data.link ||!data.text) {
+    };
+    if (!data.business ||!data.link ||!data.text) {
     document.getElementById("adPayMsg").textContent = "Fill business, link and text.";
     document.getElementById("adPayMsg").style.color = "red";
     return;
-  }
-  document.getElementById("adPayMsg").textContent = "Redirecting to payment...";
-  document.getElementById("adPayMsg").style.color = "blue";
-  const res = await fetch("/paid-ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
-  const result = await res.json();
-  if (result.payment_link) {
+    }
+    document.getElementById("adPayMsg").textContent = "Redirecting to payment...";
+    document.getElementById("adPayMsg").style.color = "blue";
+    const res = await fetch("/paid-ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
+    const result = await res.json();
+    if (result.payment_link) {
     window.location.href = result.payment_link;
-  } else {
+    } else {
     document.getElementById("adPayMsg").textContent = "Payment failed. Try again.";
     document.getElementById("adPayMsg").style.color = "red";
-  }
-}
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.get("payment") === "success") {
-  document.getElementById("adMsg").textContent = "Payment successful! Job posted.";
-  document.getElementById("adMsg").style.color = "green";
-  loadUserAds();
-  loadPaidAds();
-}
-if (urlParams.get("payment") === "failed") {
-  document.getElementById("adMsg").textContent = "Payment failed or cancelled.";
-  document.getElementById("adMsg").style.color = "red";
-}
-document.getElementById("searchBtn").addEventListener("click", loadJobs);
-document.getElementById("dateFilter").addEventListener("change", loadJobs);
-document.getElementById("searchInput").addEventListener("keypress", function(e) {
-  if (e.key === "Enter") loadJobs();
-});
-loadJobs();
-loadUserAds();
-loadPaidAds();
-</script>
-</body>
-</html>'
-);
-});
+    }
+    }
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("payment") === "success") {
+    document.getElementById("adMsg").textContent = "Payment successful! Job posted.";
+    document.getElementById("adMsg").style.color = "green";
+    loadUserAds();
+    loadPaidAds();
+    }
+    if (urlParams.get("payment") === "failed") {
+    document.getElementById("adMsg").textContent = "Payment failed or cancelled.";
+    document.getElementById("adMsg").style.color = "red";
+    }
+    document.getElementById("searchBtn").addEventListener("click", loadJobs);
+    document.getElementById("dateFilter").addEventListener("change", loadJobs);
+    document.getElementById("searchInput").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") loadJobs();
+    });
+    loadJobs();
+    loadUserAds();
+    loadPaidAds();
+    </script>
+    </body>
+    </html>'
+    );
+    });
 
-app.post('/upload-ad-image', upload.single('image'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-  res.json({ url: req.file.path });
-});
+    app.post('/upload-ad-image', upload.single('image'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    res.json({ url: req.file.path });
+    });
 
-app.post('/auth/signup', async (req, res) => {
-  const { firstName, lastName, email, phone, password } = req.body;
-  if (!firstName ||!lastName ||!email ||!password) {
+    app.post('/auth/signup', async (req, res) => {
+    const { firstName, lastName, email, phone, password } = req.body;
+    if (!firstName ||!lastName ||!email ||!password) {
     return res.status(400).json({ success: false, error: 'Missing required fields' });
-  }
-  try {
+    }
+    try {
     const hash = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      `INSERT INTO users (first_name, last_name, email, phone, password_hash) VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, email`,
-      [firstName, lastName, email, phone, hash]
+    `INSERT INTO users (first_name, last_name, email, phone, password_hash) VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, email`,
+    [firstName, lastName, email, phone, hash]
     );
     res.json({ success: true, user: result.rows[0] });
-  } catch (err) {
+    } catch (err) {
     if (err.code === '23505') {
-      res.status(400).json({ success: false, error: 'Email already exists' });
+    res.status(400).json({ success: false, error: 'Email already exists' });
     } else {
-      console.error(err);
-      res.status(500).json({ success: false, error: 'Signup failed' });
+    console.error(err);
+    res.status(500).json({ success: false, error: 'Signup failed' });
     }
-  }
-});
+    }
+    });
 
-app.post('/auth/login', async (req, res) => {
-  const { email, password } = req.body;
-  if (!email ||!password) {
+    app.post('/auth/login', async (req, res) => {
+    const { email, password } = req.body;
+    if (!email ||!password) {
     return res.status(400).json({ success: false, error: 'Missing email or password' });
-  }
-  try {
+    }
+    try {
     const result = await pool.query(`SELECT * FROM users WHERE email = $1`, [email]);
     if (result.rows.length === 0) {
-      return res.status(400).json({ success: false, error: 'Invalid email or password' });
+    return res.status(400).json({ success: false, error: 'Invalid email or password' });
     }
     const user = result.rows[0];
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
-      return res.status(400).json({ success: false, error: 'Invalid email or password' });
+    return res.status(400).json({ success: false, error: 'Invalid email or password' });
     }
     res.json({ success: true, user: { id: user.id, first_name: user.first_name, last_name: user.last_name, email: user.email } });
-  } catch (err) {
+    } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, error: 'Login failed' });
-  }
-});
+    }
+    });
 
-app.post('/auth/logout', (req, res) => {
-  res.json({ success: true });
-});
+    app.post('/auth/logout', (req, res) => {
+    res.json({ success: true });
+    });
 
-async function fetchAdzunaJobs(countryCode, countryName, query) {
-  try {
+    async function fetchAdzunaJobs(countryCode, countryName, query) {
+    try {
     const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=20&content-type=application/json&max_days_old=7&what=${encodeURIComponent(query)}`;
     const response = await fetch(url);
     if (!response.ok) return [];
     const data = await response.json();
     return (data.results || []).map(j => ({
-      title: j.title || 'Job Title',
-      company: j.company?.display_name || 'Unknown Company',
-      location: j.location?.display_name || countryName,
-      country: countryName,
-      url: j.redirect_url || '#',
-      date_posted: j.created,
-      source: 'Adzuna'
+    title: j.title || 'Job Title',
+    company: j.company?.display_name || 'Unknown Company',
+    location: j.location?.display_name || countryName,
+    country: countryName,
+    url: j.redirect_url || '#',
+    date_posted: j.created,
+    source: 'Adzuna'
     }));
-  } catch (err) {
+    } catch (err) {
     return [];
-  }
-}
+    }
+    }
 
-async function fetchJSearchJobs(query, location) {
-  try {
+    async function fetchJSearchJobs(query, location) {
+    try {
     const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1&date_posted=week`;
     const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'X-RapidAPI-Key': RAPIDAPI_KEY,
-        'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
-      }
+    method: 'GET',
+    headers: {
+    'X-RapidAPI-Key': RAPIDAPI_KEY,
+    'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
+    }
     });
     if (!response.ok) return [];
     const data = await response.json();
     return (data.data || []).map(j => ({
-      title: j.job_title || 'Job Title',
-      company: j.employer_name || 'Unknown Company',
-      location: j.job_city || location,
-      country: location,
-      url: j.job_apply_link || '#',
-      date_posted: j.job_posted_at_datetime_utc,
-      source: j.job_publisher || 'JSearch'
+    title: j.job_title || 'Job Title',
+    company: j.employer_name || 'Unknown Company',
+    location: j.job_city || location,
+    country: location,
+    url: j.job_apply_link || '#',
+    date_posted: j.job_posted_at_datetime_utc,
+    source: j.job_publisher || 'JSearch'
     }));
-  } catch (err) {
+    } catch (err) {
     return [];
-  }
-}
+    }
+    }
 
-async function fetchJoobleJobs(query, location) {
-  try {
+    async function fetchJoobleJobs(query, location) {
+    try {
     const response = await fetch(`https://jooble.org/api/${JOOBLE_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        keywords: query,
-        location: location,
-        page: 1,
-        resultsOnPage: 20
-      })
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+    keywords: query,
+    location: location,
+    page: 1,
+    resultsOnPage: 20
+    })
     });
     if (!response.ok) return [];
     const data = await response.json();
     return (data.jobs || []).map(j => ({
-      title: j.title,
-      company: j.company,
-      location: j.location,
-      country: location,
-      url: j.link,
-      date_posted: j.updated,
-      source: 'Jooble'
+    title: j.title,
+    company: j.company,
+    location: j.location,
+    country: location,
+    url: j.link,
+    date_posted: j.updated,
+    source: 'Jooble'
     }));
-  } catch (err) {
+    } catch (err) {
     return [];
-  }
-}
+    }
+    }
 
-async function fetchRemotiveJobs(query) {
-  try {
+    async function fetchRemotiveJobs(query) {
+    try {
     const response = await fetch(`https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}`);
     if (!response.ok) return [];
     const data = await response.json();
     return (data.jobs || []).map(j => ({
-      title: j.title,
-      company: j.company_name,
-      location: 'Remote',
-      country: 'Global',
-      url: j.url,
-      date_posted: j.date,
-      source: 'Remotive'
+    title: j.title,
+    company: j.company_name,
+    location: 'Remote',
+    country: 'Global',
+    url: j.url,
+    date_posted: j.date,
+    source: 'Remotive'
     }));
-  } catch (err) {
+    } catch (err) {
     return [];
-  }
-}
+    }
+    }
 
-app.get('/jobs', async (req, res) => {
-  try {
+    app.get('/jobs', async (req, res) => {
+    try {
     const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
     const recentDays = parseInt(req.query.recent) || 7;
 
     const countries = [
-      { code: 'sa', name: 'Saudi Arabia' },
-      { code: 'ae', name: 'United Arab Emirates' },
-      { code: 'gb', name: 'United Kingdom' },
-      { code: 'in', name: 'India' },
-      { code: 'ug', name: 'Uganda' },
-      { code: 'ke', name: 'Kenya' },
-      { code: 'tz', name: 'Tanzania' },
-      { code: 'za', name: 'South Africa' },
-      { code: 'au', name: 'Australia' },
-      { code: 'us', name: 'United States' },
-      { code: 'rw', name: 'Rwanda' },
-      { code: 'bi', name: 'Burundi' }
+    { code: 'sa', name: 'Saudi Arabia' },
+    { code: 'ae', name: 'United Arab Emirates' },
+    { code: 'gb', name: 'United Kingdom' },
+    { code: 'in', name: 'India' },
+    { code: 'ug', name: 'Uganda' },
+    { code: 'ke', name: 'Kenya' },
+    { code: 'tz', name: 'Tanzania' },
+    { code: 'za', name: 'South Africa' },
+    { code: 'au', name: 'Australia' },
+    { code: 'us', name: 'United States' },
+    { code: 'rw', name: 'Rwanda' },
+    { code: 'bi', name: 'Burundi' }
     ];
 
     let allJobs = [];
 
     const promises = [];
     for (let i = 0; i < countries.length; i++) {
-      promises.push(fetchAdzunaJobs(countries[i].code, countries[i].name, query));
-      promises.push(fetchJSearchJobs(query, countries[i].name));
-      promises.push(fetchJoobleJobs(query, countries[i].name));
+    promises.push(fetchAdzunaJobs(countries[i].code, countries[i].name, query));
+    promises.push(fetchJSearchJobs(query, countries[i].name));
+    promises.push(fetchJoobleJobs(query, countries[i].name));
     }
     promises.push(fetchRemotiveJobs(query));
 
     const results = await Promise.all(promises);
     results.forEach(jobs => {
-      allJobs.push(...jobs);
+    allJobs.push(...jobs);
     });
 
     allJobs = allJobs.filter((job, index, self) =>
-      index === self.findIndex(j => j.url === job.url)
+    index === self.findIndex(j => j.url === job.url)
     );
 
     if (recentDays > 0 && recentDays!== 'all') {
-      const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
-      allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
+    const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
+    allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
 
     allJobs.sort((a, b) => new Date(b.date_posted) - new Date(a.date_posted));
 
     res.json(allJobs.slice(0, 100));
-  } catch (err) {
+    } catch (err) {
     console.error('Jobs fetch error:', err);
     res.json([]);
-  }
-});
+    }
+    });
 
-app.get('/ads', async (req, res) => {
-  try {
+    app.get('/ads', async (req, res) => {
+    try {
     const result = await pool.query(
-      `SELECT * FROM ads WHERE type = 'job' AND status = 'approved' ORDER BY created_at DESC`
+    `SELECT * FROM ads WHERE type = 'job' AND status = 'approved' ORDER BY created_at DESC`
     );
     res.json(result.rows);
-  } catch (err) {
+    } catch (err) {
     res.status(500).json({ error: 'Database error' });
-  }
-});
+    }
+    });
 
-app.get('/paid-ads', async (req, res) => {
-  try {
+    app.get('/paid-ads', async (req, res) => {
+    try {
     const result = await pool.query(
-      `SELECT * FROM ads WHERE type = 'ad' AND status = 'approved' AND expires_at > NOW() ORDER BY created_at DESC`
+    `SELECT * FROM ads WHERE type = 'ad' AND status = 'approved' AND expires_at > NOW() ORDER BY created_at DESC`
     );
     res.json(result.rows);
-  } catch (err) {
+    } catch (err) {
     res.status(500).json({ error: 'Database error' });
-  }
-});
+    }
+    });
 
-app.post('/ads/initiate-payment', async (req, res) => {
-  const { title, company, location, phone, url, description } = req.body;
-  if (!title ||!company ||!location) {
+    app.post('/ads/initiate-payment', async (req, res) => {
+    const { title, company, location, phone, url, description } = req.body;
+    if (!title ||!company ||!location) {
     return res.status(400).json({ error: 'Missing required fields' });
-  }
+    }
 
-  const tx_ref = 'jobai_' + Date.now();
-  const token = crypto.randomBytes(16).toString('hex');
-  pendingPayments[tx_ref] = { title, company, location, phone, url, description, type: 'job', token };
+    const tx_ref = 'jobai_' + Date.now();
+    const token = crypto.randomBytes(16).toString('hex');
+    pendingPayments[tx_ref] = { title, company, location, phone, url, description, type: 'job', token };
 
-  try {
+    try {
     const response = await fetch('https://api.flutterwave.com/v3/payments', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${FLW_SECRET_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        tx_ref,
-        amount: 200,
-        currency: 'KES',
-        redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
-        customer: {
-          email: 'customer@jobai.com',
-          phonenumber: phone || '0700000',
-          name: company
-        },
-        customizations: {
-          title: 'Job Post Payment',
-          description: 'Pay 200 KES to post job on Jobai'
-        }
-      })
+    method: 'POST',
+    headers: {
+    'Authorization': `Bearer ${FLW_SECRET_KEY}`,
+    'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+    tx_ref,
+    amount: 200,
+    currency: 'KES',
+    redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
+    customer: {
+    email: 'customer@jobai.com',
+    phonenumber: phone || '0700000',
+    name: company
+    },
+    customizations: {
+    title: 'Job Post Payment',
+    description: 'Pay 200 KES to post job on Jobai'
+    }
+    })
     });
 
     const data = await response.json();
     if (data.status === 'success') {
-      res.json({ payment_link: data.data.link });
+    res.json({ payment_link: data.data.link });
     } else {
-      res.status(400).json({ error: 'Failed to create payment' });
+    res.status(400).json({ error: 'Failed to create payment' });
     }
-  } catch (err) {
+    } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Payment error' });
-  }
-});
+    }
+    });
 
-app.post('/paid-ads/initiate-payment', async (req, res) => {
-  const { business, link, text, image } = req.body;
-  if (!business ||!link ||!text) {
+    app.post('/paid-ads/initiate-payment', async (req, res) => {
+    const { business, link, text, image } = req.body;
+    if (!business ||!link ||!text) {
     return res.status(400).json({ error: 'Missing required fields' });
-  }
+    }
 
-  const tx_ref = 'ad_' + Date.now();
-  const token = crypto.randomBytes(16).toString('hex');
-  pendingPayments[tx_ref] = { business, link, text, image, type: 'ad', token };
+    const tx_ref = 'ad_' + Date.now();
+    const token = crypto.randomBytes(16).toString('hex');
+    pendingPayments[tx_ref] = { business, link, text, image, type: 'ad', token };
 
-  try {
+    try {
     const response = await fetch('https://api.flutterwave.com/v3/payments', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${FLW_SECRET_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        tx_ref,
-        amount: AD_PRICE,
-        currency: 'KES',
-        redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
-        customer: {
-          email: 'advertiser@jobai.com',
-          name: business
-        },
-        customizations: {
-          title: 'Sponsored Ad Payment',
-          description: 'Pay ' + AD_PRICE + ' KES for 7 days ad'
-        }
-      })
+    method: 'POST',
+    headers: {
+    'Authorization': `Bearer ${FLW_SECRET_KEY}`,
+    'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+    tx_ref,
+    amount: AD_PRICE,
+    currency: 'KES',
+    redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
+    customer: {
+    email: 'advertiser@jobai.com',
+    name: business
+    },
+    customizations: {
+    title: 'Sponsored Ad Payment',
+    description: 'Pay ' + AD_PRICE + ' KES for 7 days ad'
+    }
+    })
     });
 
     const data = await response.json();
     if (data.status === 'success') {
-      res.json({ payment_link: data.data.link });
+    res.json({ payment_link: data.data.link });
     } else {
-      res.status(400).json({ error: 'Failed to create payment' });
+    res.status(400).json({ error: 'Failed to create payment' });
     }
-  } catch (err) {
+    } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Payment error' });
-  }
-});
+    }
+    });
 
-app.get('/payment-callback', async (req, res) => {
-  const { transaction_id, tx_ref } = req.query;
+    app.get('/payment-callback', async (req, res) => {
+    const { transaction_id, tx_ref } = req.query;
 
-  try {
+    try {
     const response = await fetch(`https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`, {
-      headers: { 'Authorization': `Bearer ${FLW_SECRET_KEY}` }
+    headers: { 'Authorization': `Bearer ${FLW_SECRET_KEY}` }
     });
     const data = await response.json();
 
     if (data.status === 'success' && data.data.status === 'successful') {
-      const jobData = pendingPayments[tx_ref];
-      if (jobData) {
-        const id = Date.now() + Math.floor(Math.random() * 1000);
-        const expires = new Date();
-        expires.setDate(expires.getDate() + AD_DURATION_DAYS);
+    const jobData = pendingPayments[tx_ref];
+    if (jobData) {
+    const id = Date.now() + Math.floor(Math.random() * 1000);
+    const expires = new Date();
+    expires.setDate(expires.getDate() + AD_DURATION_DAYS);
 
-        if (jobData.type === 'ad') {
-          await pool.query(
-            `INSERT INTO ads (id, token, type, status, business, link, text, image, paymentref, expires_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-            [id, jobData.token, 'ad', 'approved', jobData.business, jobData.link, jobData.text, jobData.image, transaction_id, expires]
-          );
-        } else {
-          await pool.query(
-            `INSERT INTO ads (id, token, type, status, title, company, location, phone, url, description, paymentref, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
-            [id, jobData.token, 'job', 'approved', jobData.title, jobData.company, jobData.location, jobData.phone, jobData.url, jobData.description, transaction_id]
-          );
-        }
-        delete pendingPayments[tx_ref];
-        res.redirect('/?payment=success');
-      } else {
-        res.redirect('/?payment=failed');
-      }
+    if (jobData.type === 'ad') {
+    await pool.query(
+    `INSERT INTO ads (id, token, type, status, business, link, text, image, paymentref, expires_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+    [id, jobData.token, 'ad', 'approved', jobData.business, jobData.link, jobData.text, jobData.image, transaction_id, expires]
+    );
     } else {
-      res.redirect('/?payment=failed');
+    await pool.query(
+    `INSERT INTO ads (id, token, type, status, title, company, location, phone, url, description, paymentref, created_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+    [id, jobData.token, 'job', 'approved', jobData.title, jobData.company, jobData.location, jobData.phone, jobData.url, jobData.description, transaction_id]
+    );
     }
-  } catch (err) {
+    delete pendingPayments[tx_ref];
+    res.redirect('/?payment=success');
+    } else {
+    res.redirect('/?payment=failed');
+    }
+    } else {
+    res.redirect('/?payment=failed');
+    }
+    } catch (err) {
     console.error(err);
     res.redirect('/?payment=failed');
-  }
-});
+    }
+    });
 
-app.post('/ads/edit', async (req, res) => {
-  const { id, token, title, location, company, description } = req.body;
-  try {
+    app.post('/ads/edit', async (req, res) => {
+    const { id, token, title, location, company, description } = req.body;
+    try {
     const result = await pool.query(
-      `UPDATE ads SET title = COALESCE($1, title), location = COALESCE($2, location),
-       company = COALESCE($3, company), description = COALESCE($4, description)
-       WHERE id = $5 AND token = $6 AND type = 'job' RETURNING id`,
-      [title, location, company, description, id, token]
+    `UPDATE ads SET title = COALESCE($1, title), location = COALESCE($2, location),
+    company = COALESCE($3, company), description = COALESCE($4, description)
+    WHERE id = $5 AND token = $6 AND type = 'job' RETURNING id`,
+    [title, location, company, description, id, token]
     );
     res.json({ success: result.rowCount > 0 });
-  } catch (err) {
+    } catch (err) {
     console.error(err);
     res.json({ success: false });
-  }
-});
+    }
+    });
 
-app.post('/ads/delete', async (req, res) => {
-  const { id, token } = req.body;
-  try {
+    app.post('/ads/delete', async (req, res) => {
+    const { id, token } = req.body;
+    try {
     const result = await pool.query(
-      `DELETE FROM ads WHERE id = $1 AND token = $2 AND type = 'job' RETURNING id`,
-      [id, token]
+    `DELETE FROM ads WHERE id = $1 AND token = $2 AND type = 'job' RETURNING id`,
+    [id, token]
     );
     res.json({ success: result.rowCount > 0 });
-  } catch (err) {
+    } catch (err) {
     console.error(err);
     res.json({ success: false });
-  }
-});
+    }
+    });
 
-app.post('/paid-ads/edit', async (req, res) => {
-  const { id, token, title, location, company, description } = req.body;
-  try {
+    app.post('/paid-ads/edit', async (req, res) => {
+    const { id, token, title, location, company, description } = req.body;
+    try {
     const result = await pool.query(
-      `UPDATE ads SET business = COALESCE($1, business), text = COALESCE($2, text),
-       location = COALESCE($3, location), company = COALESCE($4, company)
-       WHERE id = $5 AND token = $6 AND type = 'ad' RETURNING id`,
-      [title, description, location, company, id, token]
+    `UPDATE ads SET business = COALESCE($1, business), text = COALESCE($2, text),
+    location = COALESCE($3, location), company = COALESCE($4, company)
+    WHERE id = $5 AND token = $6 AND type = 'ad' RETURNING id`,
+    [title, description, location, company, id, token]
     );
     res.json({ success: result.rowCount > 0 });
-  } catch (err) {
+    } catch (err) {
     console.error(err);
     res.json({ success: false });
-  }
-});
+    }
+    });
 
-app.post('/paid-ads/delete', async (req, res) => {
-  const { id, token } = req.body;
-  try {
+    app.post('/paid-ads/delete', async (req, res) => {
+    const { id, token } = req.body;
+    try {
     const result = await pool.query(
-      `DELETE FROM ads WHERE id = $1 AND token = $2 AND type = 'ad' RETURNING id`,
-      [id, token]
+    `DELETE FROM ads WHERE id = $1 AND token = $2 AND type = 'ad' RETURNING id`,
+    [id, token]
     );
     res.json({ success: result.rowCount > 0 });
-  } catch (err) {
+    } catch (err) {
     console.error(err);
     res.json({ success: false });
-  }
-});
+    }
+    });
 
-app.listen(PORT, function() {
-  console.log('Server running on port ' + PORT);
-});
+    app.listen(PORT, function() {
+    console.log('Server running on port ' + PORT);
+    });
