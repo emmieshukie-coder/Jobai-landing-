@@ -332,7 +332,7 @@ app.get('/', (req, res) => {
     ' }' +
     ' buttons += "</div>";' +
     ' let actions = "<div class=\\"card-actions\\">";' +
-    ' actions += `<button class="icon-btn edit-btn" onclick="openEdit('+"'user','"+j.id+"','"+j.token+"','"+(j.title||'')+"','"+(j.location||'')+"','"+(j.company||'')+"','"+(j.description||'')+"')\\">✏️</button>`;' +
+    ' actions += \'<button class="icon-btn edit-btn" onclick="openEdit(' + JSON.stringify('user') + ',' + JSON.stringify(j.id) + ',' + JSON.stringify(j.token) + ',' + JSON.stringify(j.title||'') + ',' + JSON.stringify(j.location||'') + ',' + JSON.stringify(j.company||'') + ',' + JSON.stringify(j.description||'') + ')">✏️</button>\';' +
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">🗑️</button>";' +
     ' actions += "</div>";' +
     ' const timeStr = timeAgo(j.created_at);' +
@@ -348,7 +348,7 @@ app.get('/', (req, res) => {
     ' document.getElementById("paidAds").innerHTML = ads.map(function(ad) {' +
     ' let img = ad.image? \'<img src="\' + ad.image + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
     ' let actions = "<div class=\\"card-actions\\">";' +
-    ' actions += `<button class="icon-btn edit-btn" onclick="openEdit('+"'paid','"+ad.id+"','"+ad.token+"','"+(ad.business||'')+"','"+(ad.location||'')+"','"+(ad.company||'')+"','"+(ad.text||'')+"')\\">✏️</button>`;' +
+    ' actions += \'<button class="icon-btn edit-btn" onclick="openEdit(' + JSON.stringify('paid') + ',' + JSON.stringify(ad.id) + ',' + JSON.stringify(ad.token) + ',' + JSON.stringify(ad.business||'') + ',' + JSON.stringify(ad.location||'') + ',' + JSON.stringify(ad.company||'') + ',' + JSON.stringify(ad.text||'') + ')">✏️</button>\';' +
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">🗑️</button>";' +
     ' actions += "</div>";' +
     ' const timeStr = timeAgo(ad.created_at);' +
@@ -364,7 +364,6 @@ app.get('/', (req, res) => {
     ' \'</div>\';' +
     ' }).join("");' +
     ' }' +
-    // FIXED openEdit - now fills the modal inputs
         ' function openEdit(type, id, token, title, location, company, desc) {' +
     ' document.getElementById("editType").value = type;' +
     ' document.getElementById("editId").value = id;' +
@@ -926,4 +925,3 @@ app.post('/paid-ads/delete', async (req, res) => {
 app.listen(PORT, function() {
   console.log('Server running on port ' + PORT);
 });
-
