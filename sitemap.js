@@ -1,4 +1,4 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 
 router.get('/sitemap.xml', (req, res) => {
@@ -13,4 +13,4 @@ router.get('/sitemap.xml', (req, res) => {
 </urlset>`);
 });
 
-module.exports = router;
+export default router;
