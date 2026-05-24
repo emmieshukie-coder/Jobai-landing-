@@ -78,7 +78,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// YOUR ORIGINAL UI - unchanged
+// YOUR ORIGINAL UI - unchanged except renderPaidAds
 app.get('/', (req, res) => {
   res.send(
     '<!DOCTYPE html>' +
@@ -290,7 +290,6 @@ app.get('/', (req, res) => {
     ' document.getElementById("adPayMsg").style.color = "red";' +
     ' }' +
     ' });' +
-    // NEW timeAgo - hides time after 2 days
     ' function timeAgo(dateStr) {' +
     ' if (!dateStr) return "";' +
     ' const date = new Date(dateStr);' +
@@ -309,7 +308,6 @@ app.get('/', (req, res) => {
     ' if (diffDay === 1) return "1d ago";' +
     ' return diffDay + "d ago";' +
     ' }' +
-    // UPDATED renderJobs - adds time only if recent
     ' function renderJobs(jobs) {' +
     ' if (!jobs.length) {' +
     ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">No jobs found.</div>";' +
@@ -321,7 +319,6 @@ app.get('/', (req, res) => {
     ' return "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"job-card\\"><span class=\\"country-tag\\">" + j.country + "</span><span class=\\"source-tag\\">" + j.source + "</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span>" + timePart + "</p><span class=\\"connect-btn\\">Connect & Apply</span></a>";' +
     ' }).join("");' +
     ' }' +
-    // UPDATED renderUserAds - adds time tag
     ' function renderUserAds(ads) {' +
     ' if (!ads.length) {' +
     ' document.getElementById("userAds").innerHTML = "<div class=\\"error\\">No community posts yet.</div>";' +
@@ -345,6 +342,7 @@ app.get('/', (req, res) => {
     ' return "<div class=\\"job-card\\" style=\\"position:relative\\">"+actions+"<span class=\\"country-tag user-ad-tag\\">Community</span>"+timeHtml+"<h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
     ' }).join("");' +
     ' }' +
+    // MODIFIED: Added time display for sponsored ads using created_at
     ' function renderPaidAds(ads) {' +
     ' if (!ads.length) {' +
     ' document.getElementById("paidAds").innerHTML = "<div class=\\"error\\">No sponsors yet.</div>";' +
@@ -378,7 +376,7 @@ app.get('/', (req, res) => {
     ' function closeEdit() {' +
     ' document.getElementById("editModal").classList.remove("active");' +
     ' }' +
-    async function saveEdit() {
+   async function saveEdit() {
   const type = document.getElementById("editType").value;
   const id = document.getElementById("editId").value;
   const token = document.getElementById("editToken").value;
@@ -390,7 +388,7 @@ app.get('/', (req, res) => {
     description: document.getElementById("editDesc").value
   };
   const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";
-  const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+  const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
   const result = await res.json();
   if (result.success) {
     closeEdit();
@@ -404,7 +402,7 @@ app.get('/', (req, res) => {
 async function deleteAd(type, id, token) {
   if (!confirm("Delete this ad?")) return;
   const endpoint = type === "paid"? "/paid-ads/delete" : "/ads/delete";
-  const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, token }) });
+  const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, token})});
   const result = await res.json();
   if (result.success) {
     loadUserAds();
@@ -452,7 +450,7 @@ async function submitAd() {
   }
   document.getElementById("adMsg").textContent = "Redirecting to payment...";
   document.getElementById("adMsg").style.color = "blue";
-  const res = await fetch("/ads/initiate-payment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+  const res = await fetch("/ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
   const result = await res.json();
   if (result.payment_link) {
     window.location.href = result.payment_link;
@@ -475,7 +473,7 @@ async function submitPaidAd() {
   }
   document.getElementById("adPayMsg").textContent = "Redirecting to payment...";
   document.getElementById("adPayMsg").style.color = "blue";
-  const res = await fetch("/paid-ads/initiate-payment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+  const res = await fetch("/paid-ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
   const result = await res.json();
   if (result.payment_link) {
     window.location.href = result.payment_link;
@@ -497,7 +495,7 @@ if (urlParams.get("payment") === "failed") {
 }
 document.getElementById("searchBtn").addEventListener("click", loadJobs);
 document.getElementById("dateFilter").addEventListener("change", loadJobs);
-document.getElementById("searchInput").addEventListener("keypress", function (e) {
+document.getElementById("searchInput").addEventListener("keypress", function(e) {
   if (e.key === "Enter") loadJobs();
 });
 loadJobs();
@@ -663,7 +661,7 @@ async function fetchRemotiveJobs(query) {
 app.get('/jobs', async (req, res) => {
   try {
     const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
-    const recentDays = req.query.recent === 'all'? 'all' : parseInt(req.query.recent) || 7;
+    const recentDays = parseInt(req.query.recent) || 7;
 
     const countries = [
       { code: 'sa', name: 'Saudi Arabia' },
@@ -703,7 +701,7 @@ app.get('/jobs', async (req, res) => {
       index === self.findIndex(j => j.url === job.url)
     );
 
-    if (recentDays!== 'all') {
+    if (recentDays > 0 && recentDays!== 'all') {
       const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
@@ -923,6 +921,6 @@ app.post('/paid-ads/delete', async (req, res) => {
   }
 });
 
-app.listen(PORT, function () {
+app.listen(PORT, function() {
   console.log('Server running on port ' + PORT);
 });
