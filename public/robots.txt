@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://jobai-landing.onrender.com/sitemap.xml
