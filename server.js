@@ -9,6 +9,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fetch from 'node-fetch'; // <-- Added this
 
+import sitemapRouter from './sitemap.js';
+
 const { Pool } = pkg;
 
 const app = express();
@@ -27,6 +29,10 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
+app.use(sitemapRouter);
+
+pool.query(`
+  CREATE TABLE IF NOT EXISTS ads (
 
 // Keep your tables
 pool.query(`
