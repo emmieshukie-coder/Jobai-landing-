@@ -528,8 +528,8 @@ app.get('/', (req, res) => {
 'loadUserAds(); ' +
 'loadPaidAds(); ' +
 '</script> ' +
-'<footer style="text-align:center; padding:20px; font-size:14px; color:#666; margin-top:40px;">' +
-'Sponsored by EmmieTechUg | Contact: emmiechukie at gmail dot com' +
+'<footer style="text-align:center; padding:24px 10px; font-size:13px; color:#888; margin-top:60px; border-top:1px solid #eee;">' +
+'Sponsored by <strong style="color:#333;">EmmieTechUg</strong> | Contact: emmiechukie at gmail dot com' +
 '</footer>' +
 '</body> ' +
 '</html>'
