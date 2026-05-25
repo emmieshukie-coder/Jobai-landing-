@@ -528,12 +528,11 @@ app.get('/', (req, res) => {
 'loadUserAds(); ' +
 'loadPaidAds(); ' +
 '</script> ' +
-  
-  <footer style="text-align:center; padding:20px; font-size:14px; color:#666; margin-top:40px;">
-  Sponsored by EmmieTechUg | Contact: emmieshukie@gmail.com
-</footer>
+'<footer style="text-align:center; padding:20px; font-size:14px; color:#666; margin-top:40px;">' +
+'Sponsored by EmmieTechUg | Contact: emmiechukie at gmail dot com' +
+'</footer>' +
 '</body> ' +
-'</html>' 
+'</html>'
   );
 });
 // Upload image route
