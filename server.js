@@ -529,17 +529,6 @@ app.get('/', (req, res) => {
 'loadPaidAds(); ' +
 '</script> ' +
 
-  '<div style="margin:40px 0;padding:20px;background:#f8f9fa;border-radius:10px;">' +
-'<h3 style="text-align:center;margin-bottom:15px;">🔥 Other Top Products</h3>' +
-'<a href="https://myketosana.com/ketosana-pdp-fe#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#FF5722;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;font-size:16px;\'>' +
-'🔥 Burn Fat Fast - KetoSana Formula →' +
-'</a>' +
-'</div>' +
-  
-'<a href="https://www.advancedbionutritionals.com/DS24/Advanced-Amino/Muscle-Mass-Loss/HD.htm#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#25D366;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;\'>' +
-'💪 Boost Energy & Recovery → Click Here' +
-'</a>' +
-
   
 '<footer style="text-align:center; padding:24px 10px; font-size:13px; color:#888; margin-top:60px; border-top:1px solid #eee;">' +
 'Sponsored by <strong style="color:#333;">EmmieTechUg</strong> | Contact: emmieshukie at gmail dot com' +
@@ -553,6 +542,10 @@ app.get('/', (req, res) => {
 '🦴 Joint Pain Relief Formula →' +
 '</a>' +
 '</div>' +
+
+'<a href="https://www.advancedbionutritionals.com/DS24/Advanced-Amino/Muscle-Mass-Loss/HD.htm#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#25D366;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;\'>' +
+'💪 Boost Energy & Recovery → Click Here' +
+'</a>' +
   
 '</footer>' +
 '</body> ' +
