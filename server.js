@@ -543,6 +543,17 @@ app.get('/', (req, res) => {
   
 '<footer style="text-align:center; padding:24px 10px; font-size:13px; color:#888; margin-top:60px; border-top:1px solid #eee;">' +
 'Sponsored by <strong style="color:#333;">EmmieTechUg</strong> | Contact: emmieshukie at gmail dot com' +
+
+'<div style="margin:40px 0;padding:20px;background:#f8f9fa;border-radius:10px;">' +
+'<h3 style="text-align:center;margin-bottom:15px;">🔥 Other Top Products</h3>' +
+'<a href="PASTE_PRODUCT1_LINK_HERE#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#FF9800;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;\'>' +
+'🩺 Support Healthy Blood Sugar →' +
+'</a>' +
+'<a href="PASTE_PRODUCT2_LINK_HERE#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#9C27B0;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;\'>' +
+'🦴 Joint Pain Relief Formula →' +
+'</a>' +
+'</div>' +
+  
 '</footer>' +
 '</body> ' +
 '</html>'
