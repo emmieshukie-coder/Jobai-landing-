@@ -538,7 +538,7 @@ app.get('/', (req, res) => {
 '<a href="https://myketosana.com/ketosana-pdp-fe#aff=emmieshukiee042#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#FF9800;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;\'>' +
 '🩺 Support Healthy Blood Sugar →' +
 '</a>' +
-'<a href="PASTE_PRODUCT2_LINK_HERE#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#9C27B0;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;\'>' +
+'<a href="https://www.antitar.com/digistore-antitar-vsl#aff=emmieshukiee042#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#9C27B0;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;\'>' +
 '🦴 Joint Pain Relief Formula →' +
 '</a>' +
 '</div>' +
