@@ -546,7 +546,7 @@ app.get('/', (req, res) => {
 
 '<div style="margin:40px 0;padding:20px;background:#f8f9fa;border-radius:10px;">' +
 '<h3 style="text-align:center;margin-bottom:15px;">🔥 Other Top Products</h3>' +
-'<a href="PASTE_PRODUCT1_LINK_HERE#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#FF9800;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;\'>' +
+'<a href="https://myketosana.com/ketosana-pdp-fe#aff=emmieshukiee042#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#FF9800;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;\'>' +
 '🩺 Support Healthy Blood Sugar →' +
 '</a>' +
 '<a href="PASTE_PRODUCT2_LINK_HERE#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#9C27B0;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;\'>' +
