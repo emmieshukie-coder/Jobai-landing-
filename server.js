@@ -542,6 +542,9 @@ app.get('/', (req, res) => {
 '🦴 Joint Pain Relief Formula →' +
   '<a href="https://www.advancedbionutritionals.com/DS24/Advanced-Amino/Muscle-Mass-Loss/HD.htm#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#25D366;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;\'>' +
 '💪 Boost Energy & Recovery → Click Here' +
+  '<a href="https://myketosana.com/ketosana-pdp-fe#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#FF5722;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;font-size:16px;\'>' +
+'🔥 Burn Fat Fast - KetoSana →' +
+'</a>' +
 '</a>' +
 '</a>' +
 '</div>' +
