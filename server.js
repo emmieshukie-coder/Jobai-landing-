@@ -540,12 +540,12 @@ app.get('/', (req, res) => {
 '</a>' +
 '<a href="https://jointpainhack.com/digi/add-to-cart/#aff=emmieshukiee042#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#9C27B0;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;\'>' +
 '🦴 Joint Pain Relief Formula →' +
+  '<a href="https://www.advancedbionutritionals.com/DS24/Advanced-Amino/Muscle-Mass-Loss/HD.htm#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#25D366;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;\'>' +
+'💪 Boost Energy & Recovery → Click Here' +
+'</a>' +
 '</a>' +
 '</div>' +
 
-'<a href="https://www.advancedbionutritionals.com/DS24/Advanced-Amino/Muscle-Mass-Loss/HD.htm#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#25D366;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;\'>' +
-'💪 Boost Energy & Recovery → Click Here' +
-'</a>' +
   
 '</footer>' +
 '</body> ' +
