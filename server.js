@@ -550,14 +550,13 @@ app.get('/', (req, res) => {
 '</a>' +
 '</div>' +
   
-'<div style="margin:40px 0;padding:20px;background:#000;border-radius:10px;border:2px solid #FFD700;">' +
+  '<div style="margin:40px 0;padding:20px;background:#000;border-radius:10px;border:2px solid #FFD700;">' +
 '<h3 style="text-align:center;color:#FFD700;margin-bottom:15px;">💰 AI Cash System 2026</h3>' +
-'<a href="https://ai-cash-page-system-dd.24-7-ai-cash-system.academy/#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#FFD700;color:#000;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;font-size:16px;">' +
+'<a href="https://ai-cash-page-system-dd.24-7-ai-cash-system.academy/#aff=emmieshukiee042" target="_blank" style="display:block;padding:15px;background:#FFD700;color:#000;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;font-size:16px;">' +
 '🚀 Make Money With AI - Copy & Paste System →' +
 '</a>' +
 '<p style="text-align:center;color:#aaa;font-size:12px;margin:5px 0 0;">$74.21 per sale | Video courses included</p>' +
 '</div>' +
-  
 '</footer>' +
 '</body> ' +
 '</html>'
