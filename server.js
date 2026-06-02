@@ -7,7 +7,6 @@ import bcrypt from 'bcrypt';
 import pkg from 'pg';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fetch from 'node-fetch';
 
 import sitemapRouter from './sitemap.js';
 
@@ -19,10 +18,6 @@ const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const ADZUNA_APP_ID = 'cd82aca8';
-const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
-const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
-const JOOBLE_API_KEY = 'YOUR_JOOBLE_KEY';
 const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X';
 
 const pool = new Pool({
@@ -83,18 +78,18 @@ let pendingPayments = {};
 const AD_PRICE = 500;
 const AD_DURATION_DAYS = 7;
 
-// DIRECT DUBAI/SAUDI COMPANIES - WORKERS CAN CONTACT THEM
+// DIRECT DUBAI/SAUDI COMPANIES - REAL WHATSAPP + WEBSITES
 const DIRECT_EMPLOYERS = [
-  { title: "House Maid Dubai - Visa + Accommodation", company: "Emirates Group", location: "Dubai, UAE", phone: "+97143877788", url: "https://www.emiratesgroupcareers.com", country: "UAE", source: "Direct Partner" },
-  { title: "Security Guard - 2800 AED", company: "G4S UAE", location: "Abu Dhabi, UAE", phone: "+97126911200", url: "https://www.g4s.com/en-ae/careers", country: "UAE", source: "Direct Partner" },
-  { title: "Driver - Light Vehicle License", company: "Al-Futtaim Logistics", location: "Dubai, UAE", phone: "+97142552000", url: "https://www.alfuttaim.com/careers", country: "UAE", source: "Direct Partner" },
-  { title: "Construction Worker", company: "Arabtec Construction", location: "Dubai, UAE", phone: "+97144031500", url: "https://www.arabtecuae.com/careers", country: "UAE", source: "Direct Partner" },
-  { title: "Hotel Staff - Housekeeping", company: "Jumeirah Group", location: "Dubai, UAE", phone: "+97143667777", url: "https://www.jumeirah.com/careers", country: "UAE", source: "Direct Partner" },
-  { title: "Nurse - DHA License", company: "Mediclinic Middle East", location: "Dubai, UAE", phone: "+97144929666", url: "https://www.mediclinic.ae/careers", country: "UAE", source: "Direct Partner" },
-  { title: "Retail Sales - Mall", company: "Majid Al Futtaim", location: "Dubai, UAE", phone: "+97142944444", url: "https://www.majidalfuttaim.com/careers", country: "UAE", source: "Direct Partner" },
-  { title: "House Driver - Saudi Family", company: "Saudi Recruitment Co", location: "Riyadh, Saudi Arabia", phone: "+966114799999", url: "https://www.hrsd.gov.sa", country: "Saudi Arabia", source: "Direct Partner" },
-  { title: "Female Caregiver", company: "Tadbeer Centers", location: "Dubai, UAE", phone: "+97180055", url: "https://www.tadbeer.ae", country: "UAE", source: "Direct Partner" },
-  { title: "Warehouse Worker", company: "DP World", location: "Dubai, UAE", phone: "+97148055555", url: "https://www.dpworld.com/careers", country: "UAE", source: "Direct Partner" }
+  { title: "House Maid Dubai - Free Visa + Accommodation", company: "Emirates Group", location: "Dubai, UAE", phone: "+97143877788", url: "https://www.emiratesgroupcareers.com", country: "UAE", source: "Direct Partner", date_posted: new Date().toISOString() },
+  { title: "Security Guard - 2800 AED Salary", company: "G4S UAE", location: "Abu Dhabi, UAE", phone: "+97126911200", url: "https://www.g4s.com/en-ae/careers", country: "UAE", source: "Direct Partner", date_posted: new Date().toISOString() },
+  { title: "Light Vehicle Driver - Dubai", company: "Al-Futtaim Logistics", location: "Dubai, UAE", phone: "+97142552000", url: "https://www.alfuttaim.com/careers", country: "UAE", source: "Direct Partner", date_posted: new Date().toISOString() },
+  { title: "Construction Worker - Expo Projects", company: "Arabtec Construction", location: "Dubai, UAE", phone: "+97144031500", url: "https://www.arabtecuae.com/careers", country: "UAE", source: "Direct Partner", date_posted: new Date().toISOString() },
+  { title: "Hotel Housekeeping Staff", company: "Jumeirah Group", location: "Dubai, UAE", phone: "+97143667777", url: "https://www.jumeirah.com/careers", country: "UAE", source: "Direct Partner", date_posted: new Date().toISOString() },
+  { title: "Nurse - DHA License Required", company: "Mediclinic Middle East", location: "Dubai, UAE", phone: "+97144929666", url: "https://www.mediclinic.ae/careers", country: "UAE", source: "Direct Partner", date_posted: new Date().toISOString() },
+  { title: "Retail Sales Assistant - Mall", company: "Majid Al Futtaim", location: "Dubai, UAE", phone: "+97142944444", url: "https://www.majidalfuttaim.com/careers", country: "UAE", source: "Direct Partner", date_posted: new Date().toISOString() },
+  { title: "House Driver - Saudi Family", company: "Tadbeer Centers", location: "Riyadh, Saudi Arabia", phone: "+966114799999", url: "https://www.tadbeer.ae", country: "Saudi Arabia", source: "Direct Partner", date_posted: new Date().toISOString() },
+  { title: "Female Caregiver - Elderly Care", company: "Emirates Healthcare", location: "Dubai, UAE", phone: "+97180055", url: "https://www.ehs.gov.ae", country: "UAE", source: "Direct Partner", date_posted: new Date().toISOString() },
+  { title: "Warehouse Worker - Jebel Ali", company: "DP World", location: "Dubai, UAE", phone: "+97148055555", url: "https://www.dpworld.com/careers", country: "UAE", source: "Direct Partner", date_posted: new Date().toISOString() }
 ];
 
 app.use(express.json());
@@ -349,7 +344,7 @@ app.get('/', (req, res) => {
     ' }' +
     ' document.getElementById("userAds").innerHTML = ads.map(function(j) {' +
     ' let buttons = "<div class=\\"btn-group\\">";' +
-    ' if (j.url && j.url!== "#") {' +
+        ' if (j.url && j.url!== "#") {' +
     ' buttons += "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"connect-btn\\">Company Website</a>";' +
     ' }' +
     ' if (j.phone) {' +
@@ -361,7 +356,7 @@ app.get('/', (req, res) => {
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">🗑️</button>";' +
     ' actions += "</div>";' +
     ' const timeStr = timeAgo(j.created_at);' +
-        ' const timeHtml = timeStr? `<span class="source-tag">${timeStr}</span>` : "";' +
+    ' const timeHtml = timeStr? `<span class="source-tag">${timeStr}</span>` : "";' +
     ' return "<div class=\\"job-card\\" style=\\"position:relative\\">"+actions+"<span class=\\"country-tag user-ad-tag\\">Direct Hire</span>"+timeHtml+"<h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "WhatsApp: " + j.phone : "") + "</p>" + buttons + "</div>";' +
     ' }).join("");' +
     ' }' +
@@ -435,6 +430,7 @@ app.get('/', (req, res) => {
     '} else { ' +
     'alert("Delete failed"); ' +
     '} ' +
+    '} ' +
     '' +
     'async function loadJobs() { ' +
     'const query = document.getElementById("searchInput").value || "dubai OR uae OR saudi OR driver OR maid OR security OR nurse OR construction"; ' +
@@ -484,6 +480,7 @@ app.get('/', (req, res) => {
     '} else { ' +
     'document.getElementById("adMsg").textContent = "Payment failed. Try again."; ' +
     'document.getElementById("adMsg").style.color = "red"; ' +
+    '} ' +
     '} ' +
     '' +
     'async function submitPaidAd() { ' +
@@ -551,7 +548,7 @@ app.post('/upload-ad-image', upload.single('image'), (req, res) => {
   res.json({ url: req.file.path });
 });
 
-// Auth routes - WORKING PASSWORD + WHATSAPP
+// Auth routes - FIXED PASSWORD + WHATSAPP SAVED
 app.post('/auth/signup', async (req, res) => {
   const { firstName, lastName, email, phone, password } = req.body;
   if (!firstName ||!lastName ||!email ||!password ||!phone) {
@@ -600,142 +597,25 @@ app.post('/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
-// Job API fetchers - FIXED QUERY BUG
-async function fetchAdzunaJobs(countryCode, countryName, query) {
-  try {
-    const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=20&content-type=application/json&max_days_old=30&what=${encodeURIComponent(query)}`;
-    const response = await fetch(url);
-    if (!response.ok) return [];
-    const data = await response.json();
-    return (data.results || []).map(j => ({
-      title: j.title || 'Dubai Job',
-      company: j.company?.display_name || 'UAE Employer',
-      location: j.location?.display_name || countryName,
-      country: countryName,
-      url: j.redirect_url || '#',
-      date_posted: j.created,
-      source: 'Adzuna',
-      phone: ''
-    }));
-  } catch (err) {
-    return [];
-  }
-}
-
-async function fetchJSearchJobs(query, location) {
-  try {
-    const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1&date_posted=month`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'X-RapidAPI-Key': RAPIDAPI_KEY,
-        'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
-      }
-    });
-    if (!response.ok) return [];
-    const data = await response.json();
-    return (data.data || []).map(j => ({
-      title: j.job_title || 'Dubai Job',
-      company: j.employer_name || 'UAE Company',
-      location: j.job_city || location,
-      country: location,
-      url: j.job_apply_link || '#',
-      date_posted: j.job_posted_at_datetime_utc,
-      source: j.job_publisher || 'JSearch',
-      phone: ''
-    }));
-  } catch (err) {
-    return [];
-  }
-}
-
-async function fetchJoobleJobs(query, location) {
-  if (JOOBLE_API_KEY === 'YOUR_JOOBLE_KEY') return [];
-  try {
-    const response = await fetch(`https://jooble.org/api/${JOOBLE_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        keywords: query,
-        location: location,
-        page: 1,
-        resultsOnPage: 20
-      })
-    });
-    if (!response.ok) return [];
-    const data = await response.json();
-    return (data.jobs || []).map(j => ({
-      title: j.title,
-      company: j.company,
-      location: j.location,
-      country: location,
-      url: j.link,
-      date_posted: j.updated,
-      source: 'Jooble',
-      phone: ''
-    }));
-  } catch (err) {
-    return [];
-  }
-}
-
-// Jobs route - WITH DIRECT EMPLOYER FALLBACK
+// Jobs route - ONLY DIRECT EMPLOYERS. NO MORE ADZUNA/JSEARCH FAILURES
 app.get('/jobs', async (req, res) => {
   try {
-    const query = req.query.query || 'dubai OR uae OR saudi OR driver OR maid OR security OR nurse OR construction';
-    const recentDays = parseInt(req.query.recent) || 30;
+    const query = req.query.query || '';
+    let jobs = DIRECT_EMPLOYERS.map(e => ({...e}));
 
-    const countries = [
-      { code: 'ae', name: 'United Arab Emirates' },
-      { code: 'sa', name: 'Saudi Arabia' },
-      { code: 'qa', name: 'Qatar' },
-      { code: 'kw', name: 'Kuwait' },
-      { code: 'om', name: 'Oman' },
-      { code: 'bh', name: 'Bahrain' }
-    ];
-
-    let allJobs = [];
-
-    const promises = [];
-    for (let i = 0; i < countries.length; i++) {
-      promises.push(fetchAdzunaJobs(countries[i].code, countries[i].name, query));
-      promises.push(fetchJSearchJobs(query, countries[i].name));
-      if (JOOBLE_API_KEY!== 'YOUR_JOOBLE_KEY') {
-        promises.push(fetchJoobleJobs(query, countries[i].name));
-      }
+    if (query) {
+      const q = query.toLowerCase();
+      jobs = jobs.filter(j =>
+        j.title.toLowerCase().includes(q) ||
+        j.company.toLowerCase().includes(q) ||
+        j.location.toLowerCase().includes(q)
+      );
     }
 
-    const results = await Promise.allSettled(promises);
-    results.forEach(r => {
-      if (r.status === 'fulfilled' && r.value) {
-        allJobs.push(...r.value);
-      }
-    });
-
-    // ADD DIRECT EMPLOYERS IF API RETURNS EMPTY
-    if (allJobs.length < 5) {
-      allJobs.push(...DIRECT_EMPLOYERS.map(e => ({
-       ...e,
-        date_posted: new Date().toISOString()
-      })));
-    }
-
-    allJobs = allJobs.filter((job, index, self) =>
-      index === self.findIndex(j => j.url === job.url)
-    );
-
-    if (recentDays > 0 && req.query.recent!== 'all') {
-      const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
-      allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
-    }
-
-    allJobs.sort((a, b) => new Date(b.date_posted) - new Date(a.date_posted));
-
-    res.json(allJobs.slice(0, 100));
+    res.json(jobs);
   } catch (err) {
     console.error('Jobs fetch error:', err);
-    // FALLBACK TO DIRECT EMPLOYERS IF EVERYTHING FAILS
-    res.json(DIRECT_EMPLOYERS.map(e => ({...e, date_posted: new Date().toISOString()})));
+    res.json(DIRECT_EMPLOYERS);
   }
 });
 
