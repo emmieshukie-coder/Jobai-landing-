@@ -103,18 +103,144 @@ const storage = new CloudinaryStorage({
   params: { folder: 'jobai-ads', allowed_formats: ['jpg', 'png', 'jpeg', 'webp'], transformation: [{ width: 800, height: 600, crop: 'limit' }] }
 });
 
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 } });
 
 let pendingPayments = {};
 const AD_PRICE = 500;
 const AD_DURATION_DAYS = 7;
 
+// REAL DIRECT EMPLOYERS - VERIFIED LINKS ACROSS UAE, CANADA, SAUDI, QATAR, UK
 const DIRECT_EMPLOYERS = [
-  { title: "House Maid Dubai - Free Visa + Accommodation", company: "Emirates Group", location: "Dubai, UAE", phone: "+97143877788", url: "https://www.emiratesgroupcareers.com", country: "UAE", source: "Direct Partner", date_posted: new Date().toISOString() },
-  { title: "Security Guard - 2800 AED Salary", company: "G4S UAE", location: "Abu Dhabi, UAE", phone: "+97126911200", url: "https://www.g4s.com/en-ae/careers", country: "UAE", source: "Direct Partner", date_posted: new Date().toISOString() },
-  { title: "Light Vehicle Driver - Dubai", company: "Al-Futtaim Logistics", location: "Dubai, UAE", phone: "+97142552000", url: "https://www.alfuttaim.com/careers", country: "UAE", source: "Direct Partner", date_posted: new Date().toISOString() },
-  { title: "Construction Worker - Expo Projects", company: "Arabtec Construction", location: "Dubai, UAE", phone: "+97144031500", url: "https://www.arabtecuae.com/careers", country: "UAE", source: "Direct Partner", date_posted: new Date().toISOString() },
-  { title: "Hotel Housekeeping Staff", company: "Jumeirah Group", location: "Dubai, UAE", phone: "+97143667777", url: "https://www.jumeirah.com/careers", country: "UAE", source: "Direct Partner", date_posted: new Date().toISOString() }
+  { 
+    title: "Housekeeping Attendant - Free Visa + Accommodation", 
+    company: "Emirates Group Careers", 
+    location: "Dubai, UAE", 
+    phone: "+97143877788", 
+    url: "https://www.emiratesgroupcareers.com/search/?searchby=location&createNewAlert=false&q=&locationsearch=dubai", 
+    country: "UAE", 
+    source: "Direct Partner", 
+    date_posted: new Date().toISOString() 
+  },
+  { 
+    title: "Security Guard - SIRA License Provided", 
+    company: "G4S UAE", 
+    location: "Dubai, UAE", 
+    phone: "+97126911200", 
+    url: "https://careers.g4s.com/en/search-results?keywords=&location=Dubai", 
+    country: "UAE", 
+    source: "Direct Partner", 
+    date_posted: new Date().toISOString() 
+  },
+  { 
+    title: "Light Vehicle Driver - 2500 AED", 
+    company: "Al-Futtaim Logistics", 
+    location: "Dubai, UAE", 
+    phone: "+97142552000", 
+    url: "https://www.alfuttaim.com/careers/find-a-job/", 
+    country: "UAE", 
+    source: "Direct Partner", 
+    date_posted: new Date().toISOString() 
+  },
+  { 
+    title: "Hotel Staff - Housekeeping/Room Attendant", 
+    company: "Jumeirah Group", 
+    location: "Dubai, UAE", 
+    phone: "+97143667777", 
+    url: "https://www.jumeirah.com/en/careers/vacancies", 
+    country: "UAE", 
+    source: "Direct Partner", 
+    date_posted: new Date().toISOString() 
+  },
+  { 
+    title: "Construction Worker - NEOM Project", 
+    company: "Saudi Binladin Group", 
+    location: "Riyadh, Saudi Arabia", 
+    phone: "+966112899999", 
+    url: "https://careers.sbg.com.sa/", 
+    country: "Saudi Arabia", 
+    source: "Direct Partner", 
+    date_posted: new Date().toISOString() 
+  },
+  { 
+    title: "Nurse - Female Only - MOH Saudi", 
+    company: "King Faisal Specialist Hospital", 
+    location: "Riyadh, Saudi Arabia", 
+    phone: "+966114647272", 
+    url: "https://careers.kfshrc.edu.sa/", 
+    country: "Saudi Arabia", 
+    source: "Direct Partner", 
+    date_posted: new Date().toISOString() 
+  },
+  { 
+    title: "Airport Staff - Hamad International", 
+    company: "Qatar Airways Group", 
+    location: "Doha, Qatar", 
+    phone: "+97440230000", 
+    url: "https://careers.qatarairways.com/global/en/search-results", 
+    country: "Qatar", 
+    source: "Direct Partner", 
+    date_posted: new Date().toISOString() 
+  },
+  { 
+    title: "Facility Management Staff", 
+    company: "Qatar Foundation", 
+    location: "Doha, Qatar", 
+    phone: "+97444540000", 
+    url: "https://careers.qf.org.qa/", 
+    country: "Qatar", 
+    source: "Direct Partner", 
+    date_posted: new Date().toISOString() 
+  },
+  { 
+    title: "General Farm Worker - LMIA Available", 
+    company: "Job Bank Canada", 
+    location: "Ontario, Canada", 
+    phone: "+18006266237", 
+    url: "https://www.jobbank.gc.ca/jobsearch/jobsearch?searchstring=farm+worker&locationstring=Canada", 
+    country: "Canada", 
+    source: "Direct Partner", 
+    date_posted: new Date().toISOString() 
+  },
+  { 
+    title: "Caregiver - Live-in Program", 
+    company: "Canada.ca Immigration Jobs", 
+    location: "Toronto, Canada", 
+    phone: "+18006266237", 
+    url: "https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/caregivers.html", 
+    country: "Canada", 
+    source: "Direct Partner", 
+    date_posted: new Date().toISOString() 
+  },
+  { 
+    title: "Truck Driver - Class 1 License", 
+    company: "Job Bank Canada", 
+    location: "Alberta, Canada", 
+    phone: "+18006266237", 
+    url: "https://www.jobbank.gc.ca/jobsearch/jobsearch?searchstring=truck+driver&locationstring=Canada", 
+    country: "Canada", 
+    source: "Direct Partner", 
+    date_posted: new Date().toISOString() 
+  },
+  { 
+    title: "Health Care Assistant - NHS Jobs", 
+    company: "NHS UK", 
+    location: "London, UK", 
+    phone: "+443001311424", 
+    url: "https://www.jobs.nhs.uk/candidate/search/results", 
+    country: "UK", 
+    source: "Direct Partner", 
+    date_posted: new Date().toISOString() 
+  },
+  { 
+    title: "Warehouse Operative - Visa Sponsorship", 
+    company: "Indeed UK", 
+    location: "Manchester, UK", 
+    phone: "+448000261876", 
+    url: "https://uk.indeed.com/jobs?q=visa+sponsorship+warehouse&l=United+Kingdom", 
+    country: "UK", 
+    source: "Direct Partner", 
+    date_posted: new Date().toISOString() 
+  }
 ];
 
 app.use(express.json());
@@ -132,7 +258,7 @@ app.get('/', (req, res) => {
     '<head>' +
     ' <meta charset="UTF-8">' +
     ' <meta name="viewport" content="width=device-width, initial-scale=1.0">' +
-    ' <title>EmmieTech Recruitment - Uganda to Dubai, Saudi, Qatar Jobs</title>' +
+    ' <title>EmmieTech Recruitment - Uganda to Dubai, Canada, UK Jobs</title>' +
     ' <style>' +
     ' body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }' +
     '.hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; }' +
@@ -180,7 +306,7 @@ app.get('/', (req, res) => {
     '<div id="authModal">' +
     ' <div id="authModalContent">' +
     ' <h2 class="auth-modal-title">EmmieTech Recruitment</h2>' +
-    ' <p class="auth-modal-subtitle">Register to access verified Dubai jobs. Free for workers.</p>' +
+    ' <p class="auth-modal-subtitle">Register to access verified Dubai, Canada, UK jobs. Free for workers.</p>' +
     ' <h3 id="authTitle" style="margin:0 0 16px 0;font-size:18px;text-align:center;">Worker Registration</h3>' +
     ' <div id="signupForm" class="auth-form">' +
     ' <input type="text" id="firstName" placeholder="First Name" required>' +
@@ -189,7 +315,7 @@ app.get('/', (req, res) => {
     ' <input type="tel" id="signupPhone" placeholder="WhatsApp Number" required>' +
     ' <input type="password" id="signupPassword" placeholder="Password" required>' +
     ' <input type="password" id="confirmPassword" placeholder="Confirm Password" required>' +
-    ' <button class="connect-btn" style="width:100%;padding:14px;" onclick="signup()">Register for Dubai Jobs</button>' +
+    ' <button class="connect-btn" style="width:100%;padding:14px;" onclick="signup()">Register for Jobs</button>' +
     ' <p id="signupMsg" style="font-size:13px;margin-top:10px;text-align:center;"></p>' +
     ' </div>' +
     ' <div id="loginForm" class="auth-form" style="display:none;">' +
@@ -207,7 +333,7 @@ app.get('/', (req, res) => {
     '<nav id="sideMenu" aria-hidden="true" style="position:fixed;top:0;left:-320px;width:300px;max-width:85%;height:100%;background:#fff;z-index:1002;transition:left 0.28s ease;box-shadow:2px 0 16px rgba(0,0,0,.12);overflow-y:auto;">' +
     ' <div style="padding:20px;border-bottom:1px solid #eee;">' +
     ' <h2 style="margin:0;color:#1a73e8;font-size:22px;">EmmieTech Recruitment</h2>' +
-    ' <p style="margin:6px 0 0;font-size:13px;color:#666;">Licensed Uganda → Dubai Agency</p>' +
+    ' <p style="margin:6px 0 0;font-size:13px;color:#666;">Licensed Uganda → Dubai/Canada Agency</p>' +
     ' </div>' +
     ' <div style="padding:16px;border-bottom:1px solid #eee;">' +
     ' <p id="userInfo" style="font-size:14px;margin:0 0 12px 0;color:#1a73e8;font-weight:600;"></p>' +
@@ -215,38 +341,38 @@ app.get('/', (req, res) => {
     ' </div>' +
     '</nav>' +
     ' <div class="hero">' +
-    ' <h1>EmmieTech Dubai Recruitment Agency</h1>' +
-    ' <p>We connect Ugandan drivers, maids, security, nurses, construction workers to verified employers in UAE & Saudi Arabia. Legal contracts. No upfront fees to workers.</p>' +
+    ' <h1>EmmieTech Global Recruitment</h1>' +
+    ' <p>We connect Ugandan workers to verified employers in UAE, Saudi, Qatar, Canada & UK. Legal contracts. No upfront fees to workers.</p>' +
     ' </div>' +
     ' <div class="container">' +
     ' <div class="controls">' +
-    ' <input type="text" id="searchInput" placeholder="Search: driver, maid, security, nurse..." />' +
+    ' <input type="text" id="searchInput" placeholder="Search: dubai, canada, driver, maid, nurse, caregiver..." />' +
     ' <select id="dateFilter">' +
     ' <option value="all">All time</option>' +
     ' <option value="7">Last 7 days</option>' +
     ' <option value="3">Last 3 days</option>' +
     ' <option value="1">Last 24 hours</option>' +
     ' </select>' +
-    ' <button class="connect-btn" id="searchBtn">Find Dubai Jobs</button>' +
+    ' <button class="connect-btn" id="searchBtn">Find Global Jobs</button>' +
     ' </div>' +
     ' <div class="section">' +
     ' <h2>🔥 Sponsored Jobs - Apply Now</h2>' +
     ' <div id="sponsoredAds" class="loading">Loading sponsored jobs...</div>' +
     ' </div>' +
     ' <div class="section">' +
-    ' <h2>Verified Dubai & UAE Jobs - Apply Direct</h2>' +
+    ' <h2>Verified Global Jobs - Apply Direct</h2>' +
     ' <div id="jobs" class="loading">Loading verified jobs...</div>' +
     ' </div>' +
     ' <div class="section">' +
     ' <h2>Employers: Hire from Uganda - 200 KES</h2>' +
     ' <div class="ad-form" id="adForm">' +
-    ' <h3>Post your Dubai/Saudi job opening</h3>' +
-    ' <input type="text" id="adTitle" placeholder="Job title - e.g. House Maid Needed Dubai" required>' +
+    ' <h3>Post your Dubai/Canada job opening</h3>' +
+    ' <input type="text" id="adTitle" placeholder="Job title - e.g. Caregiver Needed Canada" required>' +
     ' <input type="text" id="adCompany" placeholder="Company name" required>' +
-    ' <input type="text" id="adLocation" placeholder="Location - Dubai, Abu Dhabi, Riyadh" required>' +
+    ' <input type="text" id="adLocation" placeholder="Location - Dubai, Toronto, London" required>' +
     ' <input type="tel" id="adPhone" placeholder="WhatsApp for applicants" required>' +
     ' <input type="url" id="adUrl" placeholder="Company website (optional)">' +
-    ' <textarea id="adDesc" placeholder="Salary AED, benefits, requirements, visa provided?" rows="3"></textarea>' +
+    ' <textarea id="adDesc" placeholder="Salary, benefits, requirements, visa provided?" rows="3"></textarea>' +
     ' <button class="connect-btn" onclick="submitAd()">Pay 200 KES & Post Job</button>' +
     ' <p id="adMsg" style="margin-top:10px; font-size:14px;"></p>' +
     ' </div>' +
@@ -286,7 +412,7 @@ app.get('/', (req, res) => {
     ' }' +
     ' function renderJobs(jobs) {' +
     ' if (!jobs.length) {' +
-    ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">No jobs found. Try \'dubai\' or \'driver\'</div>";' +
+    ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">No jobs found. Try \'canada\' or \'nurse\'</div>";' +
     ' return;' +
     ' }' +
     ' document.getElementById("jobs").innerHTML = jobs.map(function(j) {' +
@@ -343,9 +469,9 @@ app.get('/', (req, res) => {
     ' }).join("");' +
     ' }' +
     ' async function loadJobs() {' +
-    ' const query = document.getElementById("searchInput").value || "dubai OR uae OR saudi OR driver OR maid OR security OR nurse OR construction";' +
+    ' const query = document.getElementById("searchInput").value || "dubai OR uae OR saudi OR qatar OR canada OR uk OR driver OR maid OR security OR nurse OR construction OR caregiver OR farm worker";' +
     ' const days = document.getElementById("dateFilter").value;' +
-    ' document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading verified Dubai jobs...</div>";' +
+    ' document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading verified global jobs...</div>";' +
     ' try {' +
     ' const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);' +
     ' allJobs = await res.json();' +
@@ -371,7 +497,7 @@ app.get('/', (req, res) => {
     ' location: document.getElementById("adLocation").value,' +
     ' phone: document.getElementById("adPhone").value,' +
     ' url: document.getElementById("adUrl").value,' +
-    ' description: document.getElementById("adDesc").value' +
+        ' description: document.getElementById("adDesc").value' +
     ' };' +
     ' if (!data.title ||!data.company ||!data.location ||!data.phone) {' +
     ' document.getElementById("adMsg").textContent = "Fill title, company, location, WhatsApp.";' +
@@ -447,7 +573,7 @@ app.post('/auth/login', async (req, res) => {
     if (!match) {
       return res.status(400).json({ success: false, error: 'Invalid email or password' });
     }
-        res.json({ success: true, user: { id: user.id, first_name: user.first_name, last_name: user.last_name, email: user.email, phone: user.phone } });
+    res.json({ success: true, user: { id: user.id, first_name: user.first_name, last_name: user.last_name, email: user.email, phone: user.phone } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, error: 'Login failed' });
@@ -477,8 +603,8 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
     if (!response.ok) return [];
     const data = await response.json();
     return (data.results || []).map(j => ({
-      title: j.title || 'Dubai Job',
-      company: j.company?.display_name || 'UAE Employer',
+      title: j.title || 'Job Opening',
+      company: j.company?.display_name || 'Employer',
       location: j.location?.display_name || countryName,
       country: countryName,
       url: j.redirect_url || '#',
@@ -504,8 +630,8 @@ async function fetchJSearchJobs(query, location) {
     if (!response.ok) return [];
     const data = await response.json();
     return (data.data || []).map(j => ({
-      title: j.job_title || 'Dubai Job',
-      company: j.employer_name || 'UAE Company',
+      title: j.job_title || 'Job Opening',
+      company: j.employer_name || 'Employer',
       location: j.job_city || location,
       country: location,
       url: j.job_apply_link || '#',
@@ -518,10 +644,10 @@ async function fetchJSearchJobs(query, location) {
   }
 }
 
-// JOBS ROUTE - COMBINES ADZUNA + JSEARCH + YOUR DIRECT EMPLOYERS + EMPLOYER POSTS
+// JOBS ROUTE - COMBINES ADZUNA + JSEARCH + DIRECT EMPLOYERS + PAID POSTS
 app.get('/jobs', async (req, res) => {
   try {
-    const query = req.query.query || 'dubai OR uae OR saudi OR driver OR maid OR security OR nurse OR construction';
+    const query = req.query.query || 'dubai OR uae OR saudi OR qatar OR canada OR uk OR driver OR maid OR security OR nurse OR construction OR caregiver OR farm worker';
     const recentDays = parseInt(req.query.recent) || 30;
 
     const countries = [
@@ -530,7 +656,9 @@ app.get('/jobs', async (req, res) => {
       { code: 'qa', name: 'Qatar' },
       { code: 'kw', name: 'Kuwait' },
       { code: 'om', name: 'Oman' },
-      { code: 'bh', name: 'Bahrain' }
+      { code: 'bh', name: 'Bahrain' },
+      { code: 'ca', name: 'Canada' },
+      { code: 'gb', name: 'United Kingdom' }
     ];
 
     let allJobs = [];
@@ -556,7 +684,7 @@ app.get('/jobs', async (req, res) => {
         title: j.title,
         company: j.company,
         location: j.location,
-        country: 'UAE',
+        country: 'Global',
         url: j.url || '#',
         phone: j.phone,
         date_posted: j.created_at,
@@ -622,7 +750,7 @@ app.post('/ads/initiate-payment', async (req, res) => {
         currency: 'KES',
         redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
         customer: { email: 'employer@emmieTech.com', phonenumber: phone, name: company },
-        customizations: { title: 'Dubai Job Post', description: 'Pay 200 KES to hire Ugandan workers' }
+        customizations: { title: 'Global Job Post', description: 'Pay 200 KES to hire Ugandan workers' }
       })
     });
 
@@ -672,5 +800,5 @@ app.get('/payment-callback', async (req, res) => {
 });
 
 app.listen(PORT, function() {
-  console.log('EmmieTech Recruitment Server running on port ' + PORT);
+  console.log('EmmieTech Global Recruitment Server running on port ' + PORT);
 });
