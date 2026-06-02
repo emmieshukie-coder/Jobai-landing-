@@ -103,13 +103,12 @@ const storage = new CloudinaryStorage({
   params: { folder: 'jobai-ads', allowed_formats: ['jpg', 'png', 'jpeg', 'webp'], transformation: [{ width: 800, height: 600, crop: 'limit' }] }
 });
 
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 } });
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 let pendingPayments = {};
 const AD_PRICE = 500;
 const AD_DURATION_DAYS = 7;
 
-// REAL DIRECT EMPLOYERS - VERIFIED LINKS ACROSS UAE, CANADA, SAUDI, QATAR, UK
 const DIRECT_EMPLOYERS = [
   { 
     title: "Housekeeping Attendant - Free Visa + Accommodation", 
@@ -469,7 +468,7 @@ app.get('/', (req, res) => {
     ' }).join("");' +
     ' }' +
     ' async function loadJobs() {' +
-    ' const query = document.getElementById("searchInput").value || "dubai OR uae OR saudi OR qatar OR canada OR uk OR driver OR maid OR security OR nurse OR construction OR caregiver OR farm worker";' +
+    ' const query = document.getElementById("searchInput").value || "dubai OR abu dhabi OR riyadh OR doha OR toronto OR london OR helper OR cleaner OR driver OR security OR nurse OR caregiver OR construction OR warehouse";' +
     ' const days = document.getElementById("dateFilter").value;' +
     ' document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading verified global jobs...</div>";' +
     ' try {' +
@@ -497,10 +496,10 @@ app.get('/', (req, res) => {
     ' location: document.getElementById("adLocation").value,' +
     ' phone: document.getElementById("adPhone").value,' +
     ' url: document.getElementById("adUrl").value,' +
-        ' description: document.getElementById("adDesc").value' +
+    ' description: document.getElementById("adDesc").value' +
     ' };' +
     ' if (!data.title ||!data.company ||!data.location ||!data.phone) {' +
-    ' document.getElementById("adMsg").textContent = "Fill title, company, location, WhatsApp.";' +
+        ' document.getElementById("adMsg").textContent = "Fill title, company, location, WhatsApp.";' +
     ' document.getElementById("adMsg").style.color = "red";' +
     ' return;' +
     ' }' +
@@ -595,13 +594,17 @@ app.get('/sponsored', async (req, res) => {
   }
 });
 
-// FETCHERS - ADZUNA + JSEARCH
+// FETCHERS - ADZUNA + JSEARCH - FIXED TO SHOW MORE JOBS
 async function fetchAdzunaJobs(countryCode, countryName, query) {
   try {
-    const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=20&content-type=application/json&max_days_old=30&what=${encodeURIComponent(query)}`;
+    const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=50&content-type=application/json&what=${encodeURIComponent(query)}&sort_by=date`;
     const response = await fetch(url);
-    if (!response.ok) return [];
+    if (!response.ok) {
+      console.error(`Adzuna ${countryCode} failed:`, response.status);
+      return [];
+    }
     const data = await response.json();
+    console.log(`Adzuna ${countryCode} found:`, data.count || 0);
     return (data.results || []).map(j => ({
       title: j.title || 'Job Opening',
       company: j.company?.display_name || 'Employer',
@@ -613,13 +616,14 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
       phone: ''
     }));
   } catch (err) {
+    console.error(`Adzuna ${countryCode} error:`, err.message);
     return [];
   }
 }
 
 async function fetchJSearchJobs(query, location) {
   try {
-    const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1&date_posted=month`;
+    const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=3`;
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -627,8 +631,12 @@ async function fetchJSearchJobs(query, location) {
         'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
       }
     });
-    if (!response.ok) return [];
+    if (!response.ok) {
+      console.error(`JSearch ${location} failed:`, response.status);
+      return [];
+    }
     const data = await response.json();
+    console.log(`JSearch ${location} found:`, data.data?.length || 0);
     return (data.data || []).map(j => ({
       title: j.job_title || 'Job Opening',
       company: j.employer_name || 'Employer',
@@ -640,6 +648,7 @@ async function fetchJSearchJobs(query, location) {
       phone: ''
     }));
   } catch (err) {
+    console.error(`JSearch ${location} error:`, err.message);
     return [];
   }
 }
@@ -647,7 +656,7 @@ async function fetchJSearchJobs(query, location) {
 // JOBS ROUTE - COMBINES ADZUNA + JSEARCH + DIRECT EMPLOYERS + PAID POSTS
 app.get('/jobs', async (req, res) => {
   try {
-    const query = req.query.query || 'dubai OR uae OR saudi OR qatar OR canada OR uk OR driver OR maid OR security OR nurse OR construction OR caregiver OR farm worker';
+    const query = req.query.query || 'dubai OR abu dhabi OR riyadh OR doha OR toronto OR london OR helper OR cleaner OR driver OR security OR nurse OR caregiver OR construction OR warehouse';
     const recentDays = parseInt(req.query.recent) || 30;
 
     const countries = [
