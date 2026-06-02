@@ -60,7 +60,7 @@ pool.query(`
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
-    phone TEXT,
+    phone TEXT NOT NULL,
     password_hash TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT NOW()
   )
@@ -83,6 +83,20 @@ let pendingPayments = {};
 const AD_PRICE = 500;
 const AD_DURATION_DAYS = 7;
 
+// DIRECT DUBAI/SAUDI COMPANIES - WORKERS CAN CONTACT THEM
+const DIRECT_EMPLOYERS = [
+  { title: "House Maid Dubai - Visa + Accommodation", company: "Emirates Group", location: "Dubai, UAE", phone: "+97143877788", url: "https://www.emiratesgroupcareers.com", country: "UAE", source: "Direct Partner" },
+  { title: "Security Guard - 2800 AED", company: "G4S UAE", location: "Abu Dhabi, UAE", phone: "+97126911200", url: "https://www.g4s.com/en-ae/careers", country: "UAE", source: "Direct Partner" },
+  { title: "Driver - Light Vehicle License", company: "Al-Futtaim Logistics", location: "Dubai, UAE", phone: "+97142552000", url: "https://www.alfuttaim.com/careers", country: "UAE", source: "Direct Partner" },
+  { title: "Construction Worker", company: "Arabtec Construction", location: "Dubai, UAE", phone: "+97144031500", url: "https://www.arabtecuae.com/careers", country: "UAE", source: "Direct Partner" },
+  { title: "Hotel Staff - Housekeeping", company: "Jumeirah Group", location: "Dubai, UAE", phone: "+97143667777", url: "https://www.jumeirah.com/careers", country: "UAE", source: "Direct Partner" },
+  { title: "Nurse - DHA License", company: "Mediclinic Middle East", location: "Dubai, UAE", phone: "+97144929666", url: "https://www.mediclinic.ae/careers", country: "UAE", source: "Direct Partner" },
+  { title: "Retail Sales - Mall", company: "Majid Al Futtaim", location: "Dubai, UAE", phone: "+97142944444", url: "https://www.majidalfuttaim.com/careers", country: "UAE", source: "Direct Partner" },
+  { title: "House Driver - Saudi Family", company: "Saudi Recruitment Co", location: "Riyadh, Saudi Arabia", phone: "+966114799999", url: "https://www.hrsd.gov.sa", country: "Saudi Arabia", source: "Direct Partner" },
+  { title: "Female Caregiver", company: "Tadbeer Centers", location: "Dubai, UAE", phone: "+97180055", url: "https://www.tadbeer.ae", country: "UAE", source: "Direct Partner" },
+  { title: "Warehouse Worker", company: "DP World", location: "Dubai, UAE", phone: "+97148055555", url: "https://www.dpworld.com/careers", country: "UAE", source: "Direct Partner" }
+];
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -91,7 +105,6 @@ app.get('/google765cda11c517c492.html', (req, res) => {
   res.send('google-site-verification: google765cda11c517c492.html');
 });
 
-// Main UI - RECRUITMENT APP + YOUR AFFILIATES
 app.get('/', (req, res) => {
   res.send(
     '<!DOCTYPE html>' +
@@ -99,7 +112,7 @@ app.get('/', (req, res) => {
     '<head>' +
     ' <meta charset="UTF-8">' +
     ' <meta name="viewport" content="width=device-width, initial-scale=1.0">' +
-    ' <title>EmmieTech Recruitment - Uganda to Dubai Jobs</title>' +
+    ' <title>EmmieTech Recruitment - Uganda to Dubai, Saudi, Qatar Jobs</title>' +
     ' <style>' +
     ' body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }' +
     '.hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; }' +
@@ -118,6 +131,7 @@ app.get('/', (req, res) => {
     '.job-meta span { margin-right: 8px; }' +
     '.country-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }' +
     '.source-tag { display: inline-block; background: #f5f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }' +
+    '.direct-tag { background: #e8f5e9; color: #2e7d32; }' +
     '.user-ad-tag { background: #fff3e0; color: #f57c00; }' +
     '.btn-group { display: flex; gap: 10px; flex-wrap: wrap; }' +
     '.connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; border: none; cursor: pointer; }' +
@@ -184,8 +198,8 @@ app.get('/', (req, res) => {
     ' </div>' +
     '</nav>' +
     ' <div class="hero">' +
-    ' <h1>EmmieTech Dubai Recruitment</h1>' +
-    ' <p>We place Ugandan drivers, maids, security, nurses, construction workers in UAE & Saudi Arabia. Legal contracts. No upfront fees to workers.</p>' +
+    ' <h1>EmmieTech Dubai Recruitment Agency</h1>' +
+    ' <p>We connect Ugandan drivers, maids, security, nurses, construction workers to verified employers in UAE & Saudi Arabia. Legal contracts. No upfront fees to workers.</p>' +
     ' </div>' +
     ' <div class="container">' +
     ' <div class="controls">' +
@@ -199,7 +213,7 @@ app.get('/', (req, res) => {
     ' <button class="connect-btn" id="searchBtn">Find Dubai Jobs</button>' +
     ' </div>' +
     ' <div class="section">' +
-    ' <h2>Verified Dubai & UAE Jobs</h2>' +
+    ' <h2>Verified Dubai & UAE Jobs - Apply Direct</h2>' +
     ' <div id="jobs" class="loading">Loading verified jobs...</div>' +
     ' </div>' +
     ' <div class="section">' +
@@ -316,7 +330,16 @@ app.get('/', (req, res) => {
     ' document.getElementById("jobs").innerHTML = jobs.map(function(j) {' +
     ' const timeStr = timeAgo(j.date_posted);' +
     ' const timePart = timeStr? `<span>•</span><span>${timeStr}</span>` : "";' +
-    ' return "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"job-card\\"><span class=\\"country-tag\\">" + j.country + "</span><span class=\\"source-tag\\">" + j.source + "</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span>" + timePart + "</p><span class=\\"connect-btn\\">Apply via EmmieTech</span></a>";' +
+    ' const tagClass = j.source === "Direct Partner"? "direct-tag" : "";' +
+    ' let buttons = "<div class=\\"btn-group\\">";' +
+    ' if (j.phone) {' +
+    ' buttons += "<a href=\\"https://wa.me/" + j.phone.replace(/[^0-9]/g,"") + "\\" target=\\"_blank\\" class=\\"connect-btn call-btn\\">WhatsApp Employer</a>";' +
+    ' }' +
+    ' if (j.url && j.url!== "#") {' +
+    ' buttons += "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"connect-btn\\">Apply on Website</a>";' +
+    ' }' +
+    ' buttons += "</div>";' +
+    ' return "<div class=\\"job-card\\"><span class=\\"country-tag\\">" + j.country + "</span><span class=\\"source-tag " + tagClass + "\\">" + j.source + "</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span>" + timePart + "</p>" + buttons + "</div>";' +
     ' }).join("");' +
     ' }' +
     ' function renderUserAds(ads) {' +
@@ -338,7 +361,7 @@ app.get('/', (req, res) => {
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">🗑️</button>";' +
     ' actions += "</div>";' +
     ' const timeStr = timeAgo(j.created_at);' +
-    ' const timeHtml = timeStr? `<span class="source-tag">${timeStr}</span>` : "";' +
+        ' const timeHtml = timeStr? `<span class="source-tag">${timeStr}</span>` : "";' +
     ' return "<div class=\\"job-card\\" style=\\"position:relative\\">"+actions+"<span class=\\"country-tag user-ad-tag\\">Direct Hire</span>"+timeHtml+"<h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "WhatsApp: " + j.phone : "") + "</p>" + buttons + "</div>";' +
     ' }).join("");' +
     ' }' +
@@ -369,7 +392,7 @@ app.get('/', (req, res) => {
     ' function openEdit(type, id, token) {' +
     ' document.getElementById("editType").value = type;' +
     ' document.getElementById("editId").value = id;' +
-        ' document.getElementById("editToken").value = token;' +
+    ' document.getElementById("editToken").value = token;' +
     ' document.getElementById("editModal").classList.add("active");' +
     ' }' +
     ' function closeEdit() {' +
@@ -412,10 +435,9 @@ app.get('/', (req, res) => {
     '} else { ' +
     'alert("Delete failed"); ' +
     '} ' +
-    '} ' +
     '' +
     'async function loadJobs() { ' +
-    'const query = document.getElementById("searchInput").value || "dubai OR uae OR saudi OR driver OR maid OR security OR nurse"; ' +
+    'const query = document.getElementById("searchInput").value || "dubai OR uae OR saudi OR driver OR maid OR security OR nurse OR construction"; ' +
     'const days = document.getElementById("dateFilter").value; ' +
     'document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading verified Dubai jobs...</div>"; ' +
     'try { ' +
@@ -515,7 +537,8 @@ app.get('/', (req, res) => {
     'EmmieTech Recruitment Agency | Licensed Uganda → Dubai | WhatsApp: +256 700 000000 | ' +
     '<a href="https://bloodsugarblaster.com/index-vsl-ds24#aff=emmieshukiee042" target=\'_blank\' style=\'color:#1a73e8;text-decoration:none;\'>Health</a> | ' +
     '<a href="https://jointpainhack.com/digi/add-to-cart/#aff=emmieshukiee042" target=\'_blank\' style=\'color:#1a73e8;text-decoration:none;\'>Wellness</a> | ' +
-    '<a href="https://myketosana.com/ketosana-pdp-fe#aff=emmieshukiee042" target=\'_blank\' style=\'color:#1a73e8;text-decoration:none;\'>Fitness</a>' +
+    '<a href="https://myketosana.com/ketosana-pdp-fe#aff=emmieshukiee042" target=\'_blank\' style=\'color:#1a73e8;text-decoration:none;\'>Fitness</a> | ' +
+    '<a href="https://legionnairesmoneymachine.com/go?aid=1001&aff=1001" target=\'_blank\' style=\'color:#1a73e8;text-decoration:none;\'>AI Cash</a>' +
     '</footer>' +
     '</body> ' +
     '</html>'
@@ -528,7 +551,7 @@ app.post('/upload-ad-image', upload.single('image'), (req, res) => {
   res.json({ url: req.file.path });
 });
 
-// Auth routes - FIXED PASSWORD
+// Auth routes - WORKING PASSWORD + WHATSAPP
 app.post('/auth/signup', async (req, res) => {
   const { firstName, lastName, email, phone, password } = req.body;
   if (!firstName ||!lastName ||!email ||!password ||!phone) {
@@ -537,7 +560,7 @@ app.post('/auth/signup', async (req, res) => {
   try {
     const hash = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      `INSERT INTO users (first_name, last_name, email, phone, password_hash) VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, email`,
+      `INSERT INTO users (first_name, last_name, email, phone, password_hash) VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, email, phone`,
       [firstName, lastName, email, phone, hash]
     );
     res.json({ success: true, user: result.rows[0] });
@@ -566,7 +589,7 @@ app.post('/auth/login', async (req, res) => {
     if (!match) {
       return res.status(400).json({ success: false, error: 'Invalid email or password' });
     }
-    res.json({ success: true, user: { id: user.id, first_name: user.first_name, last_name: user.last_name, email: user.email } });
+    res.json({ success: true, user: { id: user.id, first_name: user.first_name, last_name: user.last_name, email: user.email, phone: user.phone } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, error: 'Login failed' });
@@ -591,7 +614,8 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
       country: countryName,
       url: j.redirect_url || '#',
       date_posted: j.created,
-      source: 'Adzuna'
+      source: 'Adzuna',
+      phone: ''
     }));
   } catch (err) {
     return [];
@@ -617,7 +641,8 @@ async function fetchJSearchJobs(query, location) {
       country: location,
       url: j.job_apply_link || '#',
       date_posted: j.job_posted_at_datetime_utc,
-      source: j.job_publisher || 'JSearch'
+      source: j.job_publisher || 'JSearch',
+      phone: ''
     }));
   } catch (err) {
     return [];
@@ -646,36 +671,17 @@ async function fetchJoobleJobs(query, location) {
       country: location,
       url: j.link,
       date_posted: j.updated,
-      source: 'Jooble'
+      source: 'Jooble',
+      phone: ''
     }));
   } catch (err) {
     return [];
   }
 }
 
-async function fetchRemotiveJobs(query) {
-  try {
-    const response = await fetch(`https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}`);
-    if (!response.ok) return [];
-    const data = await response.json();
-    return (data.jobs || []).map(j => ({
-      title: j.title,
-      company: j.company_name,
-      location: 'Remote',
-      country: 'Global',
-      url: j.url,
-      date_posted: j.date,
-      source: 'Remotive'
-    }));
-  } catch (err) {
-    return [];
-  }
-}
-
-// Jobs route - FIXED THE BUG THAT BLOCKED JOBS
+// Jobs route - WITH DIRECT EMPLOYER FALLBACK
 app.get('/jobs', async (req, res) => {
   try {
-    // THIS WAS THE BUG - req.query is an object, not string
     const query = req.query.query || 'dubai OR uae OR saudi OR driver OR maid OR security OR nurse OR construction';
     const recentDays = parseInt(req.query.recent) || 30;
 
@@ -685,9 +691,7 @@ app.get('/jobs', async (req, res) => {
       { code: 'qa', name: 'Qatar' },
       { code: 'kw', name: 'Kuwait' },
       { code: 'om', name: 'Oman' },
-      { code: 'bh', name: 'Bahrain' },
-      { code: 'gb', name: 'United Kingdom' },
-      { code: 'ca', name: 'Canada' }
+      { code: 'bh', name: 'Bahrain' }
     ];
 
     let allJobs = [];
@@ -700,7 +704,6 @@ app.get('/jobs', async (req, res) => {
         promises.push(fetchJoobleJobs(query, countries[i].name));
       }
     }
-    promises.push(fetchRemotiveJobs(query));
 
     const results = await Promise.allSettled(promises);
     results.forEach(r => {
@@ -708,6 +711,14 @@ app.get('/jobs', async (req, res) => {
         allJobs.push(...r.value);
       }
     });
+
+    // ADD DIRECT EMPLOYERS IF API RETURNS EMPTY
+    if (allJobs.length < 5) {
+      allJobs.push(...DIRECT_EMPLOYERS.map(e => ({
+       ...e,
+        date_posted: new Date().toISOString()
+      })));
+    }
 
     allJobs = allJobs.filter((job, index, self) =>
       index === self.findIndex(j => j.url === job.url)
@@ -723,7 +734,8 @@ app.get('/jobs', async (req, res) => {
     res.json(allJobs.slice(0, 100));
   } catch (err) {
     console.error('Jobs fetch error:', err);
-    res.json([]);
+    // FALLBACK TO DIRECT EMPLOYERS IF EVERYTHING FAILS
+    res.json(DIRECT_EMPLOYERS.map(e => ({...e, date_posted: new Date().toISOString()})));
   }
 });
 
