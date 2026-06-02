@@ -67,7 +67,6 @@ pool.query(`
   )
 `).catch(console.error);
 
-// ADD YOUR SPONSORED ADS HERE - THESE SHOW INSTANTLY
 const SPONSORED_ADS = [
   {
     id: 999001,
@@ -167,21 +166,22 @@ app.get('/', (req, res) => {
     '.ad-form input,.ad-form textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; }' +
     '.ad-form h3 { margin-top: 0; font-size: 18px; }' +
     '.phone-display { color: #34a853; font-weight: 600; }' +
-    '.auth-form input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }' +
-    '.auth-toggle { text-align:center;margin-top:10px;font-size:13px;color:#666;cursor:pointer; }' +
-    '.logout-btn { display:none; width:100%; margin-top:10px; background:#d32f2f; }' +
+    '.auth-form input { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; }' +
+    '.auth-toggle { text-align:center;margin-top:12px;font-size:14px;color:#666;cursor:pointer; }' +
+    '.logout-btn { width:100%; margin-top:10px; background:#d32f2f; }' +
+    '#authModal { position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px; }' +
+    '#authModalContent { background:white;border-radius:16px;padding:24px;max-width:400px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.3); }' +
+    '.auth-modal-title { font-size:22px;margin:0 0 8px 0;color:#1a73e8;text-align:center;font-weight:700; }' +
+    '.auth-modal-subtitle { font-size:14px;margin:0 0 20px 0;color:#666;text-align:center; }' +
+    '#mainContent { display:none; }' +
     ' </style>' +
     '</head>' +
     '<body>' +
-    '<button id="menuBtn" aria-label="Open menu" style="position:fixed;top:14px;left:14px;z-index:1001;background:#fff;border:0;border-radius:8px;padding:10px 12px;box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer;font-size:18px;">☰</button>' +
-    '<div id="overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;" onclick="closeMenu()"></div>' +
-    '<nav id="sideMenu" aria-hidden="true" style="position:fixed;top:0;left:-320px;width:300px;max-width:85%;height:100%;background:#fff;z-index:1002;transition:left 0.28s ease;box-shadow:2px 0 16px rgba(0,0,0,.12);overflow-y:auto;">' +
-    ' <div style="padding:20px;border-bottom:1px solid #eee;">' +
-    ' <h2 style="margin:0;color:#1a73e8;font-size:22px;">EmmieTech Recruitment</h2>' +
-    ' <p style="margin:6px 0 0;font-size:13px;color:#666;">Licensed Uganda → Dubai Agency</p>' +
-    ' </div>' +
-    ' <div id="authSection" style="padding:16px;border-bottom:1px solid #eee;">' +
-    ' <h3 id="authTitle" style="margin:0 0 12px 0;font-size:16px;">Worker Registration</h3>' +
+    '<div id="authModal">' +
+    ' <div id="authModalContent">' +
+    ' <h2 class="auth-modal-title">EmmieTech Recruitment</h2>' +
+    ' <p class="auth-modal-subtitle">Register to access verified Dubai jobs. Free for workers.</p>' +
+    ' <h3 id="authTitle" style="margin:0 0 16px 0;font-size:18px;text-align:center;">Worker Registration</h3>' +
     ' <div id="signupForm" class="auth-form">' +
     ' <input type="text" id="firstName" placeholder="First Name" required>' +
     ' <input type="text" id="lastName" placeholder="Last Name" required>' +
@@ -189,18 +189,29 @@ app.get('/', (req, res) => {
     ' <input type="tel" id="signupPhone" placeholder="WhatsApp Number" required>' +
     ' <input type="password" id="signupPassword" placeholder="Password" required>' +
     ' <input type="password" id="confirmPassword" placeholder="Confirm Password" required>' +
-    ' <button class="connect-btn" style="width:100%;" onclick="signup()">Register for Dubai Jobs</button>' +
-    ' <p id="signupMsg" style="font-size:12px;margin-top:8px;"></p>' +
+    ' <button class="connect-btn" style="width:100%;padding:14px;" onclick="signup()">Register for Dubai Jobs</button>' +
+    ' <p id="signupMsg" style="font-size:13px;margin-top:10px;text-align:center;"></p>' +
     ' </div>' +
     ' <div id="loginForm" class="auth-form" style="display:none;">' +
     ' <input type="email" id="loginEmail" placeholder="Email" required>' +
     ' <input type="password" id="loginPassword" placeholder="Password" required>' +
-    ' <button class="connect-btn" style="width:100%;" onclick="login()">Login</button>' +
-    ' <p id="loginMsg" style="font-size:12px;margin-top:8px;"></p>' +
+    ' <button class="connect-btn" style="width:100%;padding:14px;" onclick="login()">Login</button>' +
+    ' <p id="loginMsg" style="font-size:13px;margin-top:10px;text-align:center;"></p>' +
     ' </div>' +
     ' <div class="auth-toggle" onclick="toggleAuth()">Already registered? <b>Login</b></div>' +
+    ' </div>' +
+    '</div>' +
+    '<div id="mainContent">' +
+    '<button id="menuBtn" aria-label="Open menu" style="position:fixed;top:14px;left:14px;z-index:1001;background:#fff;border:0;border-radius:8px;padding:10px 12px;box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer;font-size:18px;">☰</button>' +
+    '<div id="overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;" onclick="closeMenu()"></div>' +
+    '<nav id="sideMenu" aria-hidden="true" style="position:fixed;top:0;left:-320px;width:300px;max-width:85%;height:100%;background:#fff;z-index:1002;transition:left 0.28s ease;box-shadow:2px 0 16px rgba(0,0,0,.12);overflow-y:auto;">' +
+    ' <div style="padding:20px;border-bottom:1px solid #eee;">' +
+    ' <h2 style="margin:0;color:#1a73e8;font-size:22px;">EmmieTech Recruitment</h2>' +
+    ' <p style="margin:6px 0 0;font-size:13px;color:#666;">Licensed Uganda → Dubai Agency</p>' +
+    ' </div>' +
+    ' <div style="padding:16px;border-bottom:1px solid #eee;">' +
+    ' <p id="userInfo" style="font-size:14px;margin:0 0 12px 0;color:#1a73e8;font-weight:600;"></p>' +
     ' <button id="logoutBtn" class="connect-btn logout-btn" onclick="logout()">Logout</button>' +
-    ' <p id="userInfo" style="font-size:13px;margin-top:8px;color:#1a73e8;"></p>' +
     ' </div>' +
     '</nav>' +
     ' <div class="hero">' +
@@ -243,15 +254,16 @@ app.get('/', (req, res) => {
     ' <div id="userAds" class="loading">Loading...</div>' +
     ' </div>' +
     ' </div>' +
+    '</div>' +
     ' <script>' +
     'function openMenu(){document.getElementById("sideMenu").style.left="0";document.getElementById("overlay").style.display="block";document.getElementById("sideMenu").setAttribute("aria-hidden","false");}' +
     'function closeMenu(){document.getElementById("sideMenu").style.left="-320px";document.getElementById("overlay").style.display="none";document.getElementById("sideMenu").setAttribute("aria-hidden","true");}' +
     'function toggleAuth(){const s=document.getElementById("signupForm"),l=document.getElementById("loginForm"),t=document.getElementById("authTitle");if(s.style.display==="none"){s.style.display="block";l.style.display="none";t.textContent="Worker Registration";}else{s.style.display="none";l.style.display="block";t.textContent="Worker Login";}}' +
-    'async function signup(){const first=document.getElementById("firstName").value.trim(),last=document.getElementById("lastName").value.trim(),email=document.getElementById("signupEmail").value.trim(),phone=document.getElementById("signupPhone").value.trim(),pass=document.getElementById("signupPassword").value,cpass=document.getElementById("confirmPassword").value;const msg=document.getElementById("signupMsg");if(!first||!last||!email||!pass||!phone){msg.textContent="Fill all fields";msg.style.color="red";return;}if(pass!==cpass){msg.textContent="Passwords do not match";msg.style.color="red";return;}msg.textContent="Registering...";msg.style.color="blue";const res=await fetch("/auth/signup",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({firstName:first,lastName:last,email,phone,password:pass})});const data=await res.json();if(data.success){msg.textContent="Registered! EmmieTech will WhatsApp you Dubai jobs.";msg.style.color="green";toggleAuth();}else{msg.textContent=data.error||"Signup failed";msg.style.color="red";}}' +
-    'async function login(){const email=document.getElementById("loginEmail").value.trim(),pass=document.getElementById("loginPassword").value;const msg=document.getElementById("loginMsg");if(!email||!pass){msg.textContent="Enter email and password";msg.style.color="red";return;}msg.textContent="Logging in...";msg.style.color="blue";const res=await fetch("/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password:pass})});const data=await res.json();if(data.success){msg.textContent="Welcome back!";msg.style.color="green";localStorage.setItem("jobai_user",JSON.stringify(data.user));updateAuthUI(data.user);closeMenu();}else{msg.textContent=data.error||"Login failed";msg.style.color="red";}}' +
-    'async function logout(){await fetch("/auth/logout",{method:"POST"});localStorage.removeItem("jobai_user");updateAuthUI(null);}' +
-    'function updateAuthUI(user){const logout=document.getElementById("logoutBtn");const info=document.getElementById("userInfo");if(user){document.getElementById("signupForm").style.display="none";document.getElementById("loginForm").style.display="none";document.getElementById("authTitle").textContent="My Account";logout.style.display="block";info.textContent="Welcome "+user.first_name+"! We will contact you for Dubai jobs.";}else{document.getElementById("signupForm").style.display="block";document.getElementById("loginForm").style.display="none";document.getElementById("authTitle").textContent="Worker Registration";logout.style.display="none";info.textContent="";}}' +
-    'window.addEventListener("load",()=>{const user=JSON.parse(localStorage.getItem("jobai_user")||"null");updateAuthUI(user);});' +
+    'function showMainContent(user){document.getElementById("authModal").style.display="none";document.getElementById("mainContent").style.display="block";document.getElementById("userInfo").textContent="Welcome "+user.first_name+"!";loadSponsoredAds();loadJobs();loadUserAds();}' +
+    'async function signup(){const first=document.getElementById("firstName").value.trim(),last=document.getElementById("lastName").value.trim(),email=document.getElementById("signupEmail").value.trim(),phone=document.getElementById("signupPhone").value.trim(),pass=document.getElementById("signupPassword").value,cpass=document.getElementById("confirmPassword").value;const msg=document.getElementById("signupMsg");if(!first||!last||!email||!pass||!phone){msg.textContent="Fill all fields";msg.style.color="red";return;}if(pass!==cpass){msg.textContent="Passwords do not match";msg.style.color="red";return;}msg.textContent="Registering...";msg.style.color="blue";const res=await fetch("/auth/signup",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({firstName:first,lastName:last,email,phone,password:pass})});const data=await res.json();if(data.success){localStorage.setItem("jobai_user",JSON.stringify(data.user));showMainContent(data.user);}else{msg.textContent=data.error||"Signup failed";msg.style.color="red";}}' +
+    'async function login(){const email=document.getElementById("loginEmail").value.trim(),pass=document.getElementById("loginPassword").value;const msg=document.getElementById("loginMsg");if(!email||!pass){msg.textContent="Enter email and password";msg.style.color="red";return;}msg.textContent="Logging in...";msg.style.color="blue";const res=await fetch("/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password:pass})});const data=await res.json();if(data.success){localStorage.setItem("jobai_user",JSON.stringify(data.user));showMainContent(data.user);}else{msg.textContent=data.error||"Login failed";msg.style.color="red";}}' +
+    'async function logout(){await fetch("/auth/logout",{method:"POST"});localStorage.removeItem("jobai_user");location.reload();}' +
+    'window.addEventListener("load",()=>{const user=JSON.parse(localStorage.getItem("jobai_user")||"null");if(user){showMainContent(user);}else{document.getElementById("authModal").style.display="flex";document.getElementById("mainContent").style.display="none";}});' +
     'document.getElementById("menuBtn").addEventListener("click",openMenu);' +
     ' let allJobs = [];' +
     ' function timeAgo(dateStr) {' +
@@ -381,7 +393,6 @@ app.get('/', (req, res) => {
     ' if (urlParams.get("payment") === "success") {' +
     ' document.getElementById("adMsg").textContent = "Payment successful! Job posted.";' +
     ' document.getElementById("adMsg").style.color = "green";' +
-    ' loadUserAds();' +
     ' }' +
     ' if (urlParams.get("payment") === "failed") {' +
     ' document.getElementById("adMsg").textContent = "Payment failed or cancelled.";' +
@@ -392,9 +403,6 @@ app.get('/', (req, res) => {
     ' document.getElementById("searchInput").addEventListener("keypress", function(e) {' +
     ' if (e.key === "Enter") loadJobs();' +
     ' });' +
-    ' loadSponsoredAds();' +
-    ' loadJobs();' +
-    ' loadUserAds();' +
     ' </script>' +
     ' </body>' +
     ' </html>'
@@ -439,7 +447,7 @@ app.post('/auth/login', async (req, res) => {
     if (!match) {
       return res.status(400).json({ success: false, error: 'Invalid email or password' });
     }
-    res.json({ success: true, user: { id: user.id, first_name: user.first_name, last_name: user.last_name, email: user.email, phone: user.phone } });
+        res.json({ success: true, user: { id: user.id, first_name: user.first_name, last_name: user.last_name, email: user.email, phone: user.phone } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, error: 'Login failed' });
@@ -453,12 +461,10 @@ app.post('/auth/logout', (req, res) => {
 // SPONSORED ADS ROUTE - YOUR FEATURED JOBS
 app.get('/sponsored', async (req, res) => {
   try {
-    // Get sponsored ads from database + hardcoded ones
     const dbSponsored = await pool.query(`SELECT * FROM ads WHERE sponsored = true AND status = 'approved' ORDER BY created_at DESC`);
     const allSponsored = [...SPONSORED_ADS,...dbSponsored.rows];
     res.json(allSponsored);
   } catch (err) {
-    // If DB fails, still show your hardcoded sponsored ads
     res.json(SPONSORED_ADS);
   }
 });
@@ -529,7 +535,6 @@ app.get('/jobs', async (req, res) => {
 
     let allJobs = [];
 
-    // 1. FETCH FROM ADZUNA + JSEARCH
     const promises = [];
     for (let i = 0; i < countries.length; i++) {
       promises.push(fetchAdzunaJobs(countries[i].code, countries[i].name, query));
@@ -543,10 +548,8 @@ app.get('/jobs', async (req, res) => {
       }
     });
 
-    // 2. ADD YOUR DIRECT EMPLOYERS ALWAYS
     allJobs.push(...DIRECT_EMPLOYERS);
 
-    // 3. ADD EMPLOYER-POSTED JOBS FROM DATABASE
     try {
       const dbAds = await pool.query(`SELECT * FROM ads WHERE type = 'job' AND status = 'approved' AND sponsored = false ORDER BY created_at DESC LIMIT 20`);
       const employerJobs = dbAds.rows.map(j => ({
@@ -565,18 +568,15 @@ app.get('/jobs', async (req, res) => {
       console.error('DB jobs error:', dbErr);
     }
 
-    // Remove duplicates by URL + title
     allJobs = allJobs.filter((job, index, self) =>
       index === self.findIndex(j => j.url === job.url && j.title === job.title)
     );
 
-    // Filter by date if needed
     if (recentDays > 0 && req.query.recent!== 'all') {
       const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
 
-    // Sort newest first
     allJobs.sort((a, b) => new Date(b.date_posted) - new Date(a.date_posted));
 
     res.json(allJobs.slice(0, 100));
