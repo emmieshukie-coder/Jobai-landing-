@@ -19,7 +19,6 @@ const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// API KEYS - KEEPING ADZUNA + JSEARCH
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
@@ -50,6 +49,7 @@ pool.query(`
     text TEXT,
     image TEXT,
     paymentref TEXT,
+    sponsored BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT NOW(),
     expires_at TIMESTAMP
   )
@@ -66,6 +66,32 @@ pool.query(`
     created_at TIMESTAMP DEFAULT NOW()
   )
 `).catch(console.error);
+
+// ADD YOUR SPONSORED ADS HERE - THESE SHOW INSTANTLY
+const SPONSORED_ADS = [
+  {
+    id: 999001,
+    title: "URGENT: 50 House Maids Needed Dubai - 2000 AED + Free Visa",
+    company: "EmmieTech Recruitment",
+    location: "Dubai, UAE",
+    phone: "+971500000000",
+    url: "https://wa.me/971500000000",
+    description: "No experience needed. Free accommodation, food, transport. Legal contracts. Interview this week.",
+    sponsored: true,
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 999002,
+    title: "Security Guards - Dubai Mall - 3000 AED Salary",
+    company: "EmmieTech Recruitment",
+    location: "Dubai, UAE",
+    phone: "+971500000000",
+    url: "https://wa.me/971500000000",
+    description: "SIRA license provided. 12hr shifts. Free accommodation. Start immediately.",
+    sponsored: true,
+    created_at: new Date().toISOString()
+  }
+];
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -84,7 +110,6 @@ let pendingPayments = {};
 const AD_PRICE = 500;
 const AD_DURATION_DAYS = 7;
 
-// YOUR DIRECT EMPLOYERS - ALWAYS SHOW
 const DIRECT_EMPLOYERS = [
   { title: "House Maid Dubai - Free Visa + Accommodation", company: "Emirates Group", location: "Dubai, UAE", phone: "+97143877788", url: "https://www.emiratesgroupcareers.com", country: "UAE", source: "Direct Partner", date_posted: new Date().toISOString() },
   { title: "Security Guard - 2800 AED Salary", company: "G4S UAE", location: "Abu Dhabi, UAE", phone: "+97126911200", url: "https://www.g4s.com/en-ae/careers", country: "UAE", source: "Direct Partner", date_posted: new Date().toISOString() },
@@ -129,6 +154,8 @@ app.get('/', (req, res) => {
     '.source-tag { display: inline-block; background: #f5f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }' +
     '.direct-tag { background: #e8f5e9; color: #2e7d32; }' +
     '.user-ad-tag { background: #fff3e0; color: #f57c00; }' +
+    '.sponsored-tag { background: #ff6d00; color: white; font-weight: 700; }' +
+    '.sponsored-card { border: 2px solid #ff6d00; background: #fff8f0; }' +
     '.btn-group { display: flex; gap: 10px; flex-wrap: wrap; }' +
     '.connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; border: none; cursor: pointer; }' +
     '.connect-btn:hover { background: #1557b0; }' +
@@ -190,6 +217,10 @@ app.get('/', (req, res) => {
     ' <option value="1">Last 24 hours</option>' +
     ' </select>' +
     ' <button class="connect-btn" id="searchBtn">Find Dubai Jobs</button>' +
+    ' </div>' +
+    ' <div class="section">' +
+    ' <h2>🔥 Sponsored Jobs - Apply Now</h2>' +
+    ' <div id="sponsoredAds" class="loading">Loading sponsored jobs...</div>' +
     ' </div>' +
     ' <div class="section">' +
     ' <h2>Verified Dubai & UAE Jobs - Apply Direct</h2>' +
@@ -261,6 +292,25 @@ app.get('/', (req, res) => {
     ' return "<div class=\\"job-card\\"><span class=\\"country-tag\\">" + j.country + "</span><span class=\\"source-tag " + tagClass + "\\">" + j.source + "</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span>" + timePart + "</p>" + buttons + "</div>";' +
     ' }).join("");' +
     ' }' +
+    ' function renderSponsoredAds(ads) {' +
+    ' if (!ads.length) {' +
+    ' document.getElementById("sponsoredAds").innerHTML = "<div class=\\"error\\">No sponsored jobs right now.</div>";' +
+    ' return;' +
+    ' }' +
+    ' document.getElementById("sponsoredAds").innerHTML = ads.map(function(j) {' +
+    ' let buttons = "<div class=\\"btn-group\\">";' +
+    ' if (j.phone) {' +
+    ' buttons += "<a href=\\"https://wa.me/" + j.phone.replace(/[^0-9]/g,"") + "\\" target=\\"_blank\\" class=\\"connect-btn call-btn\\">WhatsApp Now</a>";' +
+    ' }' +
+    ' if (j.url && j.url!== "#") {' +
+    ' buttons += "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"connect-btn\\">Apply Now</a>";' +
+    ' }' +
+    ' buttons += "</div>";' +
+    ' const timeStr = timeAgo(j.created_at);' +
+    ' const timeHtml = timeStr? `<span class="source-tag">${timeStr}</span>` : "";' +
+    ' return "<div class=\\"job-card sponsored-card\\" style=\\"position:relative\\"><span class=\\"country-tag sponsored-tag\\">SPONSORED</span>"+timeHtml+"<h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "WhatsApp: " + j.phone : "") + "</p>" + buttons + "</div>";' +
+    ' }).join("");' +
+    ' }' +
     ' function renderUserAds(ads) {' +
     ' if (!ads.length) {' +
     ' document.getElementById("userAds").innerHTML = "<div class=\\"error\\">No employer posts yet.</div>";' +
@@ -291,6 +341,11 @@ app.get('/', (req, res) => {
     ' } catch (e) {' +
     ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs. Refresh page.</div>";' +
     ' }' +
+    ' }' +
+    ' async function loadSponsoredAds() {' +
+    ' const res = await fetch("/sponsored");' +
+    ' const ads = await res.json();' +
+    ' renderSponsoredAds(ads);' +
     ' }' +
     ' async function loadUserAds() {' +
     ' const res = await fetch("/ads");' +
@@ -337,6 +392,7 @@ app.get('/', (req, res) => {
     ' document.getElementById("searchInput").addEventListener("keypress", function(e) {' +
     ' if (e.key === "Enter") loadJobs();' +
     ' });' +
+    ' loadSponsoredAds();' +
     ' loadJobs();' +
     ' loadUserAds();' +
     ' </script>' +
@@ -392,6 +448,19 @@ app.post('/auth/login', async (req, res) => {
 
 app.post('/auth/logout', (req, res) => {
   res.json({ success: true });
+});
+
+// SPONSORED ADS ROUTE - YOUR FEATURED JOBS
+app.get('/sponsored', async (req, res) => {
+  try {
+    // Get sponsored ads from database + hardcoded ones
+    const dbSponsored = await pool.query(`SELECT * FROM ads WHERE sponsored = true AND status = 'approved' ORDER BY created_at DESC`);
+    const allSponsored = [...SPONSORED_ADS,...dbSponsored.rows];
+    res.json(allSponsored);
+  } catch (err) {
+    // If DB fails, still show your hardcoded sponsored ads
+    res.json(SPONSORED_ADS);
+  }
 });
 
 // FETCHERS - ADZUNA + JSEARCH
@@ -479,12 +548,12 @@ app.get('/jobs', async (req, res) => {
 
     // 3. ADD EMPLOYER-POSTED JOBS FROM DATABASE
     try {
-      const dbAds = await pool.query(`SELECT * FROM ads WHERE type = 'job' AND status = 'approved' ORDER BY created_at DESC LIMIT 20`);
+      const dbAds = await pool.query(`SELECT * FROM ads WHERE type = 'job' AND status = 'approved' AND sponsored = false ORDER BY created_at DESC LIMIT 20`);
       const employerJobs = dbAds.rows.map(j => ({
         title: j.title,
         company: j.company,
         location: j.location,
-                country: 'UAE',
+        country: 'UAE',
         url: j.url || '#',
         phone: j.phone,
         date_posted: j.created_at,
@@ -502,7 +571,7 @@ app.get('/jobs', async (req, res) => {
     );
 
     // Filter by date if needed
-    if (recentDays > 0 && req.query.recent !== 'all') {
+    if (recentDays > 0 && req.query.recent!== 'all') {
       const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
@@ -513,7 +582,6 @@ app.get('/jobs', async (req, res) => {
     res.json(allJobs.slice(0, 100));
   } catch (err) {
     console.error('Jobs fetch error:', err);
-    // FALLBACK: AT LEAST SHOW YOUR DIRECT EMPLOYERS
     res.json(DIRECT_EMPLOYERS);
   }
 });
@@ -522,7 +590,7 @@ app.get('/jobs', async (req, res) => {
 app.get('/ads', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT * FROM ads WHERE type = 'job' AND status = 'approved' ORDER BY created_at DESC`
+      `SELECT * FROM ads WHERE type = 'job' AND status = 'approved' AND sponsored = false ORDER BY created_at DESC`
     );
     res.json(result.rows);
   } catch (err) {
@@ -533,7 +601,7 @@ app.get('/ads', async (req, res) => {
 // PAYMENT FOR EMPLOYER JOB POSTS - 200 KES
 app.post('/ads/initiate-payment', async (req, res) => {
   const { title, company, location, phone, url, description } = req.body;
-  if (!title || !company || !location || !phone) {
+  if (!title ||!company ||!location ||!phone) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
@@ -585,9 +653,9 @@ app.get('/payment-callback', async (req, res) => {
       if (jobData) {
         const id = Date.now() + Math.floor(Math.random() * 1000);
         await pool.query(
-          `INSERT INTO ads (id, token, type, status, title, company, location, phone, url, description, paymentref, created_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
-          [id, jobData.token, 'job', 'approved', jobData.title, jobData.company, jobData.location, jobData.phone, jobData.url, jobData.description, transaction_id]
+          `INSERT INTO ads (id, token, type, status, title, company, location, phone, url, description, paymentref, sponsored, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())`,
+          [id, jobData.token, 'job', 'approved', jobData.title, jobData.company, jobData.location, jobData.phone, jobData.url, jobData.description, transaction_id, false]
         );
         delete pendingPayments[tx_ref];
         res.redirect('/?payment=success');
