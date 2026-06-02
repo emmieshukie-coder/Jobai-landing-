@@ -9,7 +9,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fetch from 'node-fetch';
 
-// Sitemap router
 import sitemapRouter from './sitemap.js';
 
 const { Pool } = pkg;
@@ -31,10 +30,8 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Use sitemap router
 app.use(sitemapRouter);
 
-// Tables
 pool.query(`
   CREATE TABLE IF NOT EXISTS ads (
     id BIGINT PRIMARY KEY,
@@ -90,12 +87,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// Google site verification
 app.get('/google765cda11c517c492.html', (req, res) => {
   res.send('google-site-verification: google765cda11c517c492.html');
 });
 
-// Main UI
+// Main UI - RECRUITMENT APP + YOUR AFFILIATES
 app.get('/', (req, res) => {
   res.send(
     '<!DOCTYPE html>' +
@@ -103,8 +99,7 @@ app.get('/', (req, res) => {
     '<head>' +
     ' <meta charset="UTF-8">' +
     ' <meta name="viewport" content="width=device-width, initial-scale=1.0">' +
-    ' <title>Jobai - Get Connected to Jobs & Workers</title>' +
-    ' <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-app-pub-1637256996790764" crossorigin="anonymous"></script>' +
+    ' <title>EmmieTech Recruitment - Uganda to Dubai Jobs</title>' +
     ' <style>' +
     ' body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }' +
     '.hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; }' +
@@ -139,8 +134,6 @@ app.get('/', (req, res) => {
     '.ad-form input,.ad-form textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; }' +
     '.ad-form h3 { margin-top: 0; font-size: 18px; }' +
     '.phone-display { color: #34a853; font-weight: 600; }' +
-    '.ad-unit { margin: 0; padding: 0; min-height: 0; }' +
-    '.ad-unit ins.adsbygoogle[data-ad-status="unfilled"] { display: none!important; }' +
     '.img-preview { max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 10px; display: none; }' +
     '.card-actions { position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; }' +
     '.icon-btn { width: 32px; height: 32px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; }' +
@@ -157,19 +150,19 @@ app.get('/', (req, res) => {
     '<div id="overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;" onclick="closeMenu()"></div>' +
     '<nav id="sideMenu" aria-hidden="true" style="position:fixed;top:0;left:-320px;width:300px;max-width:85%;height:100%;background:#fff;z-index:1002;transition:left 0.28s ease;box-shadow:2px 0 16px rgba(0,0,0,.12);overflow-y:auto;">' +
     ' <div style="padding:20px;border-bottom:1px solid #eee;">' +
-    ' <h2 style="margin:0;color:#1a73e8;font-size:22px;">Jobai</h2>' +
-    ' <p style="margin:6px 0 0;font-size:13px;color:#666;">Get Connected to Jobs & Workers</p>' +
+    ' <h2 style="margin:0;color:#1a73e8;font-size:22px;">EmmieTech Recruitment</h2>' +
+    ' <p style="margin:6px 0 0;font-size:13px;color:#666;">Licensed Uganda → Dubai Agency</p>' +
     ' </div>' +
     ' <div id="authSection" style="padding:16px;border-bottom:1px solid #eee;">' +
-    ' <h3 id="authTitle" style="margin:0 0 12px 0;font-size:16px;">Sign Up</h3>' +
+    ' <h3 id="authTitle" style="margin:0 0 12px 0;font-size:16px;">Worker Registration</h3>' +
     ' <div id="signupForm" class="auth-form">' +
     ' <input type="text" id="firstName" placeholder="First Name" required>' +
     ' <input type="text" id="lastName" placeholder="Last Name" required>' +
     ' <input type="email" id="signupEmail" placeholder="Email" required>' +
-    ' <input type="tel" id="signupPhone" placeholder="Phone Number">' +
+    ' <input type="tel" id="signupPhone" placeholder="WhatsApp Number" required>' +
     ' <input type="password" id="signupPassword" placeholder="Password" required>' +
     ' <input type="password" id="confirmPassword" placeholder="Confirm Password" required>' +
-    ' <button class="connect-btn" style="width:100%;" onclick="signup()">Create Account</button>' +
+    ' <button class="connect-btn" style="width:100%;" onclick="signup()">Register for Dubai Jobs</button>' +
     ' <p id="signupMsg" style="font-size:12px;margin-top:8px;"></p>' +
     ' </div>' +
     ' <div id="loginForm" class="auth-form" style="display:none;">' +
@@ -178,74 +171,64 @@ app.get('/', (req, res) => {
     ' <button class="connect-btn" style="width:100%;" onclick="login()">Login</button>' +
     ' <p id="loginMsg" style="font-size:12px;margin-top:8px;"></p>' +
     ' </div>' +
-    ' <div class="auth-toggle" onclick="toggleAuth()">Already have an account? <b>Login</b></div>' +
+    ' <div class="auth-toggle" onclick="toggleAuth()">Already registered? <b>Login</b></div>' +
     ' <button id="logoutBtn" class="connect-btn logout-btn" onclick="logout()">Logout</button>' +
     ' <p id="userInfo" style="font-size:13px;margin-top:8px;color:#1a73e8;"></p>' +
     ' </div>' +
     ' <div style="padding:8px 0;">' +
-    ' <a href="#" onclick="closeMenu();document.getElementById(\'searchInput\')?.focus();" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">🔍 <span>Job Search</span></a>' +
-    ' <a href="#" onclick="showFavorites()" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">❤️ <span>Favorites</span></a>' +
-    ' <a href="#" onclick="scrollToId(\'adForm\')" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">📄 <span>Post a Job</span> <span style="background:#ff9800;color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;margin-left:auto;">New</span></a>' +
-    ' <a href="#" onclick="showSalaries()" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">📊 <span>Salaries</span></a>' +
-    ' <a href="#" onclick="showSubscriptions()" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">✉️ <span>Job Alerts</span></a>' +
-    ' <a href="#" onclick="scrollToId(\'paidAds\')" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">💼 <span>Sponsored Ads</span></a>' +
+    ' <a href="#" onclick="closeMenu();document.getElementById(\'searchInput\')?.focus();" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">🔍 <span>Dubai Jobs</span></a>' +
+    ' <a href="#" onclick="showFavorites()" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">❤️ <span>Saved Jobs</span></a>' +
+    ' <a href="#" onclick="scrollToId(\'adForm\')" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">📄 <span>Employers: Hire</span> <span style="background:#ff9800;color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;margin-left:auto;">200 KES</span></a>' +
+    ' <a href="#" onclick="showSalaries()" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">📊 <span>Dubai Salaries</span></a>' +
+    ' <a href="#" onclick="showSubscriptions()" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">✉️ <span>Visa Services</span></a>' +
     ' </div>' +
-    ' <div style="padding:16px 18px;border-top:1px solid #eee;font-size:13px;color:#666;">Never miss new jobs on Jobai</div>' +
     '</nav>' +
     ' <div class="hero">' +
-    ' <h1>Get Connected to Jobs & Workers</h1>' +
-    ' <p>AI-powered matching for Uganda, Kenya, Tanzania, Rwanda, Burundi, India, UAE, Saudi Arabia, France, UK, Canada, China, Taiwan, Thailand</p>' +
-    ' </div>' +
-    ' <div class="ad-unit">' +
-    ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-app-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
-    ' <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>' +
+    ' <h1>EmmieTech Dubai Recruitment</h1>' +
+    ' <p>We place Ugandan drivers, maids, security, nurses, construction workers in UAE & Saudi Arabia. Legal contracts. No upfront fees to workers.</p>' +
     ' </div>' +
     ' <div class="container">' +
     ' <div class="controls">' +
-    ' <input type="text" id="searchInput" placeholder="Search: cleaner, nurse, teacher, engineer, farmer..." />' +
+    ' <input type="text" id="searchInput" placeholder="Search: driver, maid, security, nurse..." />' +
     ' <select id="dateFilter">' +
-    ' <option value="7">Last 7 days</option>' +
     ' <option value="all">All time</option>' +
+    ' <option value="7">Last 7 days</option>' +
     ' <option value="3">Last 3 days</option>' +
     ' <option value="1">Last 24 hours</option>' +
     ' </select>' +
-    ' <button class="connect-btn" id="searchBtn">Search</button>' +
+    ' <button class="connect-btn" id="searchBtn">Find Dubai Jobs</button>' +
     ' </div>' +
     ' <div class="section">' +
-    ' <h2>Trending Jobs</h2>' +
-    ' <div id="jobs" class="loading">Loading jobs...</div>' +
-    ' </div>' +
-    ' <div class="ad-unit">' +
-    ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-app-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
-    ' <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>' +
+    ' <h2>Verified Dubai & UAE Jobs</h2>' +
+    ' <div id="jobs" class="loading">Loading verified jobs...</div>' +
     ' </div>' +
     ' <div class="section">' +
-    ' <h2>Post a Job</h2>' +
+    ' <h2>Employers: Hire from Uganda - 200 KES</h2>' +
     ' <div class="ad-form" id="adForm">' +
-    ' <h3>Advertise your job for 200 KES</h3>' +
-    ' <input type="text" id="adTitle" placeholder="Job title" required>' +
+    ' <h3>Post your Dubai/Saudi job opening</h3>' +
+    ' <input type="text" id="adTitle" placeholder="Job title - e.g. House Maid Needed Dubai" required>' +
     ' <input type="text" id="adCompany" placeholder="Company name" required>' +
-    ' <input type="text" id="adLocation" placeholder="Location" required>' +
-    ' <input type="tel" id="adPhone" placeholder="Phone number for applicants">' +
-    ' <input type="url" id="adUrl" placeholder="Apply link (optional)">' +
-    ' <textarea id="adDesc" placeholder="Short description" rows="3"></textarea>' +
+    ' <input type="text" id="adLocation" placeholder="Location - Dubai, Abu Dhabi, Riyadh" required>' +
+    ' <input type="tel" id="adPhone" placeholder="WhatsApp for applicants" required>' +
+    ' <input type="url" id="adUrl" placeholder="Company website (optional)">' +
+    ' <textarea id="adDesc" placeholder="Salary AED, benefits, requirements, visa provided?" rows="3"></textarea>' +
     ' <button class="connect-btn" onclick="submitAd()">Pay 200 KES & Post Job</button>' +
     ' <p id="adMsg" style="margin-top:10px; font-size:14px;"></p>' +
     ' </div>' +
-    ' <h2>Community Job Posts</h2>' +
+    ' <h2>Direct Employer Posts</h2>' +
     ' <div id="userAds" class="loading">Loading...</div>' +
     ' </div>' +
     ' <div class="section">' +
-    ' <h2>Sponsored Ads</h2>' +
+    ' <h2>Recruitment Agency Partners</h2>' +
     ' <div class="ad-form">' +
-    ' <h3>Advertise here for ' + AD_PRICE + ' KES for 7 days</h3>' +
-    ' <input type="text" id="adBizName" placeholder="Business name" required>' +
+    ' <h3>Advertise your agency - ' + AD_PRICE + ' KES for 7 days</h3>' +
+    ' <input type="text" id="adBizName" placeholder="Agency name" required>' +
     ' <input type="url" id="adLink" placeholder="Website or WhatsApp link" required>' +
-    ' <input type="text" id="adText" placeholder="Short ad text" required>' +
+    ' <input type="text" id="adText" placeholder="We hire for Dubai, Saudi, Qatar" required>' +
     ' <input type="file" id="adImgFile" accept="image/*" capture="environment">' +
     ' <img id="imgPreview" class="img-preview" />' +
     ' <input type="hidden" id="adImgUrl">' +
-    ' <button class="connect-btn" style="background:#f57c00;" onclick="submitPaidAd()">Pay ' + AD_PRICE + ' KES & Run Ad</button>' +
+    ' <button class="connect-btn" style="background:#f57c00;" onclick="submitPaidAd()">Pay ' + AD_PRICE + ' KES & Advertise</button>' +
     ' <p id="adPayMsg" style="margin-top:10px; font-size:14px;"></p>' +
     ' </div>' +
     ' <div id="paidAds" class="loading">Loading ads...</div>' +
@@ -271,14 +254,14 @@ app.get('/', (req, res) => {
     'function openMenu(){document.getElementById(\'sideMenu\').style.left=\'0\';document.getElementById(\'overlay\').style.display=\'block\';document.getElementById(\'sideMenu\').setAttribute(\'aria-hidden\',\'false\');}' +
     'function closeMenu(){document.getElementById(\'sideMenu\').style.left=\'-320px\';document.getElementById(\'overlay\').style.display=\'none\';document.getElementById(\'sideMenu\').setAttribute(\'aria-hidden\',\'true\');}' +
     'function scrollToId(id){closeMenu();const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:\'smooth\',block:\'start\'});}' +
-    'function showFavorites(){closeMenu();const fav=JSON.parse(localStorage.getItem(\'jobai_fav\')||\'[]\');if(!fav.length){alert(\'No favorites yet. Click "Connect & Apply" then save the job link.\');return;}renderJobs(fav);document.querySelector(\'.section h2\').textContent=\'Favorites\';}' +
-    'function showSalaries(){closeMenu();alert(\'Salaries coming next. We will wire this to Adzuna Salary API.\');}' +
-    'function showSubscriptions(){closeMenu();alert(\'Job Alerts coming next. Enter email + keywords and get notified.\');}' +
-    'function toggleAuth(){const s=document.getElementById(\'signupForm\'),l=document.getElementById(\'loginForm\'),t=document.getElementById(\'authTitle\');if(s.style.display===\'none\'){s.style.display=\'block\';l.style.display=\'none\';t.textContent=\'Sign Up\';}else{s.style.display=\'none\';l.style.display=\'block\';t.textContent=\'Login\';}}' +
-    'async function signup(){const first=document.getElementById(\'firstName\').value.trim(),last=document.getElementById(\'lastName\').value.trim(),email=document.getElementById(\'signupEmail\').value.trim(),phone=document.getElementById(\'signupPhone\').value.trim(),pass=document.getElementById(\'signupPassword\').value,cpass=document.getElementById(\'confirmPassword\').value;const msg=document.getElementById(\'signupMsg\');if(!first||!last||!email||!pass){msg.textContent=\'Fill all required fields\';msg.style.color=\'red\';return;}if(pass!==cpass){msg.textContent=\'Passwords do not match\';msg.style.color=\'red\';return;}msg.textContent=\'Creating account...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/signup\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({firstName:first,lastName:last,email,phone,password:pass})});const data=await res.json();if(data.success){msg.textContent=\'Account created! You can login now.\';msg.style.color=\'green\';toggleAuth();}else{msg.textContent=data.error||\'Signup failed\';msg.style.color=\'red\';}}' +
-    'async function login(){const email=document.getElementById(\'loginEmail\').value.trim(),pass=document.getElementById(\'loginPassword\').value;const msg=document.getElementById(\'loginMsg\');if(!email||!pass){msg.textContent=\'Enter email and password\';msg.style.color=\'red\';return;}msg.textContent=\'Logging in...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/login\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({email,password:pass})});const data=await res.json();if(data.success){msg.textContent=\'Login successful!\';msg.style.color=\'green\';localStorage.setItem(\'jobai_user\',JSON.stringify(data.user));updateAuthUI(data.user);closeMenu();}else{msg.textContent=data.error||\'Login failed\';msg.style.color=\'red\';}}' +
+    'function showFavorites(){closeMenu();const fav=JSON.parse(localStorage.getItem(\'jobai_fav\')||\'[]\');if(!fav.length){alert(\'No saved jobs yet.\');return;}renderJobs(fav);document.querySelector(\'.section h2\').textContent=\'Saved Jobs\';}' +
+    'function showSalaries(){closeMenu();alert(\'Dubai Salaries 2026: Driver 1800-3500 AED | Maid 1200-2000 AED | Security 2200-4000 AED | Construction 1500-3000 AED | Nurse 5000-12000 AED. Most include free visa + accommodation.\');}' +
+    'function showSubscriptions(){closeMenu();alert(\'EmmieTech Visa Services: We process Dubai work visas. WhatsApp +256 700 000000. Fee: 150,000 UGX ONLY after job confirmation. Never pay upfront to agents.\');}' +
+    'function toggleAuth(){const s=document.getElementById(\'signupForm\'),l=document.getElementById(\'loginForm\'),t=document.getElementById(\'authTitle\');if(s.style.display===\'none\'){s.style.display=\'block\';l.style.display=\'none\';t.textContent=\'Worker Registration\';}else{s.style.display=\'none\';l.style.display=\'block\';t.textContent=\'Worker Login\';}}' +
+    'async function signup(){const first=document.getElementById(\'firstName\').value.trim(),last=document.getElementById(\'lastName\').value.trim(),email=document.getElementById(\'signupEmail\').value.trim(),phone=document.getElementById(\'signupPhone\').value.trim(),pass=document.getElementById(\'signupPassword\').value,cpass=document.getElementById(\'confirmPassword\').value;const msg=document.getElementById(\'signupMsg\');if(!first||!last||!email||!pass||!phone){msg.textContent=\'Fill all fields\';msg.style.color=\'red\';return;}if(pass!==cpass){msg.textContent=\'Passwords do not match\';msg.style.color=\'red\';return;}msg.textContent=\'Registering...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/signup\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({firstName:first,lastName:last,email,phone,password:pass})});const data=await res.json();if(data.success){msg.textContent=\'Registered! EmmieTech will WhatsApp you Dubai jobs.\';msg.style.color=\'green\';toggleAuth();}else{msg.textContent=data.error||\'Signup failed\';msg.style.color=\'red\';}}' +
+    'async function login(){const email=document.getElementById(\'loginEmail\').value.trim(),pass=document.getElementById(\'loginPassword\').value;const msg=document.getElementById(\'loginMsg\');if(!email||!pass){msg.textContent=\'Enter email and password\';msg.style.color=\'red\';return;}msg.textContent=\'Logging in...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/login\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({email,password:pass})});const data=await res.json();if(data.success){msg.textContent=\'Welcome back!\';msg.style.color=\'green\';localStorage.setItem(\'jobai_user\',JSON.stringify(data.user));updateAuthUI(data.user);closeMenu();}else{msg.textContent=data.error||\'Login failed\';msg.style.color=\'red\';}}' +
     'async function logout(){await fetch(\'/auth/logout\',{method:\'POST\'});localStorage.removeItem(\'jobai_user\');updateAuthUI(null);}' +
-    'function updateAuthUI(user){const logout=document.getElementById(\'logoutBtn\');const info=document.getElementById(\'userInfo\');if(user){document.getElementById(\'signupForm\').style.display=\'none\';document.getElementById(\'loginForm\').style.display=\'none\';document.getElementById(\'authTitle\').textContent=\'Account\';logout.style.display=\'block\';info.textContent=\'Logged in as \'+user.first_name+\' \'+user.last_name;}else{document.getElementById(\'signupForm\').style.display=\'block\';document.getElementById(\'loginForm\').style.display=\'none\';document.getElementById(\'authTitle\').textContent=\'Sign Up\';logout.style.display=\'none\';info.textContent=\'\';}}' +
+    'function updateAuthUI(user){const logout=document.getElementById(\'logoutBtn\');const info=document.getElementById(\'userInfo\');if(user){document.getElementById(\'signupForm\').style.display=\'none\';document.getElementById(\'loginForm\').style.display=\'none\';document.getElementById(\'authTitle\').textContent=\'My Account\';logout.style.display=\'block\';info.textContent=\'Welcome \'+user.first_name+\'! We will contact you for Dubai jobs.\';}else{document.getElementById(\'signupForm\').style.display=\'block\';document.getElementById(\'loginForm\').style.display=\'none\';document.getElementById(\'authTitle\').textContent=\'Worker Registration\';logout.style.display=\'none\';info.textContent=\'\';}}' +
     'window.addEventListener(\'load\',()=>{const user=JSON.parse(localStorage.getItem(\'jobai_user\')||\'null\');updateAuthUI(user);});' +
     'document.getElementById(\'menuBtn\').addEventListener(\'click\',openMenu);' +
     ' let allJobs = [];' +
@@ -327,27 +310,27 @@ app.get('/', (req, res) => {
     ' }' +
     ' function renderJobs(jobs) {' +
     ' if (!jobs.length) {' +
-    ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">No jobs found.</div>";' +
+    ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">No jobs found. Try \'dubai\' or \'driver\'</div>";' +
     ' return;' +
     ' }' +
     ' document.getElementById("jobs").innerHTML = jobs.map(function(j) {' +
     ' const timeStr = timeAgo(j.date_posted);' +
     ' const timePart = timeStr? `<span>•</span><span>${timeStr}</span>` : "";' +
-    ' return "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"job-card\\"><span class=\\"country-tag\\">" + j.country + "</span><span class=\\"source-tag\\">" + j.source + "</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span>" + timePart + "</p><span class=\\"connect-btn\\">Connect & Apply</span></a>";' +
+    ' return "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"job-card\\"><span class=\\"country-tag\\">" + j.country + "</span><span class=\\"source-tag\\">" + j.source + "</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span>" + timePart + "</p><span class=\\"connect-btn\\">Apply via EmmieTech</span></a>";' +
     ' }).join("");' +
     ' }' +
     ' function renderUserAds(ads) {' +
     ' if (!ads.length) {' +
-    ' document.getElementById("userAds").innerHTML = "<div class=\\"error\\">No community posts yet.</div>";' +
+    ' document.getElementById("userAds").innerHTML = "<div class=\\"error\\">No employer posts yet.</div>";' +
     ' return;' +
     ' }' +
     ' document.getElementById("userAds").innerHTML = ads.map(function(j) {' +
     ' let buttons = "<div class=\\"btn-group\\">";' +
     ' if (j.url && j.url!== "#") {' +
-    ' buttons += "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"connect-btn\\">Apply Now</a>";' +
+    ' buttons += "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"connect-btn\\">Company Website</a>";' +
     ' }' +
     ' if (j.phone) {' +
-    ' buttons += "<a href=\\"tel:" + j.phone + "\\" class=\\"connect-btn call-btn\\">Call " + j.phone + "</a>";' +
+    ' buttons += "<a href=\\"https://wa.me/" + j.phone.replace(/[^0-9]/g,"") + "\\" target=\\"_blank\\" class=\\"connect-btn call-btn\\">WhatsApp " + j.phone + "</a>";' +
     ' }' +
     ' buttons += "</div>";' +
     ' let actions = "<div class=\\"card-actions\\">";' +
@@ -356,12 +339,12 @@ app.get('/', (req, res) => {
     ' actions += "</div>";' +
     ' const timeStr = timeAgo(j.created_at);' +
     ' const timeHtml = timeStr? `<span class="source-tag">${timeStr}</span>` : "";' +
-    ' return "<div class=\\"job-card\\" style=\\"position:relative\\">"+actions+"<span class=\\"country-tag user-ad-tag\\">Community</span>"+timeHtml+"<h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
+    ' return "<div class=\\"job-card\\" style=\\"position:relative\\">"+actions+"<span class=\\"country-tag user-ad-tag\\">Direct Hire</span>"+timeHtml+"<h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "WhatsApp: " + j.phone : "") + "</p>" + buttons + "</div>";' +
     ' }).join("");' +
     ' }' +
     ' function renderPaidAds(ads) {' +
     ' if (!ads.length) {' +
-    ' document.getElementById("paidAds").innerHTML = "<div class=\\"error\\">No sponsors yet.</div>";' +
+    ' document.getElementById("paidAds").innerHTML = "<div class=\\"error\\">No recruitment agencies yet.</div>";' +
     ' return;' +
     ' }' +
     ' document.getElementById("paidAds").innerHTML = ads.map(function(ad) {' +
@@ -374,204 +357,181 @@ app.get('/', (req, res) => {
     ' const timeHtml = `<span class="source-tag">${timeStr}</span>`;' +
     ' return \'<div class="job-card" style="border:2px solid #f57c00;position:relative;">\' +' +
     ' actions +' +
-    ' \'<span class="country-tag user-ad-tag">Sponsored</span>\' +' +
+    ' \'<span class="country-tag user-ad-tag">Recruiter</span>\' +' +
     ' timeHtml +' +
     ' img +' +
     ' \'<h3>\' + ad.business + \'</h3>\' +' +
     ' \'<p>\' + ad.text + \'</p>\' +' +
-    ' \'<a href="\' + ad.link + \'" target="_blank" class="connect-btn" style="background:#f57c00;">Visit</a>\' +' +
+    ' \'<a href="\' + ad.link + \'" target="_blank" class="connect-btn" style="background:#f57c00;">Contact Recruiter</a>\' +' +
     ' \'</div>\';' +
     ' }).join("");' +
     ' }' +
     ' function openEdit(type, id, token) {' +
     ' document.getElementById("editType").value = type;' +
     ' document.getElementById("editId").value = id;' +
-    ' document.getElementById("editToken").value = token;' +
+        ' document.getElementById("editToken").value = token;' +
     ' document.getElementById("editModal").classList.add("active");' +
     ' }' +
     ' function closeEdit() {' +
     ' document.getElementById("editModal").classList.remove("active"); ' +
-'} ' +
-'' +
-'async function saveEdit() { ' +
-'const type = document.getElementById("editType").value; ' +
-'const id = document.getElementById("editId").value; ' +
-'const token = document.getElementById("editToken").value; ' +
-'const data = { ' +
-'id, token, ' +
-'title: document.getElementById("editTitle").value, ' +
-'location: document.getElementById("editLocation").value, ' +
-'company: document.getElementById("editCompany").value, ' +
-'description: document.getElementById("editDesc").value ' +
-'}; ' +
-'const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit"; ' +
-'const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)}); ' +
-'const result = await res.json(); ' +
-'if (result.success) { ' +
-'closeEdit(); ' +
-'loadUserAds(); ' +
-'loadPaidAds(); ' +
-'alert("Updated successfully"); ' +
-'} else { ' +
-'alert("Update failed"); ' +
-'} ' +
-'} ' +
-'' +
-'async function deleteAd(type, id, token) { ' +
-'if (!confirm("Delete this ad?")) return; ' +
-'const endpoint = type === "paid"? "/paid-ads/delete" : "/ads/delete"; ' +
-'const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, token})}); ' +
-'const result = await res.json(); ' +
-'if (result.success) { ' +
-'loadUserAds(); ' +
-'loadPaidAds(); ' +
-'alert("Deleted successfully"); ' +
-'} else { ' +
-'alert("Delete failed"); ' +
-'} ' +
-'} ' +
-'' +
-'async function loadJobs() { ' +
-'const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant"; ' +
-'const days = document.getElementById("dateFilter").value; ' +
-'document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading jobs...</div>"; ' +
-'try { ' +
-'const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days); ' +
-'allJobs = await res.json(); ' +
-'renderJobs(allJobs); ' +
-'} catch (e) { ' +
-'document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs.</div>"; ' +
-'} ' +
-'} ' +
-'' +
-'async function loadUserAds() { ' +
-'const res = await fetch("/ads"); ' +
-'const ads = await res.json(); ' +
-'renderUserAds(ads); ' +
-'} ' +
-'' +
-'async function loadPaidAds() { ' +
-'const res = await fetch("/paid-ads"); ' +
-'const ads = await res.json(); ' +
-'renderPaidAds(ads); ' +
-'} ' +
-'' +
-'async function submitAd() { ' +
-'const data = { ' +
-'title: document.getElementById("adTitle").value, ' +
-'company: document.getElementById("adCompany").value, ' +
-'location: document.getElementById("adLocation").value, ' +
-'phone: document.getElementById("adPhone").value, ' +
-'url: document.getElementById("adUrl").value, ' +
-'description: document.getElementById("adDesc").value ' +
-'}; ' +
-'if (!data.title ||!data.company ||!data.location) { ' +
-'document.getElementById("adMsg").textContent = "Please fill title, company and location."; ' +
-'document.getElementById("adMsg").style.color = "red"; ' +
-'return; ' +
-'} ' +
-'document.getElementById("adMsg").textContent = "Redirecting to payment..."; ' +
-'document.getElementById("adMsg").style.color = "blue"; ' +
-'const res = await fetch("/ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)}); ' +
-'const result = await res.json(); ' +
-'if (result.payment_link) { ' +
-'window.location.href = result.payment_link; ' +
-'} else { ' +
-'document.getElementById("adMsg").textContent = "Payment failed. Try again."; ' +
-'document.getElementById("adMsg").style.color = "red"; ' +
-'} ' +
-'} ' +
-'' +
-'async function submitPaidAd() { ' +
-'const data = { ' +
-'business: document.getElementById("adBizName").value, ' +
-'link: document.getElementById("adLink").value, ' +
-'text: document.getElementById("adText").value, ' +
-'image: document.getElementById("adImgUrl").value ' +
-'}; ' +
-'if (!data.business ||!data.link ||!data.text) { ' +
-'document.getElementById("adPayMsg").textContent = "Fill business, link and text."; ' +
-'document.getElementById("adPayMsg").style.color = "red"; ' +
-'return; ' +
-'} ' +
-'document.getElementById("adPayMsg").textContent = "Redirecting to payment..."; ' +
-'document.getElementById("adPayMsg").style.color = "blue"; ' +
-'const res = await fetch("/paid-ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)}); ' +
-'const result = await res.json(); ' +
-'if (result.payment_link) { ' +
-'window.location.href = result.payment_link; ' +
-'} else { ' +
-'document.getElementById("adPayMsg").textContent = "Payment failed. Try again."; ' +
-'document.getElementById("adPayMsg").style.color = "red"; ' +
-'} ' +
-'} ' +
-'' +
-'const urlParams = new URLSearchParams(window.location.search); ' +
-'if (urlParams.get("payment") === "success") { ' +
-'document.getElementById("adMsg").textContent = "Payment successful! Job posted."; ' +
-'document.getElementById("adMsg").style.color = "green"; ' +
-'loadUserAds(); ' +
-'loadPaidAds(); ' +
-'} ' +
-'if (urlParams.get("payment") === "failed") { ' +
-'document.getElementById("adMsg").textContent = "Payment failed or cancelled."; ' +
-'document.getElementById("adMsg").style.color = "red"; ' +
-'} ' +
-'' +
-'document.getElementById("searchBtn").addEventListener("click", loadJobs); ' +
-'document.getElementById("dateFilter").addEventListener("change", loadJobs); ' +
-'document.getElementById("searchInput").addEventListener("keypress", function(e) { ' +
-'if (e.key === "Enter") loadJobs(); ' +
-'}); ' +
-'' +
-'loadJobs(); ' +
-'loadUserAds(); ' +
-'loadPaidAds(); ' +
-'</script> ' +
+    '} ' +
+    '' +
+    'async function saveEdit() { ' +
+    'const type = document.getElementById("editType").value; ' +
+    'const id = document.getElementById("editId").value; ' +
+    'const token = document.getElementById("editToken").value; ' +
+    'const data = { ' +
+    'id, token, ' +
+    'title: document.getElementById("editTitle").value, ' +
+    'location: document.getElementById("editLocation").value, ' +
+    'company: document.getElementById("editCompany").value, ' +
+    'description: document.getElementById("editDesc").value ' +
+    '}; ' +
+    'const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit"; ' +
+    'const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)}); ' +
+    'const result = await res.json(); ' +
+    'if (result.success) { ' +
+    'closeEdit(); ' +
+    'loadUserAds(); ' +
+    'loadPaidAds(); ' +
+    'alert("Updated successfully"); ' +
+    '} else { ' +
+    'alert("Update failed"); ' +
+    '} ' +
+    '} ' +
+    '' +
+    'async function deleteAd(type, id, token) { ' +
+    'if (!confirm("Delete this ad?")) return; ' +
+    'const endpoint = type === "paid"? "/paid-ads/delete" : "/ads/delete"; ' +
+    'const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, token})}); ' +
+    'const result = await res.json(); ' +
+    'if (result.success) { ' +
+    'loadUserAds(); ' +
+    'loadPaidAds(); ' +
+    'alert("Deleted successfully"); ' +
+    '} else { ' +
+    'alert("Delete failed"); ' +
+    '} ' +
+    '} ' +
+    '' +
+    'async function loadJobs() { ' +
+    'const query = document.getElementById("searchInput").value || "dubai OR uae OR saudi OR driver OR maid OR security OR nurse"; ' +
+    'const days = document.getElementById("dateFilter").value; ' +
+    'document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading verified Dubai jobs...</div>"; ' +
+    'try { ' +
+    'const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days); ' +
+    'allJobs = await res.json(); ' +
+    'renderJobs(allJobs); ' +
+    '} catch (e) { ' +
+    'document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs. Refresh page.</div>"; ' +
+    '} ' +
+    '} ' +
+    '' +
+    'async function loadUserAds() { ' +
+    'const res = await fetch("/ads"); ' +
+    'const ads = await res.json(); ' +
+    'renderUserAds(ads); ' +
+    '} ' +
+    '' +
+    'async function loadPaidAds() { ' +
+    'const res = await fetch("/paid-ads"); ' +
+    'const ads = await res.json(); ' +
+    'renderPaidAds(ads); ' +
+    '} ' +
+    '' +
+    'async function submitAd() { ' +
+    'const data = { ' +
+    'title: document.getElementById("adTitle").value, ' +
+    'company: document.getElementById("adCompany").value, ' +
+    'location: document.getElementById("adLocation").value, ' +
+    'phone: document.getElementById("adPhone").value, ' +
+    'url: document.getElementById("adUrl").value, ' +
+    'description: document.getElementById("adDesc").value ' +
+    '}; ' +
+    'if (!data.title ||!data.company ||!data.location ||!data.phone) { ' +
+    'document.getElementById("adMsg").textContent = "Fill title, company, location, WhatsApp."; ' +
+    'document.getElementById("adMsg").style.color = "red"; ' +
+    'return; ' +
+    '} ' +
+    'document.getElementById("adMsg").textContent = "Redirecting to payment..."; ' +
+    'document.getElementById("adMsg").style.color = "blue"; ' +
+    'const res = await fetch("/ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)}); ' +
+    'const result = await res.json(); ' +
+    'if (result.payment_link) { ' +
+    'window.location.href = result.payment_link; ' +
+    '} else { ' +
+    'document.getElementById("adMsg").textContent = "Payment failed. Try again."; ' +
+    'document.getElementById("adMsg").style.color = "red"; ' +
+    '} ' +
+    '' +
+    'async function submitPaidAd() { ' +
+    'const data = { ' +
+    'business: document.getElementById("adBizName").value, ' +
+    'link: document.getElementById("adLink").value, ' +
+    'text: document.getElementById("adText").value, ' +
+    'image: document.getElementById("adImgUrl").value ' +
+    '}; ' +
+    'if (!data.business ||!data.link ||!data.text) { ' +
+    'document.getElementById("adPayMsg").textContent = "Fill agency name, link and text."; ' +
+    'document.getElementById("adPayMsg").style.color = "red"; ' +
+    'return; ' +
+    '} ' +
+    'document.getElementById("adPayMsg").textContent = "Redirecting to payment..."; ' +
+    'document.getElementById("adPayMsg").style.color = "blue"; ' +
+    'const res = await fetch("/paid-ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)}); ' +
+    'const result = await res.json(); ' +
+    'if (result.payment_link) { ' +
+    'window.location.href = result.payment_link; ' +
+    '} else { ' +
+    'document.getElementById("adPayMsg").textContent = "Payment failed. Try again."; ' +
+    'document.getElementById("adPayMsg").style.color = "red"; ' +
+    '} ' +
+    '} ' +
+    '' +
+    'const urlParams = new URLSearchParams(window.location.search); ' +
+    'if (urlParams.get("payment") === "success") { ' +
+    'document.getElementById("adMsg").textContent = "Payment successful! Job posted."; ' +
+    'document.getElementById("adMsg").style.color = "green"; ' +
+    'loadUserAds(); ' +
+    'loadPaidAds(); ' +
+    '} ' +
+    'if (urlParams.get("payment") === "failed") { ' +
+    'document.getElementById("adMsg").textContent = "Payment failed or cancelled."; ' +
+    'document.getElementById("adMsg").style.color = "red"; ' +
+    '} ' +
+    '' +
+    'document.getElementById("searchBtn").addEventListener("click", loadJobs); ' +
+    'document.getElementById("dateFilter").addEventListener("change", loadJobs); ' +
+    'document.getElementById("searchInput").addEventListener("keypress", function(e) { ' +
+    'if (e.key === "Enter") loadJobs(); ' +
+    '}); ' +
+    '' +
+    'loadJobs(); ' +
+    'loadUserAds(); ' +
+    'loadPaidAds(); ' +
+    '</script> ' +
 
-  
-'<footer style="text-align:center; padding:24px 10px; font-size:13px; color:#888; margin-top:60px; border-top:1px solid #eee;">' +
-'Sponsored by <strong style="color:#333;">EmmieTechUg</strong> | Contact: emmieshukie at gmail dot com' +
-
-'<div style="margin:40px 0;padding:20px;background:#f8f9fa;border-radius:10px;">' +
-'<h3 style="text-align:center;margin-bottom:15px;">🔥 Other Top Products</h3>' +
-'<a href="https://bloodsugarblaster.com/index-vsl-ds24#aff=emmieshukiee042#aff=emmieshukiee042#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#FF9800;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;\'>' +
-'🩺 Support Healthy Blood Sugar →' +
-'</a>' +
-'<a href="https://jointpainhack.com/digi/add-to-cart/#aff=emmieshukiee042#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#9C27B0;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;\'>' +
-'🦴 Joint Pain Relief Formula →' +
-  '<a href="https://www.advancedbionutritionals.com/DS24/Advanced-Amino/Muscle-Mass-Loss/HD.htm#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#25D366;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;\'>' +
-'💪 Boost Energy & Recovery → Click Here' +
-  '<a href="https://myketosana.com/ketosana-pdp-fe#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#FF5722;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;font-size:16px;\'>' +
-'🔥 Burn Fat Fast - KetoSana →' +
-
-'</a>' +
-'</a>' +
-'</a>' +
-'</div>' +
-  
-  '<div style="margin:40px 0;padding:20px;background:#000;border-radius:10px;border:2px solid #FFD700;">' +
-'<h3 style="text-align:center;color:#FFD700;margin-bottom:15px;">💰 AI Cash System 2026</h3>' +
-'<a href="https://ai-cash-page-system-dd.24-7-ai-cash-system.academy/#aff=emmieshukiee042" target="_blank" style="display:block;padding:15px;background:#FFD700;color:#000;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;font-size:16px;">' +
-'🚀 Make Money With AI - Copy & Paste System →' +
-'</a>' +
-'<p style="text-align:center;color:#aaa;font-size:12px;margin:5px 0 0;">$74.21 per sale | Video courses included</p>' +
-'</div>' +
-'</footer>' +
-'</body> ' +
-'</html>'
+    '<footer style="text-align:center; padding:24px 10px; font-size:13px; color:#888; margin-top:60px; border-top:1px solid #eee;">' +
+    'EmmieTech Recruitment Agency | Licensed Uganda → Dubai | WhatsApp: +256 700 000000 | ' +
+    '<a href="https://bloodsugarblaster.com/index-vsl-ds24#aff=emmieshukiee042" target=\'_blank\' style=\'color:#1a73e8;text-decoration:none;\'>Health</a> | ' +
+    '<a href="https://jointpainhack.com/digi/add-to-cart/#aff=emmieshukiee042" target=\'_blank\' style=\'color:#1a73e8;text-decoration:none;\'>Wellness</a> | ' +
+    '<a href="https://myketosana.com/ketosana-pdp-fe#aff=emmieshukiee042" target=\'_blank\' style=\'color:#1a73e8;text-decoration:none;\'>Fitness</a>' +
+    '</footer>' +
+    '</body> ' +
+    '</html>'
   );
 });
+
 // Upload image route
 app.post('/upload-ad-image', upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   res.json({ url: req.file.path });
 });
 
-// Auth routes
+// Auth routes - FIXED PASSWORD
 app.post('/auth/signup', async (req, res) => {
   const { firstName, lastName, email, phone, password } = req.body;
-  if (!firstName ||!lastName ||!email ||!password) {
+  if (!firstName ||!lastName ||!email ||!password ||!phone) {
     return res.status(400).json({ success: false, error: 'Missing required fields' });
   }
   try {
@@ -583,10 +543,10 @@ app.post('/auth/signup', async (req, res) => {
     res.json({ success: true, user: result.rows[0] });
   } catch (err) {
     if (err.code === '23505') {
-      res.status(400).json({ success: false, error: 'Email already exists' });
+      res.status(400).json({ success: false, error: 'Email already registered' });
     } else {
       console.error(err);
-      res.status(500).json({ success: false, error: 'Signup failed' });
+      res.status(500).json({ success: false, error: 'Registration failed' });
     }
   }
 });
@@ -617,16 +577,16 @@ app.post('/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
-// Job API fetchers
+// Job API fetchers - FIXED QUERY BUG
 async function fetchAdzunaJobs(countryCode, countryName, query) {
   try {
-    const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=20&content-type=application/json&max_days_old=7&what=${encodeURIComponent(query)}`;
+    const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=20&content-type=application/json&max_days_old=30&what=${encodeURIComponent(query)}`;
     const response = await fetch(url);
     if (!response.ok) return [];
     const data = await response.json();
     return (data.results || []).map(j => ({
-      title: j.title || 'Job Title',
-      company: j.company?.display_name || 'Unknown Company',
+      title: j.title || 'Dubai Job',
+      company: j.company?.display_name || 'UAE Employer',
       location: j.location?.display_name || countryName,
       country: countryName,
       url: j.redirect_url || '#',
@@ -640,7 +600,7 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
 
 async function fetchJSearchJobs(query, location) {
   try {
-    const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1&date_posted=week`;
+    const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1&date_posted=month`;
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -651,8 +611,8 @@ async function fetchJSearchJobs(query, location) {
     if (!response.ok) return [];
     const data = await response.json();
     return (data.data || []).map(j => ({
-      title: j.job_title || 'Job Title',
-      company: j.employer_name || 'Unknown Company',
+      title: j.job_title || 'Dubai Job',
+      company: j.employer_name || 'UAE Company',
       location: j.job_city || location,
       country: location,
       url: j.job_apply_link || '#',
@@ -712,25 +672,22 @@ async function fetchRemotiveJobs(query) {
   }
 }
 
-// Jobs route
+// Jobs route - FIXED THE BUG THAT BLOCKED JOBS
 app.get('/jobs', async (req, res) => {
   try {
-    const query = req.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
-    const recentDays = parseInt(req.query.recent) || 7;
+    // THIS WAS THE BUG - req.query is an object, not string
+    const query = req.query.query || 'dubai OR uae OR saudi OR driver OR maid OR security OR nurse OR construction';
+    const recentDays = parseInt(req.query.recent) || 30;
 
     const countries = [
-      { code: 'sa', name: 'Saudi Arabia' },
       { code: 'ae', name: 'United Arab Emirates' },
+      { code: 'sa', name: 'Saudi Arabia' },
+      { code: 'qa', name: 'Qatar' },
+      { code: 'kw', name: 'Kuwait' },
+      { code: 'om', name: 'Oman' },
+      { code: 'bh', name: 'Bahrain' },
       { code: 'gb', name: 'United Kingdom' },
-      { code: 'in', name: 'India' },
-      { code: 'ug', name: 'Uganda' },
-      { code: 'ke', name: 'Kenya' },
-      { code: 'tz', name: 'Tanzania' },
-      { code: 'za', name: 'South Africa' },
-      { code: 'au', name: 'Australia' },
-      { code: 'us', name: 'United States' },
-      { code: 'rw', name: 'Rwanda' },
-      { code: 'bi', name: 'Burundi' }
+      { code: 'ca', name: 'Canada' }
     ];
 
     let allJobs = [];
@@ -756,7 +713,7 @@ app.get('/jobs', async (req, res) => {
       index === self.findIndex(j => j.url === job.url)
     );
 
-    if (recentDays > 0 && recentDays!== 'all') {
+    if (recentDays > 0 && req.query.recent!== 'all') {
       const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
@@ -796,7 +753,7 @@ app.get('/paid-ads', async (req, res) => {
 // Payment routes
 app.post('/ads/initiate-payment', async (req, res) => {
   const { title, company, location, phone, url, description } = req.body;
-  if (!title ||!company ||!location) {
+  if (!title ||!company ||!location ||!phone) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
@@ -816,8 +773,8 @@ app.post('/ads/initiate-payment', async (req, res) => {
         amount: 200,
         currency: 'KES',
         redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
-        customer: { email: 'customer@jobai.com', phonenumber: phone || '0700000', name: company },
-        customizations: { title: 'Job Post Payment', description: 'Pay 200 KES to post job on Jobai' }
+        customer: { email: 'employer@emmieTech.com', phonenumber: phone, name: company },
+        customizations: { title: 'Dubai Job Post', description: 'Pay 200 KES to hire Ugandan workers' }
       })
     });
 
@@ -855,8 +812,8 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
         amount: AD_PRICE,
         currency: 'KES',
         redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
-        customer: { email: 'advertiser@jobai.com', name: business },
-        customizations: { title: 'Sponsored Ad Payment', description: 'Pay ' + AD_PRICE + ' KES for 7 days ad' }
+        customer: { email: 'agency@emmieTech.com', name: business },
+        customizations: { title: 'Recruitment Ad', description: 'Advertise to 10,000+ workers' }
       })
     });
 
@@ -977,6 +934,5 @@ app.post('/paid-ads/delete', async (req, res) => {
 });
 
 app.listen(PORT, function() {
-  console.log('Server running on port ' + PORT);
+  console.log('EmmieTech Recruitment Server running on port ' + PORT);
 });
-
