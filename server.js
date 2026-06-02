@@ -95,27 +95,6 @@ app.get('/google765cda11c517c492.html', (req, res) => {
   res.send('google-site-verification: google765cda11c517c492.html');
 });
 
-// ADS.TXT - REQUIRED FOR ADSENSE
-app.get('/ads.txt', (req, res) => {
-  res.type('text/plain');
-  res.send('google.com, pub-1637256996790764, DIRECT, f08c47fec0942fa0');
-});
-
-// PRIVACY POLICY - REQUIRED FOR ADSENSE
-app.get('/privacy', (req, res) => {
-  res.send('<h1>Privacy Policy</h1><p>Jobai-landing uses Google AdSense to display ads. Google may use cookies to serve ads based on your visits. We do not collect personal data. Contact: emmieshukie at gmail dot com</p>');
-});
-
-// ABOUT PAGE - REQUIRED FOR ADSENSE
-app.get('/about', (req, res) => {
-  res.send('<h1>About Jobai</h1><p>Jobai-landing helps Ugandans and Africans find legitimate Dubai, UAE, UK, and global jobs. We list verified opportunities and warn about recruitment scams. Never pay for a job offer.</p>');
-});
-
-// CONTACT PAGE - REQUIRED FOR ADSENSE
-app.get('/contact', (req, res) => {
-  res.send('<h1>Contact</h1><p>For job inquiries or to report scams, email: emmieshukie at gmail dot com. Powered by EmmieTechUg.</p>');
-});
-
 // Main UI
 app.get('/', (req, res) => {
   res.send(
@@ -125,7 +104,7 @@ app.get('/', (req, res) => {
     ' <meta charset="UTF-8">' +
     ' <meta name="viewport" content="width=device-width, initial-scale=1.0">' +
     ' <title>Jobai - Get Connected to Jobs & Workers</title>' +
-    ' <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1637256996790764" crossorigin="anonymous"></script>' +
+    ' <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-app-pub-1637256996790764" crossorigin="anonymous"></script>' +
     ' <style>' +
     ' body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }' +
     '.hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; }' +
@@ -218,7 +197,7 @@ app.get('/', (req, res) => {
     ' <p>AI-powered matching for Uganda, Kenya, Tanzania, Rwanda, Burundi, India, UAE, Saudi Arabia, France, UK, Canada, China, Taiwan, Thailand</p>' +
     ' </div>' +
     ' <div class="ad-unit">' +
-    ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-1637256996790764" data-ad-slot="9360468975" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
+    ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-app-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
     ' <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>' +
     ' </div>' +
     ' <div class="container">' +
@@ -234,14 +213,10 @@ app.get('/', (req, res) => {
     ' </div>' +
     ' <div class="section">' +
     ' <h2>Trending Jobs</h2>' +
-    ' <div style="max-width:800px;margin:20px auto;padding:15px;line-height:1.6;background:#fff;border-radius:8px;">' +
-    ' <h3>Avoiding Dubai Job Scams: Guide for Ugandans 2026</h3>' +
-    ' <p>Many Ugandans lose money to fake Dubai recruitment agents. Legitimate UAE employers never ask for payment for visas or job offers. Always verify agents with the Uganda Ministry of Labour. Check if the company has a physical office in Dubai. Beware of WhatsApp-only contacts demanding mobile money before interviews. Real contracts come from MOHRE, the UAE Ministry of Human Resources. Never pay for a job. If an agent asks for 300k-800k UGX upfront, it is likely a scam. Use official channels only. Jobai lists opportunities from verified sources to help you avoid fraud.</p>' +
-    ' </div>' +
     ' <div id="jobs" class="loading">Loading jobs...</div>' +
     ' </div>' +
     ' <div class="ad-unit">' +
-    ' <ins class="adsbygoogle" style="display:block" data-ad-format="autorelaxed" data-ad-client="ca-pub-1637256996790764" data-ad-slot="4166035353"></ins>' +
+    ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-app-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
     ' <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>' +
     ' </div>' +
     ' <div class="section">' +
@@ -386,7 +361,10 @@ app.get('/', (req, res) => {
     ' }' +
     ' function renderPaidAds(ads) {' +
     ' if (!ads.length) {' +
-        ' document.getElementById("paidAds").innerHTML = ads.map(function(ad) {' +
+    ' document.getElementById("paidAds").innerHTML = "<div class=\\"error\\">No sponsors yet.</div>";' +
+    ' return;' +
+    ' }' +
+    ' document.getElementById("paidAds").innerHTML = ads.map(function(ad) {' +
     ' let img = ad.image? \'<img src="\' + ad.image + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
     ' let actions = "<div class=\\"card-actions\\">";' +
     ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">✏️</button>";' +
@@ -550,11 +528,35 @@ app.get('/', (req, res) => {
 'loadUserAds(); ' +
 'loadPaidAds(); ' +
 '</script> ' +
+
+  
 '<footer style="text-align:center; padding:24px 10px; font-size:13px; color:#888; margin-top:60px; border-top:1px solid #eee;">' +
-'Sponsored by <strong style="color:#333;">EmmieTechUg</strong> | Contact: emmieshukie at gmail dot com | ' +
-'<a href="/privacy" style="color:#1a73e8;text-decoration:none;">Privacy</a> | ' +
-'<a href="/about" style="color:#1a73e8;text-decoration:none;">About</a> | ' +
-'<a href="/contact" style="color:#1a73e8;text-decoration:none;">Contact</a>' +
+'Sponsored by <strong style="color:#333;">EmmieTechUg</strong> | Contact: emmieshukie at gmail dot com' +
+
+'<div style="margin:40px 0;padding:20px;background:#f8f9fa;border-radius:10px;">' +
+'<h3 style="text-align:center;margin-bottom:15px;">🔥 Other Top Products</h3>' +
+'<a href="https://bloodsugarblaster.com/index-vsl-ds24#aff=emmieshukiee042#aff=emmieshukiee042#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#FF9800;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;\'>' +
+'🩺 Support Healthy Blood Sugar →' +
+'</a>' +
+'<a href="https://jointpainhack.com/digi/add-to-cart/#aff=emmieshukiee042#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#9C27B0;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;\'>' +
+'🦴 Joint Pain Relief Formula →' +
+  '<a href="https://www.advancedbionutritionals.com/DS24/Advanced-Amino/Muscle-Mass-Loss/HD.htm#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#25D366;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;\'>' +
+'💪 Boost Energy & Recovery → Click Here' +
+  '<a href="https://myketosana.com/ketosana-pdp-fe#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#FF5722;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;font-size:16px;\'>' +
+'🔥 Burn Fat Fast - KetoSana →' +
+
+'</a>' +
+'</a>' +
+'</a>' +
+'</div>' +
+  
+  '<div style="margin:40px 0;padding:20px;background:#000;border-radius:10px;border:2px solid #FFD700;">' +
+'<h3 style="text-align:center;color:#FFD700;margin-bottom:15px;">💰 AI Cash System 2026</h3>' +
+'<a href="https://ai-cash-page-system-dd.24-7-ai-cash-system.academy/#aff=emmieshukiee042" target="_blank" style="display:block;padding:15px;background:#FFD700;color:#000;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;font-size:16px;">' +
+'🚀 Make Money With AI - Copy & Paste System →' +
+'</a>' +
+'<p style="text-align:center;color:#aaa;font-size:12px;margin:5px 0 0;">$74.21 per sale | Video courses included</p>' +
+'</div>' +
 '</footer>' +
 '</body> ' +
 '</html>'
@@ -977,3 +979,4 @@ app.post('/paid-ads/delete', async (req, res) => {
 app.listen(PORT, function() {
   console.log('Server running on port ' + PORT);
 });
+
