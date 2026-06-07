@@ -109,7 +109,10 @@ app.get('/', (req, res) => {
     ' body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }' +
     '.hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; }' +
     '.hero h1 { font-size: 32px; margin: 0 0 8px 0; font-weight: 700; }' +
-    '.hero p { font-size: 16px; opacity: 0.95; margin: 0; }' +
+    '.hero p { font-size: 16px; opacity: 0.95; margin: 0 0 20px 0; }' +
+    '.login-box { background: white; max-width: 400px; margin: 0 auto; padding: 20px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); }' +
+    '.login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }' +
+    '.login-box h3 { color: #1a73e8; margin: 0 0 12px 0; font-size: 18px; }' +
     '.container { max-width: 1000px; margin: 20px auto; padding: 0 16px; }' +
     '.controls { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }' +
     '.controls input,.controls select { padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; background: white; }' +
@@ -125,7 +128,7 @@ app.get('/', (req, res) => {
     '.source-tag { display: inline-block; background: #f5f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }' +
     '.user-ad-tag { background: #fff3e0; color: #f57c00; }' +
     '.btn-group { display: flex; gap: 10px; flex-wrap: wrap; }' +
-    '.connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; border: none; cursor: pointer; }' +
+    '.connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; border: none; cursor: pointer; width: 100%; }' +
     '.connect-btn:hover { background: #1557b0; }' +
     '.call-btn { background: #34a853; }' +
     '.call-btn:hover { background: #2d9147; }' +
@@ -147,11 +150,11 @@ app.get('/', (req, res) => {
     '.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }' +
     '.modal.active { display: flex; }' +
     '.modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%; }' +
-    '.auth-form input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }' +
-    '.auth-toggle { text-align:center;margin-top:10px;font-size:13px;color:#666;cursor:pointer; }' +
+    '.auth-toggle { text-align:center;margin-top:10px;font-size:13px;color:#1a73e8;cursor:pointer; font-weight: 600; }' +
     '.logout-btn { display:none; width:100%; margin-top:10px; background:#d32f2f; }' +
     '.flag-ug { width:18px; height:12px; display:inline-block; vertical-align:middle; margin-right:6px; border-radius:2px; background: linear-gradient(to bottom, #000 0 33.33%, #FCDC04 33.33% 66.66%, #D90000 66.66% 100%); position:relative; }' +
     '.flag-ug::after { content:""; position:absolute; left:50%; top:50%; width:6px; height:6px; background:#fff; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 0 1px #000; }' +
+    '#userInfo { color: #1a73e8; font-weight: 600; text-align: center; margin-top: 10px; }' +
     ' </style>' +
     '</head>' +
     '<body>' +
@@ -161,28 +164,6 @@ app.get('/', (req, res) => {
     ' <div style="padding:20px;border-bottom:1px solid #eee;">' +
     ' <h2 style="margin:0;color:#1a73e8;font-size:22px;">Jobai</h2>' +
     ' <p style="margin:6px 0 0;font-size:13px;color:#666;">Get Connected to Jobs & Workers</p>' +
-    ' </div>' +
-    ' <div id="authSection" style="padding:16px;border-bottom:1px solid #eee;">' +
-    ' <h3 id="authTitle" style="margin:0 0 12px 0;font-size:16px;">Sign Up</h3>' +
-    ' <div id="signupForm" class="auth-form">' +
-    ' <input type="text" id="firstName" placeholder="First Name" required>' +
-    ' <input type="text" id="lastName" placeholder="Last Name" required>' +
-    ' <input type="email" id="signupEmail" placeholder="Email" required>' +
-    ' <input type="tel" id="signupPhone" placeholder="Phone Number">' +
-    ' <input type="password" id="signupPassword" placeholder="Password" required>' +
-    ' <input type="password" id="confirmPassword" placeholder="Confirm Password" required>' +
-    ' <button class="connect-btn" style="width:100%;" onclick="signup()"><span class="flag-ug"></span>Create Uganda Account</button>' +
-    ' <p id="signupMsg" style="font-size:12px;margin-top:8px;"></p>' +
-    ' </div>' +
-    ' <div id="loginForm" class="auth-form" style="display:none;">' +
-    ' <input type="email" id="loginEmail" placeholder="Email" required>' +
-    ' <input type="password" id="loginPassword" placeholder="Password" required>' +
-    ' <button class="connect-btn" style="width:100%;" onclick="login()"><span class="flag-ug"></span>Login with Uganda</button>' +
-    ' <p id="loginMsg" style="font-size:12px;margin-top:8px;"></p>' +
-    ' </div>' +
-    ' <div class="auth-toggle" onclick="toggleAuth()">Already have an account? <b>Login</b></div>' +
-    ' <button id="logoutBtn" class="connect-btn logout-btn" onclick="logout()">Logout</button>' +
-    ' <p id="userInfo" style="font-size:13px;margin-top:8px;color:#1a73e8;"></p>' +
     ' </div>' +
     ' <div style="padding:8px 0;">' +
     ' <a href="#" onclick="closeMenu();document.getElementById(\'searchInput\')?.focus();" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">🔍 <span>Job Search</span></a>' +
@@ -197,6 +178,28 @@ app.get('/', (req, res) => {
     ' <div class="hero">' +
     ' <h1>Get Connected to Jobs & Workers</h1>' +
     ' <p>AI-powered matching for Uganda, Kenya, Tanzania, Rwanda, Burundi, India, UAE, Saudi Arabia, France, UK, Canada, China, Taiwan, Thailand</p>' +
+    ' <div class="login-box" id="authSection">' +
+    ' <h3 id="authTitle"><span class="flag-ug"></span>Login to Uganda Jobs</h3>' +
+    ' <div id="signupForm" style="display:none;">' +
+    ' <input type="text" id="firstName" placeholder="First Name" required>' +
+    ' <input type="text" id="lastName" placeholder="Last Name" required>' +
+    ' <input type="email" id="signupEmail" placeholder="Email" required>' +
+    ' <input type="tel" id="signupPhone" placeholder="Phone Number">' +
+    ' <input type="password" id="signupPassword" placeholder="Password" required>' +
+    ' <input type="password" id="confirmPassword" placeholder="Confirm Password" required>' +
+    ' <button class="connect-btn" onclick="signup()"><span class="flag-ug"></span>Create Uganda Account</button>' +
+    ' <p id="signupMsg" style="font-size:12px;margin-top:8px;"></p>' +
+    ' </div>' +
+    ' <div id="loginForm">' +
+    ' <input type="email" id="loginEmail" placeholder="Email" required>' +
+    ' <input type="password" id="loginPassword" placeholder="Password" required>' +
+    ' <button class="connect-btn" onclick="login()"><span class="flag-ug"></span>Login with Uganda</button>' +
+    ' <p id="loginMsg" style="font-size:12px;margin-top:8px;"></p>' +
+    ' </div>' +
+    ' <div class="auth-toggle" onclick="toggleAuth()">New user? <b>Create Account</b></div>' +
+    ' <button id="logoutBtn" class="connect-btn logout-btn" onclick="logout()">Logout</button>' +
+    ' <p id="userInfo"></p>' +
+    ' </div>' +
     ' </div>' +
     ' <div class="ad-unit">' +
     ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-app-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
@@ -211,7 +214,7 @@ app.get('/', (req, res) => {
     ' <option value="3">Last 3 days</option>' +
     ' <option value="1">Last 24 hours</option>' +
     ' </select>' +
-    ' <button class="connect-btn" id="searchBtn">Search</button>' +
+    ' <button class="connect-btn" id="searchBtn" style="width:auto;">Search</button>' +
     ' </div>' +
     ' <div class="section">' +
     ' <h2>Trending Jobs</h2>' +
@@ -276,11 +279,11 @@ app.get('/', (req, res) => {
     'function showFavorites(){closeMenu();const fav=JSON.parse(localStorage.getItem(\'jobai_fav\')||\'[]\');if(!fav.length){alert(\'No favorites yet. Click "Connect & Apply" then save the job link.\');return;}renderJobs(fav);document.querySelector(\'.section h2\').textContent=\'Favorites\';}' +
     'function showSalaries(){closeMenu();alert(\'Salaries coming next. We will wire this to Adzuna Salary API.\');}' +
     'function showSubscriptions(){closeMenu();alert(\'Job Alerts coming next. Enter email + keywords and get notified.\');}' +
-    'function toggleAuth(){const s=document.getElementById(\'signupForm\'),l=document.getElementById(\'loginForm\'),t=document.getElementById(\'authTitle\');if(s.style.display===\'none\'){s.style.display=\'block\';l.style.display=\'none\';t.textContent=\'Sign Up\';}else{s.style.display=\'none\';l.style.display=\'block\';t.textContent=\'Login\';}}' +
+    'function toggleAuth(){const s=document.getElementById(\'signupForm\'),l=document.getElementById(\'loginForm\'),t=document.getElementById(\'authTitle\');if(s.style.display===\'none\'){s.style.display=\'block\';l.style.display=\'none\';t.innerHTML=\'<span class="flag-ug"></span>Create Uganda Account\';}else{s.style.display=\'none\';l.style.display=\'block\';t.innerHTML=\'<span class="flag-ug"></span>Login to Uganda Jobs\';}}' +
     'async function signup(){const first=document.getElementById(\'firstName\').value.trim(),last=document.getElementById(\'lastName\').value.trim(),email=document.getElementById(\'signupEmail\').value.trim(),phone=document.getElementById(\'signupPhone\').value.trim(),pass=document.getElementById(\'signupPassword\').value,cpass=document.getElementById(\'confirmPassword\').value;const msg=document.getElementById(\'signupMsg\');if(!first||!last||!email||!pass){msg.textContent=\'Fill all required fields\';msg.style.color=\'red\';return;}if(pass!==cpass){msg.textContent=\'Passwords do not match\';msg.style.color=\'red\';return;}msg.textContent=\'Creating account...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/signup\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({firstName:first,lastName:last,email,phone,password:pass})});const data=await res.json();if(data.success){msg.textContent=\'Account created! You can login now.\';msg.style.color=\'green\';toggleAuth();}else{msg.textContent=data.error||\'Signup failed\';msg.style.color=\'red\';}}' +
-    'async function login(){const email=document.getElementById(\'loginEmail\').value.trim(),pass=document.getElementById(\'loginPassword\').value;const msg=document.getElementById(\'loginMsg\');if(!email||!pass){msg.textContent=\'Enter email and password\';msg.style.color=\'red\';return;}msg.textContent=\'Logging in...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/login\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({email,password:pass})});const data=await res.json();if(data.success){msg.textContent=\'Login successful!\';msg.style.color=\'green\';localStorage.setItem(\'jobai_user\',JSON.stringify(data.user));updateAuthUI(data.user);closeMenu();}else{msg.textContent=data.error||\'Login failed\';msg.style.color=\'red\';}}' +
+    'async function login(){const email=document.getElementById(\'loginEmail\').value.trim(),pass=document.getElementById(\'loginPassword\').value;const msg=document.getElementById(\'loginMsg\');if(!email||!pass){msg.textContent=\'Enter email and password\';msg.style.color=\'red\';return;}msg.textContent=\'Logging in...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/login\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({email,password:pass})});const data=await res.json();if(data.success){msg.textContent=\'Login successful!\';msg.style.color=\'green\';localStorage.setItem(\'jobai_user\',JSON.stringify(data.user));updateAuthUI(data.user);}else{msg.textContent=data.error||\'Login failed\';msg.style.color=\'red\';}}' +
     'async function logout(){await fetch(\'/auth/logout\',{method:\'POST\'});localStorage.removeItem(\'jobai_user\');updateAuthUI(null);}' +
-    'function updateAuthUI(user){const logout=document.getElementById(\'logoutBtn\');const info=document.getElementById(\'userInfo\');if(user){document.getElementById(\'signupForm\').style.display=\'none\';document.getElementById(\'loginForm\').style.display=\'none\';document.getElementById(\'authTitle\').textContent=\'Account\';logout.style.display=\'block\';info.textContent=\'Logged in as \'+user.first_name+\' \'+user.last_name;}else{document.getElementById(\'signupForm\').style.display=\'block\';document.getElementById(\'loginForm\').style.display=\'none\';document.getElementById(\'authTitle\').textContent=\'Sign Up\';logout.style.display=\'none\';info.textContent=\'\';}}' +
+    'function updateAuthUI(user){const logout=document.getElementById(\'logoutBtn\');const info=document.getElementById(\'userInfo\');const loginForm=document.getElementById(\'loginForm\');const signupForm=document.getElementById(\'signupForm\');const title=document.getElementById(\'authTitle\');if(user){loginForm.style.display=\'none\';signupForm.style.display=\'none\';logout.style.display=\'block\';info.innerHTML=\'<span class="flag-ug"></span>Logged in as \'+user.first_name+\' \'+user.last_name;title.innerHTML=\'<span class="flag-ug"></span>Welcome\';}else{loginForm.style.display=\'block\';signupForm.style.display=\'none\';logout.style.display=\'none\';info.textContent=\'\';title.innerHTML=\'<span class="flag-ug"></span>Login to Uganda Jobs\';}}' +
     'window.addEventListener(\'load\',()=>{const user=JSON.parse(localStorage.getItem(\'jobai_user\')||\'null\');updateAuthUI(user);});' +
     'document.getElementById(\'menuBtn\').addEventListener(\'click\',openMenu);' +
     ' let allJobs = [];' +
@@ -315,7 +318,7 @@ app.get('/', (req, res) => {
     ' if (isNaN(date.getTime())) return "";' +
     ' const now = new Date();' +
     ' const diffMs = now - date;' +
-    ' const diffDay = Math.floor(diffMs / (1000*60*60*24));' +
+    ' const diffDay = Math.floor(diffMs / (1000*60*24));' +
     ' if (diffDay > 2) return "";' +
     ' if (diffMs < 0) return "";' +
     ' const diffSec = Math.floor(diffMs/1000);' +
@@ -335,7 +338,7 @@ app.get('/', (req, res) => {
     ' document.getElementById("jobs").innerHTML = jobs.map(function(j) {' +
     ' const timeStr = timeAgo(j.date_posted);' +
     ' const timePart = timeStr? `<span>•</span><span>${timeStr}</span>` : "";' +
-    ' return "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"job-card\\"><span class=\\"country-tag\\">" + j.country + "</span><span class=\\"source-tag\\">" + j.source + "</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span>" + timePart + "</p><span class=\\"connect-btn\\">Connect & Apply</span></a>";' +
+    ' return "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"job-card\\"><span class=\\"country-tag\\">" + j.country + "</span><span class=\\"source-tag\\">" + j.source + "</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span>" + timePart + "</p><span class=\\"connect-btn\\" style=\\"width:auto;\\">Connect & Apply</span></a>";' +
     ' }).join("");' +
     ' }' +
     ' function renderUserAds(ads) {' +
@@ -346,10 +349,10 @@ app.get('/', (req, res) => {
     ' document.getElementById("userAds").innerHTML = ads.map(function(j) {' +
     ' let buttons = "<div class=\\"btn-group\\">";' +
     ' if (j.url && j.url!== "#") {' +
-    ' buttons += "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"connect-btn\\">Apply Now</a>";' +
+    ' buttons += "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"connect-btn\\" style=\\"width:auto;\\">Apply Now</a>";' +
     ' }' +
     ' if (j.phone) {' +
-    ' buttons += "<a href=\\"tel:" + j.phone + "\\" class=\\"connect-btn call-btn\\">Call " + j.phone + "</a>";' +
+    ' buttons += "<a href=\\"tel:" + j.phone + "\\" class=\\"connect-btn call-btn\\" style=\\"width:auto;\\">Call " + j.phone + "</a>";' +
     ' }' +
     ' buttons += "</div>";' +
     ' let actions = "<div class=\\"card-actions\\">";' +
@@ -367,7 +370,7 @@ app.get('/', (req, res) => {
     ' return;' +
     ' }' +
     ' document.getElementById("paidAds").innerHTML = ads.map(function(ad) {' +
-    ' let img = ad.image? \'<img src="\' + ad.image + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
+    ' let img = ad.image? \'<img src= ad.image + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
     ' let actions = "<div class=\\"card-actions\\">";' +
     ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">✏️</button>";' +
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">🗑️</button>";' +
@@ -380,8 +383,8 @@ app.get('/', (req, res) => {
     ' timeHtml +' +
     ' img +' +
     ' \'<h3>\' + ad.business + \'</h3>\' +' +
-    '     \'</p>\' +' +
-    ' \'<a href="\' + ad.link + \'" target="_blank" class="connect-btn" style="background:#f57c00;">Visit</a>\' +' +
+    ' \'<p>\' + ad.text + \'</p>\' +' +
+    ' \'<a href="\' + ad.link + \'" target="_blank" class="connect-btn" style="background:#f57c00;width:auto;">Visit</a>\' +' +
     ' \'</div>\';' +
     ' }).join("");' +
     ' }' +
@@ -712,30 +715,28 @@ async function fetchRemotiveJobs(query) {
   }
 }
 
-// Jobs route
+// Jobs route - FIXED QUERY BUG
 app.get('/jobs', async (req, res) => {
   try {
     const query = req.query.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
     const recentDays = parseInt(req.query.recent) || 7;
+    console.log('Fetching jobs for:', query);
 
     const countries = [
-      { code: 'sa', name: 'Saudi Arabia' },
-      { code: 'ae', name: 'United Arab Emirates' },
-      { code: 'gb', name: 'United Kingdom' },
-      { code: 'in', name: 'India' },
       { code: 'ug', name: 'Uganda' },
       { code: 'ke', name: 'Kenya' },
+      { code: 'ae', name: 'United Arab Emirates' },
+      { code: 'sa', name: 'Saudi Arabia' },
+      { code: 'gb', name: 'United Kingdom' },
+      { code: 'in', name: 'India' },
       { code: 'tz', name: 'Tanzania' },
-      { code: 'za', name: 'South Africa' },
-      { code: 'au', name: 'Australia' },
-      { code: 'us', name: 'United States' },
       { code: 'rw', name: 'Rwanda' },
-      { code: 'bi', name: 'Burundi' }
+      { code: 'us', name: 'United States' }
     ];
 
     let allJobs = [];
-
     const promises = [];
+    
     for (let i = 0; i < countries.length; i++) {
       promises.push(fetchAdzunaJobs(countries[i].code, countries[i].name, query));
       promises.push(fetchJSearchJobs(query, countries[i].name));
@@ -746,9 +747,12 @@ app.get('/jobs', async (req, res) => {
     promises.push(fetchRemotiveJobs(query));
 
     const results = await Promise.allSettled(promises);
-    results.forEach(r => {
+    results.forEach((r, idx) => {
       if (r.status === 'fulfilled' && r.value) {
+        console.log(`API ${idx} returned ${r.value.length} jobs`);
         allJobs.push(...r.value);
+      } else {
+        console.log(`API ${idx} failed:`, r.reason);
       }
     });
 
@@ -756,13 +760,13 @@ app.get('/jobs', async (req, res) => {
       index === self.findIndex(j => j.url === job.url)
     );
 
-    if (recentDays > 0 && recentDays!== 'all') {
-      const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
+    if (recentDays > 0 && req.query.recent!== 'all') {
+      const cutoff = Date.now() - recentDays * 24 * 60 * 1000;
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
 
     allJobs.sort((a, b) => new Date(b.date_posted) - new Date(a.date_posted));
-
+    console.log(`Total jobs found: ${allJobs.length}`);
     res.json(allJobs.slice(0, 100));
   } catch (err) {
     console.error('Jobs fetch error:', err);
