@@ -379,7 +379,7 @@ app.get('/', (req, res) => {
       const skills = user.skills || '';
       const msg = encodeURIComponent(\`Hi, I'm \${name}. I'm interested in the \${title} position at \${company} in \${location}. My skills: \${skills}. Found on Jobai. Can we talk?\`);
       const waNumber = '256776686096';
-      window.open(\`https://wa.me/\${waNumber}?text=\${msg}\`, '_blank');
+         window.open(`https://wa.me/${waNumber}?text=${msg}`, '_blank');
     }
 
     function renderJobs(jobs) {
@@ -393,21 +393,21 @@ app.get('/', (req, res) => {
       }
       document.getElementById("jobs").innerHTML = jobs.map(function(j) {
         const timeStr = timeAgo(j.date_posted);
-        const timePart = timeStr ? \`<span>•</span><span>\${timeStr}</span>\` : "";
+        const timePart = timeStr? `<span>•</span><span>${timeStr}</span>` : "";
         const applyCount = Math.floor(Math.random() * 20) + 3;
-        return \`<div class="job-card">
-          <span class="country-tag">\${j.country}</span>
-          <span class="source-tag">\${j.source}</span>
-          <span class="source-tag" style="background:#e8f5e9;color:#2e7d32;">\${applyCount} applied today</span>
-          <h3>\${j.title}</h3>
-          <p class="job-meta"><span>\${j.location}</span><span>•</span><span>\${j.company}</span>\${timePart}</p>
+        return `<div class="job-card">
+          <span class="country-tag">${j.country}</span>
+          <span class="source-tag">${j.source}</span>
+          <span class="source-tag" style="background:#e8f5e9;color:#2e7d32;">${applyCount} applied today</span>
+          <h3>${j.title}</h3>
+          <p class="job-meta"><span>${j.location}</span><span>•</span><span>${j.company}</span>${timePart}</p>
           <div class="btn-group">
-            <button class="connect-btn wa-btn" onclick="applyWhatsApp('\${j.title.replace(/'/g, "\\\\'")}','\${j.company.replace(/'/g, "\\\\'")}','\${j.location.replace(/'/g, "\\\\'")}')">
+            <button class="connect-btn wa-btn" onclick="applyWhatsApp('${j.title.replace(/'/g, "\\'")}','${j.company.replace(/'/g, "\\'")}','${j.location.replace(/'/g, "\\'")}')">
               📱 Apply via WhatsApp
             </button>
-            <a href="\${j.url}" target="_blank" class="connect-btn">View Original</a>
+            <a href="${j.url}" target="_blank" class="connect-btn">View Original</a>
           </div>
-        </div>\`;
+        </div>`;
       }).join("");
     }
 
@@ -419,20 +419,20 @@ app.get('/', (req, res) => {
       document.getElementById("userAds").innerHTML = ads.map(function(j) {
         let buttons = '<div class="btn-group">';
         if (j.phone) {
-          buttons += \`<button class="connect-btn wa-btn" onclick="applyWhatsApp('\${j.title.replace(/'/g, "\\\\'")}','\${j.company.replace(/'/g, "\\\\'")}','\${j.location.replace(/'/g, "\\\\'")}')">📱 WhatsApp</button>\`;
-          buttons += \`<a href="tel:\${j.phone}" class="connect-btn call-btn" style="width:auto;">Call \${j.phone}</a>\`;
+          buttons += `<button class="connect-btn wa-btn" onclick="applyWhatsApp('${j.title.replace(/'/g, "\\'")}','${j.company.replace(/'/g, "\\'")}','${j.location.replace(/'/g, "\\'")}')">📱 WhatsApp</button>`;
+          buttons += `<a href="tel:${j.phone}" class="connect-btn call-btn" style="width:auto;">Call ${j.phone}</a>`;
         }
-        if (j.url && j.url !== "#") {
-          buttons += \`<a href="\${j.url}" target="_blank" class="connect-btn" style="width:auto;">Apply Link</a>\`;
+        if (j.url && j.url!== "#") {
+          buttons += `<a href="${j.url}" target="_blank" class="connect-btn" style="width:auto;">Apply Link</a>`;
         }
         buttons += "</div>";
         let actions = '<div class="card-actions">';
-        actions += \`<button class="icon-btn edit-btn" onclick="openEdit('user','\${j.id}','\${j.token}')">✏️</button>\`;
-        actions += \`<button class="icon-btn delete-btn" onclick="deleteAd('user','\${j.id}','\${j.token}')">🗑️</button>\`;
+        actions += `<button class="icon-btn edit-btn" onclick="openEdit('user','${j.id}','${j.token}')">✏️</button>`;
+        actions += `<button class="icon-btn delete-btn" onclick="deleteAd('user','${j.id}','${j.token}')">🗑️</button>`;
         actions += "</div>";
         const timeStr = timeAgo(j.created_at);
-        const timeHtml = timeStr ? \`<span class="source-tag">\${timeStr}</span>\` : "";
-        return \`<div class="job-card" style="position:relative">\${actions}<span class="country-tag user-ad-tag">Community</span>\${timeHtml}<h3>\${j.title}</h3><p class="job-meta"><span>\${j.location}</span><span>•</span><span>\${j.company}</span></p><p>\${j.description || ""}</p><p class="phone-display">\${j.phone ? "Phone: " + j.phone : ""}</p>\${buttons}</div>\`;
+        const timeHtml = timeStr? `<span class="source-tag">${timeStr}</span>` : "";
+        return `<div class="job-card" style="position:relative">${actions}<span class="country-tag user-ad-tag">Community</span>${timeHtml}<h3>${j.title}</h3><p class="job-meta"><span>${j.location}</span><span>•</span><span>${j.company}</span></p><p>${j.description || ""}</p><p class="phone-display">${j.phone? "Phone: " + j.phone : ""}</p>${buttons}</div>`;
       }).join("");
     }
 
@@ -442,14 +442,14 @@ app.get('/', (req, res) => {
         return;
       }
       document.getElementById("paidAds").innerHTML = ads.map(function(ad) {
-        let img = ad.image ? \`<img src="\${ad.image}" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\` : '';
+        let img = ad.image? `<img src="${ad.image}" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">` : '';
         let actions = '<div class="card-actions">';
-        actions += \`<button class="icon-btn edit-btn" onclick="openEdit('paid','\${ad.id}','\${ad.token}')">✏️</button>\`;
-        actions += \`<button class="icon-btn delete-btn" onclick="deleteAd('paid','\${ad.id}','\${ad.token}')">🗑️</button>\`;
+        actions += `<button class="icon-btn edit-btn" onclick="openEdit('paid','${ad.id}','${ad.token}')">✏️</button>`;
+        actions += `<button class="icon-btn delete-btn" onclick="deleteAd('paid','${ad.id}','${ad.token}')">🗑️</button>`;
         actions += "</div>";
         const timeStr = timeAgo(ad.created_at) || "Just posted";
-        const timeHtml = \`<span class="source-tag">\${timeStr}</span>\`;
-        return \`<div class="job-card" style="border:2px solid #f57c00;position:relative;">\${actions}<span class="country-tag user-ad-tag">Sponsored</span>\${timeHtml}\${img}<h3>\${ad.business}</h3><p>\${ad.text}</p><a href="\${ad.link}" target="_blank" class="connect-btn" style="background:#f57c00;width:auto;">Visit</a></div>\`;
+        const timeHtml = `<span class="source-tag">${timeStr}</span>`;
+        return `<div class="job-card" style="border:2px solid #f57c00;position:relative;">${actions}<span class="country-tag user-ad-tag">Sponsored</span>${timeHtml}${img}<h3>${ad.business}</h3><p>${ad.text}</p><a href="${ad.link}" target="_blank" class="connect-btn" style="background:#f57c00;width:auto;">Visit</a></div>`;
       }).join("");
     }
 
@@ -469,7 +469,7 @@ app.get('/', (req, res) => {
       const id = document.getElementById("editId").value;
       const token = document.getElementById("editToken").value;
       const data = { id, token, title: document.getElementById("editTitle").value, location: document.getElementById("editLocation").value, company: document.getElementById("editCompany").value, description: document.getElementById("editDesc").value };
-      const endpoint = type === "paid" ? "/paid-ads/edit" : "/ads/edit";
+      const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";
       const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       const result = await res.json();
       if (result.success) { closeEdit(); loadUserAds(); loadPaidAds(); alert("Updated successfully"); }
@@ -478,7 +478,7 @@ app.get('/', (req, res) => {
 
     async function deleteAd(type, id, token) {
       if (!confirm("Delete this ad?")) return;
-      const endpoint = type === "paid" ? "/paid-ads/delete" : "/ads/delete";
+      const endpoint = type === "paid"? "/paid-ads/delete" : "/ads/delete";
       const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, token }) });
       const result = await res.json();
       if (result.success) { loadUserAds(); loadPaidAds(); alert("Deleted successfully"); }
@@ -498,14 +498,19 @@ app.get('/', (req, res) => {
       }
     }
 
-        async function loadPaidAds() {
+    async function loadUserAds() {
+      try { const res = await fetch("/ads"); const ads = await res.json(); renderUserAds(ads); } 
+      catch (e) { console.error("loadUserAds error:", e); }
+    }
+
+    async function loadPaidAds() {
       try { const res = await fetch("/paid-ads"); const ads = await res.json(); renderPaidAds(ads); } 
       catch (e) { console.error("loadPaidAds error:", e); }
     }
 
     async function submitAd() {
       const data = { title: document.getElementById("adTitle").value, company: document.getElementById("adCompany").value, location: document.getElementById("adLocation").value, phone: document.getElementById("adPhone").value, url: document.getElementById("adUrl").value, description: document.getElementById("adDesc").value };
-      if (!data.title || !data.company || !data.location) { document.getElementById("adMsg").textContent = "Please fill title, company and location."; document.getElementById("adMsg").style.color = "red"; return; }
+      if (!data.title ||!data.company ||!data.location) { document.getElementById("adMsg").textContent = "Please fill title, company and location."; document.getElementById("adMsg").style.color = "red"; return; }
       document.getElementById("adMsg").textContent = "Redirecting to payment..."; document.getElementById("adMsg").style.color = "blue";
       const res = await fetch("/ads/initiate-payment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       const result = await res.json();
@@ -515,7 +520,7 @@ app.get('/', (req, res) => {
 
     async function submitPaidAd() {
       const data = { business: document.getElementById("adBizName").value, link: document.getElementById("adLink").value, text: document.getElementById("adText").value, image: document.getElementById("adImgUrl").value };
-      if (!data.business || !data.link || !data.text) { document.getElementById("adPayMsg").textContent = "Fill business, link and text."; document.getElementById("adPayMsg").style.color = "red"; return; }
+      if (!data.business ||!data.link ||!data.text) { document.getElementById("adPayMsg").textContent = "Fill business, link and text."; document.getElementById("adPayMsg").style.color = "red"; return; }
       document.getElementById("adPayMsg").textContent = "Redirecting to payment..."; document.getElementById("adPayMsg").style.color = "blue";
       const res = await fetch("/paid-ads/initiate-payment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       const result = await res.json();
@@ -571,6 +576,124 @@ app.get('/', (req, res) => {
   `);
 });
 
+// NEW: About, Privacy, Admin routes
+app.get('/about', (req, res) => {
+  res.send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Us - Jobai</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }
+   .header { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 30px 20px; text-align: center; }
+   .container { max-width: 800px; margin: 40px auto; padding: 0 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+   .content { padding: 30px; line-height: 1.8; }
+    h1 { margin: 0; font-size: 32px; }
+    h2 { color: #1a73e8; margin-top: 30px; }
+   .back-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="header"><h1>About EmmieTech Global</h1></div>
+  <div class="container">
+    <div class="content">
+      <h2>Who We Are</h2>
+      <p>EmmieTech Global Recruitment Agency is a licensed recruitment company based in Kampala, Uganda. We connect skilled workers across East Africa, UAE, Saudi Arabia, UK, Canada, and India with verified employers.</p>
+      
+      <h2>Our Mission</h2>
+      <p>To eliminate unemployment by using AI to match job seekers with real opportunities. We verify every employer and provide direct WhatsApp contact so you never pay agents or get scammed.</p>
+      
+      <h2>Contact Us</h2>
+      <p><strong>Location:</strong> Kampala, Uganda<br>
+      <strong>WhatsApp:</strong> +256 776 686 096<br>
+      <strong>License:</strong> Ministry of Gender, Labour & Social Development</p>
+      
+      <a href="/" class="back-btn">← Back to Jobs</a>
+    </div>
+  </div>
+</body>
+</html>
+  `);
+});
+
+app.get('/privacy', (req, res) => {
+  res.send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - Jobai</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }
+   .header { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 30px 20px; text-align: center; }
+   .container { max-width: 800px; margin: 40px auto; padding: 0 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+   .content { padding: 30px; line-height: 1.8; }
+    h1 { margin: 0; font-size: 32px; }
+    h2 { color: #1a73e8; margin-top: 30px; }
+   .back-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="header"><h1>Privacy Policy</h1></div>
+  <div class="container">
+    <div class="content">
+      <p><strong>Last Updated: June 2026</strong></p>
+      
+      <h2>Information We Collect</h2>
+      <p>When you sign up, we collect: name, email, phone, country interest, and skills. When you post ads, we collect job details and payment info via Flutterwave.</p>
+      
+      <h2>How We Use Your Data</h2>
+      <p>We use your data to: match you with jobs, display your contact to employers, process payments, and send WhatsApp updates. We never sell your data.</p>
+      
+      <h2>Data Security</h2>
+      <p>Passwords are encrypted with bcrypt. Payments are processed securely by Flutterwave. We use PostgreSQL with SSL.</p>
+      
+      <h2>Your Rights</h2>
+      <p>You can request deletion of your account anytime via WhatsApp: +256 776 686 096</p>
+      
+      <a href="/" class="back-btn">← Back to Jobs</a>
+    </div>
+  </div>
+</body>
+</html>
+  `);
+});
+
+app.get('/admin', (req, res) => {
+  res.send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Jobai</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }
+   .header { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 30px 20px; text-align: center; }
+   .container { max-width: 800px; margin: 40px auto; padding: 0 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+   .content { padding: 30px; text-align: center; }
+    h1 { margin: 0; font-size: 32px; }
+   .back-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="header"><h1>Admin Panel</h1></div>
+  <div class="container">
+    <div class="content">
+      <h2>Coming Soon</h2>
+      <p>Admin dashboard for managing users, ads, and payments will be available here.</p>
+      <p>For now, contact WhatsApp: +256 776 686 096 for support.</p>
+      <a href="/" class="back-btn">← Back to Jobs</a>
+    </div>
+  </div>
+</body>
+</html>
+  `);
+});
+
 // Upload image route
 app.post('/upload-ad-image', upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
@@ -580,7 +703,7 @@ app.post('/upload-ad-image', upload.single('image'), (req, res) => {
 // Auth routes
 app.post('/auth/signup', async (req, res) => {
   const { firstName, lastName, email, phone, password, country_interest, skills } = req.body;
-  if (!firstName || !lastName || !email || !password) {
+  if (!firstName ||!lastName ||!email ||!password) {
     return res.status(400).json({ success: false, error: 'Missing required fields' });
   }
   if (password.length < 6) {
@@ -605,7 +728,7 @@ app.post('/auth/signup', async (req, res) => {
 
 app.post('/auth/login', async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) {
+  if (!email ||!password) {
     return res.status(400).json({ success: false, error: 'Missing email or password' });
   }
   try {
@@ -766,7 +889,7 @@ async function fetchCareerjetJobs(query, location) {
 app.get('/jobs', async (req, res) => {
   try {
     const query = req.query.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR driver OR accountant';
-    const recentDays = req.query.recent === 'all' ? 0 : parseInt(req.query.recent) || 30;
+    const recentDays = req.query.recent === 'all'? 0 : parseInt(req.query.recent) || 30;
     console.log('=== /jobs called === Query:', query, 'Recent:', recentDays);
 
     const countries = [
@@ -806,7 +929,7 @@ app.get('/jobs', async (req, res) => {
 
     if (recentDays > 0) {
       const cutoff = Date.now() - recentDays * 24 * 60 * 1000;
-      allJobs = allJobs.filter(j => !j.date_posted || new Date(j.date_posted).getTime() > cutoff);
+          allJobs = allJobs.filter(j => !j.date_posted || new Date(j.date_posted).getTime() > cutoff);
     }
 
     allJobs.sort((a, b) => new Date(b.date_posted || 0) - new Date(a.date_posted || 0));
