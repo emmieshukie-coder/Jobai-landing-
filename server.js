@@ -80,8 +80,8 @@ app.get('/', (req, res) => {
     .ug-flag { position: absolute; top: 16px; left: 16px; width: 48px; height: 48px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000; object-fit: cover; }
     .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); display: flex; flex-direction: column; z-index: 9999; overflow-y: auto; }
     .auth-overlay.hidden { display: none; }
-    .auth-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px 0; }
-    .auth-box { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-width: 420px; width: 90%; margin: auto; position: relative; }
+    .auth-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .auth-box { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-width: 420px; width: 100%; margin: auto; position: relative; }
     .auth-box h1 { margin: 0 0 8px 0; color: #1a73e8; font-size: 28px; text-align: center; }
     .auth-box p { margin: 0 0 20px 0; color: #666; text-align: center; font-size: 14px; }
     .auth-tabs { display: flex; gap: 10px; margin-bottom: 16px; }
@@ -89,7 +89,7 @@ app.get('/', (req, res) => {
     .auth-tabs .active { background: #1a73e8; color: white; }
     .auth-tabs .inactive { background: #f5f5; color: #333; }
     .auth-form input, .auth-form select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
-    .auth-footer { background:#000;color:#fff;padding:20px;text-align:center;font-size:13px; }
+    .auth-footer { background:#000;color:#fff;padding:20px;text-align:center;font-size:13px;width:100%;box-sizing:border-box; }
     .auth-footer a { color:#64b5f6;text-decoration:none;margin:0 12px; }
     .hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; position: relative; }
     .hero h1 { font-size: 32px; margin: 0 0 8px 0; font-weight: 700; }
@@ -174,6 +174,7 @@ app.get('/', (req, res) => {
           <p id="loginMsg" style="font-size:12px;margin-top:8px;"></p>
         </div>
       </div>
+    </div>
     <div class="auth-footer">
       <a href="/about">About Us</a>
       <a href="/privacy">Privacy Policy</a>
@@ -499,10 +500,10 @@ app.get('/', (req, res) => {
 
     async function loadPaidAds() {
       try { const res = await fetch("/paid-ads"); const ads = await res.json(); renderPaidAds(ads); } 
-            catch (e) { console.error("loadPaidAds error:", e); }
+      catch (e) { console.error("loadPaidAds error:", e); }
     }
 
-    async function submitAd() {
+        async function submitAd() {
       const data = { title: document.getElementById("adTitle").value, company: document.getElementById("adCompany").value, location: document.getElementById("adLocation").value, phone: document.getElementById("adPhone").value, url: document.getElementById("adUrl").value, description: document.getElementById("adDesc").value };
       if (!data.title || !data.company || !data.location) { document.getElementById("adMsg").textContent = "Please fill title, company and location."; document.getElementById("adMsg").style.color = "red"; return; }
       document.getElementById("adMsg").textContent = "Redirecting to payment..."; document.getElementById("adMsg").style.color = "blue";
