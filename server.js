@@ -57,7 +57,7 @@ const storage = new CloudinaryStorage({
   params: { folder: 'jobai-ads', allowed_formats: ['jpg', 'png', 'jpeg', 'webp'], transformation: [{ width: 800, height: 600, crop: 'limit' }] }
 });
 
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 } });
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 let pendingPayments = {};
 const AD_PRICE = 500;
 const AD_DURATION_DAYS = 7;
@@ -86,64 +86,64 @@ app.get('/', (req, res) => {
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-app-pub-1637256996790764" crossorigin="anonymous"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }
-  .ug-flag { position: absolute; top: 16px; left: 16px; width: 48px; height: 48px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000; object-fit: cover; }
-  .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); display: flex; flex-direction: column; z-index: 9999; overflow-y: auto; }
-  .auth-overlay.hidden { display: none; }
-  .auth-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
-  .auth-box { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-width: 420px; width: 100%; margin: auto; position: relative; }
-  .auth-box h1 { margin: 0 0 8px 0; color: #1a73e8; font-size: 28px; text-align: center; }
-  .auth-box p { margin: 0 0 20px 0; color: #666; text-align: center; font-size: 14px; }
-  .auth-tabs { display: flex; gap: 10px; margin-bottom: 16px; }
-  .auth-tabs button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; }
-  .auth-tabs.active { background: #1a73e8; color: white; }
-  .auth-tabs.inactive { background: #f5f5f5; color: #333; }
-  .auth-form input,.auth-form select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
-  .auth-footer { background:#000;color:#fff;padding:20px;text-align:center;font-size:13px;width:100%;box-sizing:border-box; }
-  .auth-footer a { color:#64b5f6;text-decoration:none;margin:0 12px; }
-  .hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; position: relative; }
-  .hero h1 { font-size: 32px; margin: 0 0 8px 0; font-weight: 700; }
-  .hero p { font-size: 16px; opacity: 0.95; margin: 0; }
-  .container { max-width: 1000px; margin: 20px auto; padding: 0 16px; }
-  .controls { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
-  .controls input,.controls select { padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; background: white; }
-  .controls input { flex: 1; min-width: 200px; }
-  .section { margin-bottom: 32px; }
-  .section h2 { margin: 0 0 16px 0; font-size: 24px; color: #1a1a1a; }
-  .job-card { background: white; padding: 20px; margin-bottom: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; transition: transform 0.2s, box-shadow 0.2s; display: block; text-decoration: none; color: inherit; }
-  .job-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
-  .job-card h3 { margin: 8px 0 8px 0; color: #1a73e8; font-size: 18px; line-height: 1.4; }
-  .job-meta { margin: 0 0 14px 0; color: #666; font-size: 14px; line-height: 1.5; }
-  .job-meta span { margin-right: 8px; }
-  .country-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
-  .source-tag { display: inline-block; background: #f5f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }
-  .user-ad-tag { background: #fff3e0; color: #f57c00; }
-  .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
-  .connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; border: none; cursor: pointer; }
-  .connect-btn:hover { background: #1557b0; }
-  .call-btn { background: #34a853; }
-  .call-btn:hover { background: #2d9147; }
-  .wa-btn { background: #25D366; }
-  .wa-btn:hover { background: #1ebe5a; }
-  .free-btn { background: #9C27B0; }
-  .free-btn:hover { background: #7B1FA2; }
-  .loading { text-align: center; color: #666; padding: 30px; font-size: 16px; }
-  .error { text-align: center; color: #d32f2f; padding: 30px; }
-  .ad-form { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
-  .ad-form input,.ad-form textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; }
-  .ad-form h3 { margin-top: 0; font-size: 18px; }
-  .phone-display { color: #34a853; font-weight: 600; }
-  .img-preview { max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 10px; display: none; }
-  .card-actions { position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; }
-  .icon-btn { width: 32px; height: 32px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; }
-  .edit-btn { background: #ff9800; }
-  .delete-btn { background: #d32f2f; }
-  .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
-  .modal.active { display: flex; }
-  .modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%; }
-  .user-bar { background: #1a73e8; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: relative; }
-  .user-bar button { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-  .main-content { display: none; }
-  .main-content.show { display: block; }
+ .ug-flag { position: absolute; top: 16px; left: 16px; width: 48px; height: 48px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000; object-fit: cover; }
+ .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); display: flex; flex-direction: column; z-index: 9999; overflow-y: auto; }
+ .auth-overlay.hidden { display: none; }
+ .auth-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
+ .auth-box { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-width: 420px; width: 100%; margin: auto; position: relative; }
+ .auth-box h1 { margin: 0 0 8px 0; color: #1a73e8; font-size: 28px; text-align: center; }
+ .auth-box p { margin: 0 0 20px 0; color: #666; text-align: center; font-size: 14px; }
+ .auth-tabs { display: flex; gap: 10px; margin-bottom: 16px; }
+ .auth-tabs button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; }
+ .auth-tabs.active { background: #1a73e8; color: white; }
+ .auth-tabs.inactive { background: #f5f5f5; color: #333; }
+ .auth-form input,.auth-form select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+ .auth-footer { background:#000;color:#fff;padding:20px;text-align:center;font-size:13px;width:100%;box-sizing:border-box; }
+ .auth-footer a { color:#64b5f6;text-decoration:none;margin:0 12px; }
+ .hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; position: relative; }
+ .hero h1 { font-size: 32px; margin: 0 0 8px 0; font-weight: 700; }
+ .hero p { font-size: 16px; opacity: 0.95; margin: 0; }
+ .container { max-width: 1000px; margin: 20px auto; padding: 0 16px; }
+ .controls { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+ .controls input,.controls select { padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; background: white; }
+ .controls input { flex: 1; min-width: 200px; }
+ .section { margin-bottom: 32px; }
+ .section h2 { margin: 0 0 16px 0; font-size: 24px; color: #1a1a1a; }
+ .job-card { background: white; padding: 20px; margin-bottom: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; transition: transform 0.2s, box-shadow 0.2s; display: block; text-decoration: none; color: inherit; }
+ .job-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+ .job-card h3 { margin: 8px 0 8px 0; color: #1a73e8; font-size: 18px; line-height: 1.4; }
+ .job-meta { margin: 0 0 14px 0; color: #666; font-size: 14px; line-height: 1.5; }
+ .job-meta span { margin-right: 8px; }
+ .country-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+ .source-tag { display: inline-block; background: #f5f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }
+ .user-ad-tag { background: #fff3e0; color: #f57c00; }
+ .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+ .connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; border: none; cursor: pointer; }
+ .connect-btn:hover { background: #1557b0; }
+ .call-btn { background: #34a853; }
+ .call-btn:hover { background: #2d9147; }
+ .wa-btn { background: #25D366; }
+ .wa-btn:hover { background: #1ebe5a; }
+ .free-btn { background: #9C27B0; }
+ .free-btn:hover { background: #7B1FA2; }
+ .loading { text-align: center; color: #666; padding: 30px; font-size: 16px; }
+ .error { text-align: center; color: #d32f2f; padding: 30px; }
+ .ad-form { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
+ .ad-form input,.ad-form textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; }
+ .ad-form h3 { margin-top: 0; font-size: 18px; }
+ .phone-display { color: #34a853; font-weight: 600; }
+ .img-preview { max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 10px; display: none; }
+ .card-actions { position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; }
+ .icon-btn { width: 32px; height: 32px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; }
+ .edit-btn { background: #ff9800; }
+ .delete-btn { background: #d32f2f; }
+ .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+ .modal.active { display: flex; }
+ .modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%; }
+ .user-bar { background: #1a73e8; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: relative; }
+ .user-bar button { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+ .main-content { display: none; }
+ .main-content.show { display: block; }
   </style>
 </head>
 <body>
@@ -185,7 +185,6 @@ app.get('/', (req, res) => {
           <p id="loginMsg" style="font-size:12px;margin-top:8px;"></p>
         </div>
       </div>
-    </div>
     <div class="auth-footer">
       <a href="/about">About Us</a>
       <a href="/privacy">Privacy Policy</a>
@@ -500,14 +499,14 @@ app.get('/', (req, res) => {
     }
 
     async function loadJobs() {
-      const query = document.getElementById("searchInput")?.value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager";
+      const query = document.getElementById("searchInput")?.value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR driver";
       const days = document.getElementById("dateFilter")?.value || "30";
       document.getElementById("jobs").innerHTML = '<div class="loading">Loading jobs...</div>';
       try {
-                const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);
+        const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);
         allJobs = await res.json();
         renderJobs(allJobs);
-      } catch (e) {
+            } catch (e) {
         document.getElementById("jobs").innerHTML = '<div class="error">Failed to load jobs. Retrying...</div>';
         setTimeout(loadJobs, 3000);
       }
@@ -537,7 +536,7 @@ app.get('/', (req, res) => {
 
     async function submitAd() {
       const data = { title: document.getElementById("adTitle").value, company: document.getElementById("adCompany").value, location: document.getElementById("adLocation").value, phone: document.getElementById("adPhone").value, url: document.getElementById("adUrl").value, description: document.getElementById("adDesc").value };
-      if (!data.title || !data.company || !data.location) { document.getElementById("adMsg").textContent = "Please fill title, company and location."; document.getElementById("adMsg").style.color = "red"; return; }
+      if (!data.title ||!data.company ||!data.location) { document.getElementById("adMsg").textContent = "Please fill title, company and location."; document.getElementById("adMsg").style.color = "red"; return; }
       document.getElementById("adMsg").textContent = "Redirecting to payment..."; document.getElementById("adMsg").style.color = "blue";
       const res = await fetch("/ads/initiate-payment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       const result = await res.json();
@@ -547,7 +546,7 @@ app.get('/', (req, res) => {
 
     async function submitAdFree() {
       const data = { title: document.getElementById("adTitle").value, company: document.getElementById("adCompany").value, location: document.getElementById("adLocation").value, phone: document.getElementById("adPhone").value, url: document.getElementById("adUrl").value, description: document.getElementById("adDesc").value };
-      if (!data.title || !data.company || !data.location) { document.getElementById("adMsg").textContent = "Please fill title, company and location."; document.getElementById("adMsg").style.color = "red"; return; }
+      if (!data.title ||!data.company ||!data.location) { document.getElementById("adMsg").textContent = "Please fill title, company and location."; document.getElementById("adMsg").style.color = "red"; return; }
       document.getElementById("adMsg").textContent = "Posting for free..."; document.getElementById("adMsg").style.color = "blue";
       const res = await fetch("/ads/post-free", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       const result = await res.json();
@@ -569,7 +568,7 @@ app.get('/', (req, res) => {
 
     async function submitPaidAd() {
       const data = { business: document.getElementById("adBizName").value, link: document.getElementById("adLink").value, text: document.getElementById("adText").value, image: document.getElementById("adImgUrl").value };
-      if (!data.business || !data.link || !data.text) { document.getElementById("adPayMsg").textContent = "Fill business, link and text."; document.getElementById("adPayMsg").style.color = "red"; return; }
+      if (!data.business ||!data.link ||!data.text) { document.getElementById("adPayMsg").textContent = "Fill business, link and text."; document.getElementById("adPayMsg").style.color = "red"; return; }
       document.getElementById("adPayMsg").textContent = "Redirecting to payment..."; document.getElementById("adPayMsg").style.color = "blue";
       const res = await fetch("/paid-ads/initiate-payment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       const result = await res.json();
@@ -606,18 +605,6 @@ app.get('/', (req, res) => {
         <a href="/admin" style="color:#64b5f6;text-decoration:none;font-size:14px;">Admin</a>
       </div>
     </div>
-    <div style="margin:40px auto 0;max-width:1000px;padding:20px;background:#f8f9fa;border-radius:10px;">
-      <h3 style="text-align:center;margin-bottom:15px;color:#333;">🔥 Other Top Products</h3>
-      <a href="https://bloodsugarblaster.com/index-vsl-ds24#aff=emmieshukiee042" target='_blank' style='display:block;padding:15px;background:#FF9800;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;'>🩺 Support Healthy Blood Sugar →</a>
-      <a href="https://jointpainhack.com/digi/add-to-cart/#aff=emmieshukiee042" target='_blank' style='display:block;padding:15px;background:#9C27B0;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;'>🦴 Joint Pain Relief Formula →</a>
-      <a href="https://www.advancedbionutritionals.com/DS24/Advanced-Amino/Muscle-Mass-Loss/HD.htm#aff=emmieshukiee042" target='_blank' style='display:block;padding:15px;background:#25D366;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;'>💪 Boost Energy & Recovery → Click Here</a>
-      <a href="https://myketosana.com/ketosana-pdp-fe#aff=emmieshukiee042" target='_blank' style='display:block;padding:15px;background:#FF5722;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;font-size:16px;'>🔥 Burn Fat Fast - KetoSana →</a>
-    </div>
-    <div style="margin:40px auto 0;max-width:1000px;padding:20px;background:#000;border-radius:10px;border:2px solid #FFD700;">
-      <h3 style="text-align:center;color:#FFD700;margin-bottom:15px;">💰 AI Cash System 2026</h3>
-      <a href="https://ai-cash-page-system-dd.24-7-ai-cash-system.academy/#aff=emmieshukiee042" target="_blank" style="display:block;padding:15px;background:#FFD700;color:#000;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;font-size:16px;">🚀 Make Money With AI - Copy & Paste System →</a>
-      <p style="text-align:center;color:#aaa;font-size:12px;margin:5px 0 0;">$74.21 per sale | Video courses included</p>
-    </div>
     <p style="text-align:center;margin:32px 0 0 0;font-size:12px;color:#666;">© 2026 EmmieTech Global. All rights reserved.</p>
   </footer>
 </body>
@@ -635,12 +622,12 @@ app.get('/about', (req, res) => {
   <title>About Us - Jobai</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }
-   .header { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 30px 20px; text-align: center; }
-   .container { max-width: 800px; margin: 40px auto; padding: 0 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-   .content { padding: 30px; line-height: 1.8; }
+ .header { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 30px 20px; text-align: center; }
+ .container { max-width: 800px; margin: 40px auto; padding: 0 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+ .content { padding: 30px; line-height: 1.8; }
     h1 { margin: 0; font-size: 32px; }
     h2 { color: #1a73e8; margin-top: 30px; }
-   .back-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 20px; }
+ .back-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 20px; }
   </style>
 </head>
 <body>
@@ -676,12 +663,12 @@ app.get('/privacy', (req, res) => {
   <title>Privacy Policy - Jobai</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }
-   .header { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 30px 20px; text-align: center; }
-   .container { max-width: 800px; margin: 40px auto; padding: 0 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-   .content { padding: 30px; line-height: 1.8; }
+ .header { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 30px 20px; text-align: center; }
+ .container { max-width: 800px; margin: 40px auto; padding: 0 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+ .content { padding: 30px; line-height: 1.8; }
     h1 { margin: 0; font-size: 32px; }
     h2 { color: #1a73e8; margin-top: 30px; }
-   .back-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 20px; }
+ .back-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 20px; }
   </style>
 </head>
 <body>
@@ -720,11 +707,11 @@ app.get('/admin', (req, res) => {
   <title>Admin - Jobai</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }
-   .header { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 30px 20px; text-align: center; }
-   .container { max-width: 800px; margin: 40px auto; padding: 0 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-   .content { padding: 30px; text-align: center; }
+ .header { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 30px 20px; text-align: center; }
+ .container { max-width: 800px; margin: 40px auto; padding: 0 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+ .content { padding: 30px; text-align: center; }
     h1 { margin: 0; font-size: 32px; }
-   .back-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 20px; }
+ .back-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 20px; }
   </style>
 </head>
 <body>
@@ -742,16 +729,14 @@ app.get('/admin', (req, res) => {
   `);
 });
 
-// Upload image route
 app.post('/upload-ad-image', upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   res.json({ url: req.file.path });
 });
 
-// Auth routes
 app.post('/auth/signup', async (req, res) => {
   const { firstName, lastName, email, phone, password, country_interest, skills } = req.body;
-  if (!firstName || !lastName || !email || !password) {
+  if (!firstName ||!lastName ||!email ||!password) {
     return res.status(400).json({ success: false, error: 'Missing required fields' });
   }
   if (password.length < 6) {
@@ -776,7 +761,7 @@ app.post('/auth/signup', async (req, res) => {
 
 app.post('/auth/login', async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) {
+  if (!email ||!password) {
     return res.status(400).json({ success: false, error: 'Missing email or password' });
   }
   try {
@@ -800,7 +785,6 @@ app.post('/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
-// Job API fetchers - with 5 second timeouts so nothing hangs
 async function fetchAdzunaJobs(countryCode, countryName, query) {
   try {
     const controller = new AbortController();
@@ -891,7 +875,6 @@ async function fetchRemotiveJobs(query) {
   }
 }
 
-// Jobs route - HARD 8 SECOND TIMEOUT + FALLBACK DEMO JOBS
 app.get('/jobs', async (req, res) => {
   try {
     const query = req.query.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR driver';
@@ -918,7 +901,6 @@ app.get('/jobs', async (req, res) => {
     let allJobs = [];
     const promises = [];
     
-    // Only 2 APIs to avoid timeout - JSearch + Adzuna
     for (let i = 0; i < countries.length; i++) {
       promises.push(fetchJSearchJobs(query, countries[i].name));
       promises.push(fetchAdzunaJobs(countries[i].code, countries[i].name, query));
@@ -948,113 +930,30 @@ app.get('/jobs', async (req, res) => {
     allJobs.sort((a, b) => new Date(b.date_posted || 0) - new Date(a.date_posted || 0));
     console.log(`Total unique jobs from all APIs: ${allJobs.length}`);
 
-    // FALLBACK: If no API jobs, show demo jobs so site isn't empty
     if (allJobs.length === 0) {
       console.log('All APIs failed. Showing fallback demo jobs.');
       allJobs = [
-        {
-          title: 'House Cleaner',
-          company: 'Kampala Homes',
-          location: 'Kampala, Uganda',
-          country: 'Uganda',
-          url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20House%20Cleaner',
-          date_posted: new Date().toISOString(),
-          source: 'Demo'
-        },
-        {
-          title: 'Nurse',
-          company: 'Nairobi Hospital',
-          location: 'Nairobi, Kenya',
-          country: 'Kenya',
-          url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Nurse',
-          date_posted: new Date(Date.now() - 86400000).toISOString(),
-          source: 'Demo'
-        },
-        {
-          title: 'Primary School Teacher',
-          company: 'Dar es Salaam Academy',
-          location: 'Dar es Salaam, Tanzania',
-          country: 'Tanzania',
-          url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Teacher',
-          date_posted: new Date(Date.now() - 172800000).toISOString(),
-          source: 'Demo'
-        },
-        {
-          title: 'Construction Helper',
-          company: 'Dubai Builders',
-          location: 'Dubai, UAE',
-          country: 'UAE',
-          url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Construction%20Helper',
-          date_posted: new Date(Date.now() - 259200000).toISOString(),
-          source: 'Demo'
-        },
-        {
-          title: 'Farm Worker',
-          company: 'Kigali Farms Ltd',
-          location: 'Kigali, Rwanda',
-          country: 'Rwanda',
-          url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Farm%20Worker',
-          date_posted: new Date(Date.now() - 345600000).toISOString(),
-          source: 'Demo'
-        },
-        {
-          title: 'Security Guard',
-          company: 'London Security Services',
-          location: 'London, UK',
-          country: 'UK',
-          url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Security%20Guard',
-          date_posted: new Date(Date.now() - 432000000).toISOString(),
-          source: 'Demo'
-        },
-        {
-          title: 'Hotel Receptionist',
-          company: 'Mumbai Grand Hotel',
-          location: 'Mumbai, India',
-          country: 'India',
-          url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Receptionist',
-          date_posted: new Date(Date.now() - 518400000).toISOString(),
-          source: 'Demo'
-        },
-        {
-          title: 'Truck Driver',
-          company: 'Saudi Logistics Co',
-          location: 'Riyadh, Saudi Arabia',
-          country: 'Saudi Arabia',
-          url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Truck%20Driver',
-          date_posted: new Date(Date.now() - 604800000).toISOString(),
-          source: 'Demo'
-        }
+        { title: 'House Cleaner', company: 'Kampala Homes', location: 'Kampala, Uganda', country: 'Uganda', url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20House%20Cleaner', date_posted: new Date().toISOString(), source: 'Demo' },
+        { title: 'Nurse', company: 'Nairobi Hospital', location: 'Nairobi, Kenya', country: 'Kenya', url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Nurse', date_posted: new Date(Date.now() - 86400000).toISOString(), source: 'Demo' },
+        { title: 'Primary School Teacher', company: 'Dar es Salaam Academy', location: 'Dar es Salaam, Tanzania', country: 'Tanzania', url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Teacher', date_posted: new Date(Date.now() - 172800000).toISOString(), source: 'Demo' },
+        { title: 'Construction Helper', company: 'Dubai Builders', location: 'Dubai, UAE', country: 'UAE', url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Construction%20Helper', date_posted: new Date(Date.now() - 259200000).toISOString(), source: 'Demo' },
+        { title: 'Farm Worker', company: 'Kigali Farms Ltd', location: 'Kigali, Rwanda', country: 'Rwanda', url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Farm%20Worker', date_posted: new Date(Date.now() - 345600000).toISOString(), source: 'Demo' },
+        { title: 'Security Guard', company: 'London Security Services', location: 'London, UK', country: 'UK', url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Security%20Guard', date_posted: new Date(Date.now() - 432000000).toISOString(), source: 'Demo' },
+        { title: 'Hotel Receptionist', company: 'Mumbai Grand Hotel', location: 'Mumbai, India', country: 'India', url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Receptionist', date_posted: new Date(Date.now() - 518400000).toISOString(), source: 'Demo' },
+        { title: 'Truck Driver', company: 'Saudi Logistics Co', location: 'Riyadh, Saudi Arabia', country: 'Saudi Arabia', url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Truck%20Driver', date_posted: new Date(Date.now() - 604800000).toISOString(), source: 'Demo' }
       ];
     }
 
     res.json(allJobs.slice(0, 150));
   } catch (err) {
     console.error('/jobs fatal error:', err.message);
-    // Return demo jobs even on timeout so page loads
     res.json([
-      {
-        title: 'House Cleaner',
-        company: 'Kampala Homes',
-        location: 'Kampala, Uganda',
-        country: 'Uganda',
-        url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20House%20Cleaner',
-        date_posted: new Date().toISOString(),
-        source: 'Demo'
-      },
-      {
-        title: 'Nurse',
-        company: 'Nairobi Hospital',
-        location: 'Nairobi, Kenya',
-        country: 'Kenya',
-        url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Nurse',
-        date_posted: new Date(Date.now() - 86400000).toISOString(),
-        source: 'Demo'
-      }
+      { title: 'House Cleaner', company: 'Kampala Homes', location: 'Kampala, Uganda', country: 'Uganda', url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20House%20Cleaner', date_posted: new Date().toISOString(), source: 'Demo' },
+      { title: 'Nurse', company: 'Nairobi Hospital', location: 'Nairobi, Kenya', country: 'Kenya', url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Nurse', date_posted: new Date(Date.now() - 86400000).toISOString(), source: 'Demo' }
     ]);
   }
 });
 
-// Ads routes with 3 second timeout
 app.get('/ads', async (req, res) => {
   try {
     const timeoutPromise = new Promise((_, reject) => 
@@ -1083,10 +982,9 @@ app.get('/paid-ads', async (req, res) => {
   }
 });
 
-// Payment routes
 app.post('/ads/initiate-payment', async (req, res) => {
   const { title, company, location, phone, url, description } = req.body;
-  if (!title || !company || !location) {
+  if (!title ||!company ||!location) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   const tx_ref = 'jobai_' + Date.now();
@@ -1095,20 +993,32 @@ app.post('/ads/initiate-payment', async (req, res) => {
   try {
     const response = await fetch('https://api.flutterwave.com/v3/payments', {
       method: 'POST',
-            headers: { 'Authorization': `Bearer ${FLW_SECRET_KEY}`, 'Content-Type': 'application/json' },
+      headers: { 
+        'Authorization': `Bearer ${FLW_SECRET_KEY}`, 
+        'Content-Type': 'application/json' 
+      },
       body: JSON.stringify({
-        tx_ref, amount: 200, currency: 'KES',
+        tx_ref, 
+        amount: 200, 
+        currency: 'KES',
         redirect_url: `https://${req.get('host')}/payment-callback`,
-        customer: { email: 'customer@jobai.com', phonenumber: phone || '0700000', name: company },
-        customizations: { title: 'Job Post Payment', description: 'Pay 200 KES to post job on Jobai' }
+        customer: { 
+          email: 'customer@jobai.com', 
+          phonenumber: phone || '256700000000', 
+          name: company 
+        },
+        customizations: { 
+          title: 'Job Post Payment', 
+          description: 'Pay 200 KES to post job on Jobai' 
+        }
       })
     });
     const data = await response.json();
-    console.log('Flutterwave response:', JSON.stringify(data));
     if (data.status === 'success') {
       res.json({ payment_link: data.data.link });
     } else {
-      res.status(400).json({ error: data.message || 'Failed to create payment' });
+      console.error('Flutterwave error:', data);
+      res.status(400).json({ error: data.message || 'Invalid authorization key' });
     }
   } catch (err) {
     console.error('Payment error:', err);
@@ -1146,24 +1056,35 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
   try {
     const response = await fetch('https://api.flutterwave.com/v3/payments', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${FLW_SECRET_KEY}`, 'Content-Type': 'application/json' },
+      headers: { 
+        'Authorization': `Bearer ${FLW_SECRET_KEY}`, 
+        'Content-Type': 'application/json' 
+      },
       body: JSON.stringify({
-        tx_ref, amount: AD_PRICE, currency: 'KES',
+        tx_ref, 
+        amount: AD_PRICE, 
+        currency: 'KES',
         redirect_url: `https://${req.get('host')}/payment-callback`,
-        customer: { email: 'advertiser@jobai.com', name: business },
-        customizations: { title: 'Sponsored Ad Payment', description: 'Pay ' + AD_PRICE + ' KES for 7 days ad' }
+        customer: { 
+          email: 'advertiser@jobai.com', 
+          name: business 
+        },
+        customizations: { 
+          title: 'Sponsored Ad Payment', 
+          description: 'Pay ' + AD_PRICE + ' KES for 7 days ad' 
+        }
       })
     });
     const data = await response.json();
-    console.log('Flutterwave ad response:', JSON.stringify(data));
     if (data.status === 'success') {
       res.json({ payment_link: data.data.link });
     } else {
-      res.status(400).json({ error: data.message || 'Failed to create payment' });
+      console.error('Flutterwave ad error:', data);
+      res.status(400).json({ error: data.message || 'Invalid authorization key' });
     }
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Payment error: ' + err.message });
+        res.status(500).json({ error: 'Payment error: ' + err.message });
   }
 });
 
@@ -1235,7 +1156,7 @@ app.post('/paid-ads/edit', async (req, res) => {
   try {
     const result = await pool.query(
       `UPDATE ads SET business = COALESCE($1, business), link = COALESCE($2, link), text = COALESCE($3, text) WHERE id = $4 AND token = $5 AND type = 'ad' RETURNING id`,
-      [business][link][text][id][token]
+      [business, link, text, id, token]
     );
     res.json({ success: result.rowCount > 0 });
   } catch (err) {
@@ -1247,7 +1168,7 @@ app.post('/paid-ads/edit', async (req, res) => {
 app.post('/paid-ads/delete', async (req, res) => {
   const { id, token } = req.body;
   try {
-    const result = await pool.query(`DELETE FROM ads WHERE id = $1 AND token = $2 AND type = 'ad' RETURNING id`, [id][token]);
+    const result = await pool.query(`DELETE FROM ads WHERE id = $1 AND token = $2 AND type = 'ad' RETURNING id`, [id, token]);
     res.json({ success: result.rowCount > 0 });
   } catch (err) {
     console.error(err);
@@ -1258,4 +1179,3 @@ app.post('/paid-ads/delete', async (req, res) => {
 app.listen(PORT, function() {
   console.log('Jobai server running on port ' + PORT);
 });
-     
