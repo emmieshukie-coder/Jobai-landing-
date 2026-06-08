@@ -1,25 +1,12 @@
-import express from 'express';
-import multer from 'multer';
-import { v2 as cloudinary } from 'cloudinary';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import crypto from 'crypto';
-import bcrypt from 'bcrypt';
-import pkg from 'pg';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fetch from 'node-fetch';
-
+import express from 'express';import multer from 'multer';import { v2 as cloudinary } from 'cloudinary';import { CloudinaryStorage } from 'multer-storage-cloudinary';import crypto from 'crypto';import bcrypt from 'bcrypt';import pkg from 'pg';import path from 'path';import { fileURLToPath } from 'url';import fetch from 'node-fetch';
 // Sitemap router
 import sitemapRouter from './sitemap.js';
 
 const { Pool } = pkg;
-
 const app = express();
 const PORT = process.env.PORT || 3000;
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
@@ -83,7 +70,6 @@ const storage = new CloudinaryStorage({
 });
 
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
-
 let pendingPayments = {};
 const AD_PRICE = 500;
 const AD_DURATION_DAYS = 7;
@@ -111,20 +97,7 @@ app.get('/', (req, res) => {
     ' body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }' +
     '.hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; }' +
     '.hero h1 { font-size: 32px; margin: 0 0 8px 0; font-weight: 700; }' +
-    '.hero p { font-size: 16px; opacity: 0.95; margin: 0 0 20px 0; }' +
-    '.auth-container { background: white; max-width: 420px; margin: 0 auto; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); overflow: hidden; }' +
-    '.auth-tabs { display: flex; border-bottom: 1px solid #eee; }' +
-    '.auth-tab { flex: 1; padding: 14px; text-align: center; cursor: pointer; font-weight: 600; color: #666; background: #f9f9f9; }' +
-    '.auth-tab.active { color: #1a73e8; background: white; border-bottom: 3px solid #1a73e8; }' +
-    '.auth-content { padding: 20px; }' +
-    '.form-group { margin-bottom: 14px; }' +
-    '.form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; color: #333; }' +
-    '.form-group input,.form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }' +
-    '.phone-group { display: flex; gap: 8px; }' +
-    '.phone-code { display: flex; align-items: center; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background: #f5f5f5; min-width: 80px; gap: 4px; }' +
-    '.password-field { position: relative; }' +
-    '.password-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px; color: #666; }' +
-    '.hint { font-size: 12px; color: #666; margin-top: 4px; }' +
+    '.hero p { font-size: 16px; opacity: 0.95; margin: 0; }' +
     '.container { max-width: 1000px; margin: 20px auto; padding: 0 16px; }' +
     '.controls { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }' +
     '.controls input,.controls select { padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; background: white; }' +
@@ -140,7 +113,7 @@ app.get('/', (req, res) => {
     '.source-tag { display: inline-block; background: #f5f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }' +
     '.user-ad-tag { background: #fff3e0; color: #f57c00; }' +
     '.btn-group { display: flex; gap: 10px; flex-wrap: wrap; }' +
-    '.connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; border: none; cursor: pointer; width: 100%; }' +
+    '.connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; border: none; cursor: pointer; }' +
     '.connect-btn:hover { background: #1557b0; }' +
     '.call-btn { background: #34a853; }' +
     '.call-btn:hover { background: #2d9147; }' +
@@ -162,9 +135,8 @@ app.get('/', (req, res) => {
     '.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }' +
     '.modal.active { display: flex; }' +
     '.modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%; }' +
-    '.flag-ug { width:18px; height:12px; display:inline-block; vertical-align:middle; margin-right:4px; border-radius:2px; background: linear-gradient(to bottom, #000 0 33.33%, #FCDC04 33.33% 66.66%, #D90000 66.66% 100%); position:relative; }' +
-    '.flag-ug::after { content:""; position:absolute; left:50%; top:50%; width:6px; height:6px; background:#fff; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 0 1px #000; }' +
-    '#userInfo { color: #1a73e8; font-weight: 600; text-align: center; margin-top: 10px; }' +
+    '.auth-form input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }' +
+    '.auth-toggle { text-align:center;margin-top:10px;font-size:13px;color:#666;cursor:pointer; }' +
     '.logout-btn { display:none; width:100%; margin-top:10px; background:#d32f2f; }' +
     ' </style>' +
     '</head>' +
@@ -175,6 +147,50 @@ app.get('/', (req, res) => {
     ' <div style="padding:20px;border-bottom:1px solid #eee;">' +
     ' <h2 style="margin:0;color:#1a73e8;font-size:22px;">Jobai</h2>' +
     ' <p style="margin:6px 0 0;font-size:13px;color:#666;">Get Connected to Jobs & Workers</p>' +
+    ' </div>' +
+    ' <div id="authSection" style="padding:16px;border-bottom:1px solid #eee;">' +
+    ' <div style="display:flex;border-bottom:1px solid #eee;margin-bottom:12px;">' +
+    ' <button id="tabSignup" onclick="showTab(\'signup\')" style="flex:1;padding:10px;border:none;background:#1a73e8;color:white;font-weight:600;border-radius:6px 6px 0 0;cursor:pointer;">Sign Up</button>' +
+    ' <button id="tabLogin" onclick="showTab(\'login\')" style="flex:1;padding:10px;border:none;background:#f5f5f5;color:#333;font-weight:600;border-radius:6px 6px 0 0;cursor:pointer;">Login</button>' +
+    ' </div>' +
+    ' <div id="signupForm" class="auth-form">' +
+    ' <input type="text" id="firstName" placeholder="First Name" required>' +
+    ' <input type="text" id="lastName" placeholder="Last Name" required>' +
+    ' <input type="email" id="signupEmail" placeholder="Email" required>' +
+    ' <div style="display:flex;gap:6px;margin-bottom:10px;">' +
+    ' <span style="display:flex;align-items:center;padding:10px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:14px;">🇺🇬 +256</span>' +
+    ' <input type="tel" id="signupPhone" placeholder="Phone Number" style="flex:1;" onfocus="if(!this.value)this.value=\'256\';">' +
+    ' </div>' +
+    ' <select id="countryInterest" style="width:100%;padding:10px;margin-bottom:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;">' +
+    ' <option value="">Country Interest</option>' +
+    ' <option value="Uganda">Uganda</option><option value="Kenya">Kenya</option><option value="Tanzania">Tanzania</option>' +
+    ' <option value="Rwanda">Rwanda</option><option value="Burundi">Burundi</option><option value="UAE">UAE</option>' +
+    ' <option value="Saudi Arabia">Saudi Arabia</option><option value="UK">UK</option><option value="Canada">Canada</option>' +
+    ' <option value="India">India</option><option value="China">China</option>' +
+    ' </select>' +
+    ' <input type="text" id="skills" placeholder="Skills: nurse, driver, cleaner...">' +
+    ' <div style="position:relative;margin-bottom:10px;">' +
+    ' <input type="password" id="signupPassword" placeholder="Password" required style="padding-right:40px;">' +
+    ' <button type="button" onclick="togglePass(\'signupPassword\',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;">👁️</button>' +
+    ' </div>' +
+    ' <div style="position:relative;margin-bottom:10px;">' +
+    ' <input type="password" id="confirmPassword" placeholder="Confirm Password" required style="padding-right:40px;">' +
+    ' <button type="button" onclick="togglePass(\'confirmPassword\',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;">👁️</button>' +
+    ' </div>' +
+    ' <button class="connect-btn" style="width:100%;" onclick="signup()">Create Account</button>' +
+    ' <p id="signupMsg" style="font-size:12px;margin-top:8px;"></p>' +
+    ' </div>' +
+    ' <div id="loginForm" class="auth-form" style="display:none;">' +
+    ' <input type="email" id="loginEmail" placeholder="Email" required>' +
+    ' <div style="position:relative;margin-bottom:10px;">' +
+    ' <input type="password" id="loginPassword" placeholder="Password" required style="padding-right:40px;">' +
+    ' <button type="button" onclick="togglePass(\'loginPassword\',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;">👁️</button>' +
+    ' </div>' +
+    ' <button class="connect-btn" style="width:100%;" onclick="login()">Login</button>' +
+    ' <p id="loginMsg" style="font-size:12px;margin-top:8px;"></p>' +
+    ' </div>' +
+    ' <button id="logoutBtn" class="connect-btn logout-btn" onclick="logout()">Logout</button>' +
+    ' <p id="userInfo" style="font-size:13px;margin-top:8px;color:#1a73e8;"></p>' +
     ' </div>' +
     ' <div style="padding:8px 0;">' +
     ' <a href="#" onclick="closeMenu();document.getElementById(\'searchInput\')?.focus();" style="display:flex;align-items:center;gap:12px;padding:14px 18px;text-decoration:none;color:#222;font-size:15px;">🔍 <span>Job Search</span></a>' +
@@ -189,87 +205,6 @@ app.get('/', (req, res) => {
     ' <div class="hero">' +
     ' <h1>Get Connected to Jobs & Workers</h1>' +
     ' <p>AI-powered matching for Uganda, Kenya, Tanzania, Rwanda, Burundi, India, UAE, Saudi Arabia, France, UK, Canada, China, Taiwan, Thailand</p>' +
-    ' <div class="auth-container" id="authSection">' +
-    ' <div class="auth-tabs">' +
-    ' <div class="auth-tab" id="loginTab" onclick="switchTab(\'login\')">Login</div>' +
-    ' <div class="auth-tab active" id="registerTab" onclick="switchTab(\'register\')">Register</div>' +
-    ' </div>' +
-    ' <div class="auth-content">' +
-    ' <div id="signupForm">' +
-    ' <div class="form-group">' +
-    ' <label>First Name</label>' +
-    ' <input type="text" id="firstName" required>' +
-    ' </div>' +
-    ' <div class="form-group">' +
-    ' <label>Last Name</label>' +
-    ' <input type="text" id="lastName" required>' +
-    ' </div>' +
-    ' <div class="form-group">' +
-    ' <label>Email</label>' +
-    ' <input type="email" id="signupEmail" required>' +
-    ' </div>' +
-    ' <div class="form-group">' +
-    ' <label>WhatsApp Number</label>' +
-    ' <div class="phone-group">' +
-    ' <div class="phone-code"><span class="flag-ug"></span>+256</div>' +
-    ' <input type="tel" id="signupPhone" placeholder="776686096">' +
-    ' </div>' +
-    ' </div>' +
-    ' <div class="form-group">' +
-    ' <label>Password</label>' +
-    ' <div class="password-field">' +
-    ' <input type="password" id="signupPassword" required>' +
-    ' <span class="password-toggle" onclick="togglePassword(\'signupPassword\')">👁️</span>' +
-    ' </div>' +
-    ' <div class="hint">Minimum 6 characters</div>' +
-    ' </div>' +
-    ' <div class="form-group">' +
-    ' <label>Confirm Password</label>' +
-    ' <div class="password-field">' +
-    ' <input type="password" id="confirmPassword" required>' +
-    ' <span class="password-toggle" onclick="togglePassword(\'confirmPassword\')">👁️</span>' +
-    ' </div>' +
-    ' </div>' +
-    ' <div class="form-group">' +
-    ' <label>Country Interest</label>' +
-    ' <select id="countryInterest">' +
-    ' <option value="">Select Country</option>' +
-    ' <option value="Uganda">Uganda</option>' +
-    ' <option value="Kenya">Kenya</option>' +
-    ' <option value="Tanzania">Tanzania</option>' +
-    ' <option value="Rwanda">Rwanda</option>' +
-    ' <option value="UAE">UAE</option>' +
-    ' <option value="Saudi Arabia">Saudi Arabia</option>' +
-    ' <option value="UK">UK</option>' +
-    ' <option value="Canada">Canada</option>' +
-    ' </select>' +
-    ' </div>' +
-    ' <div class="form-group">' +
-    ' <label>Skills</label>' +
-    ' <input type="text" id="skills" placeholder="e.g. Driving, Teaching, Nursing">' +
-    ' </div>' +
-    ' <button class="connect-btn" onclick="signup()"><span class="flag-ug"></span>Create Uganda Account</button>' +
-    ' <p id="signupMsg" style="font-size:12px;margin-top:8px;"></p>' +
-    ' </div>' +
-    ' <div id="loginForm" style="display:none;">' +
-    ' <div class="form-group">' +
-    ' <label>Email</label>' +
-    ' <input type="email" id="loginEmail" required>' +
-    ' </div>' +
-    ' <div class="form-group">' +
-    ' <label>Password</label>' +
-    ' <div class="password-field">' +
-    ' <input type="password" id="loginPassword" required>' +
-    ' <span class="password-toggle" onclick="togglePassword(\'loginPassword\')">👁️</span>' +
-    ' </div>' +
-    ' </div>' +
-    ' <button class="connect-btn" onclick="login()"><span class="flag-ug"></span>Login with Uganda</button>' +
-    ' <p id="loginMsg" style="font-size:12px;margin-top:8px;"></p>' +
-    ' </div>' +
-    ' <button id="logoutBtn" class="connect-btn logout-btn" onclick="logout()">Logout</button>' +
-    ' <p id="userInfo"></p>' +
-    ' </div>' +
-    ' </div>' +
     ' </div>' +
     ' <div class="ad-unit">' +
     ' <ins class="adsbygoogle" style="display:block" data-ad-client="ca-app-pub-1637256996790764" data-ad-slot="5321979598" data-ad-format="auto" data-full-width-responsive="true"></ins>' +
@@ -284,7 +219,7 @@ app.get('/', (req, res) => {
     ' <option value="3">Last 3 days</option>' +
     ' <option value="1">Last 24 hours</option>' +
     ' </select>' +
-    ' <button class="connect-btn" id="searchBtn" style="width:auto;">Search</button>' +
+    ' <button class="connect-btn" id="searchBtn">Search</button>' +
     ' </div>' +
     ' <div class="section">' +
     ' <h2>Trending Jobs</h2>' +
@@ -349,12 +284,12 @@ app.get('/', (req, res) => {
     'function showFavorites(){closeMenu();const fav=JSON.parse(localStorage.getItem(\'jobai_fav\')||\'[]\');if(!fav.length){alert(\'No favorites yet. Click "Connect & Apply" then save the job link.\');return;}renderJobs(fav);document.querySelector(\'.section h2\').textContent=\'Favorites\';}' +
     'function showSalaries(){closeMenu();alert(\'Salaries coming next. We will wire this to Adzuna Salary API.\');}' +
     'function showSubscriptions(){closeMenu();alert(\'Job Alerts coming next. Enter email + keywords and get notified.\');}' +
-    'function switchTab(tab){const loginTab=document.getElementById(\'loginTab\'),registerTab=document.getElementById(\'registerTab\'),loginForm=document.getElementById(\'loginForm\'),signupForm=document.getElementById(\'signupForm\');if(tab===\'login\'){loginTab.classList.add(\'active\');registerTab.classList.remove(\'active\');loginForm.style.display=\'block\';signupForm.style.display=\'none\';}else{registerTab.classList.add(\'active\');loginTab.classList.remove(\'active\');signupForm.style.display=\'block\';loginForm.style.display=\'none\';}}' +
-    'function togglePassword(id){const input=document.getElementById(id);input.type=input.type===\'password\'?\'text\':\'password\';}' +
-    'async function signup(){const first=document.getElementById(\'firstName\').value.trim(),last=document.getElementById(\'lastName\').value.trim(),email=document.getElementById(\'signupEmail\').value.trim(),phone=\'+256\'+document.getElementById(\'signupPhone\').value.trim(),pass=document.getElementById(\'signupPassword\').value,cpass=document.getElementById(\'confirmPassword\').value,country=document.getElementById(\'countryInterest\').value,skills=document.getElementById(\'skills\').value.trim();const msg=document.getElementById(\'signupMsg\');if(!first||!last||!email||!pass){msg.textContent=\'Fill all required fields\';msg.style.color=\'red\';return;}if(pass.length<6){msg.textContent=\'Password must be 6+ characters\';msg.style.color=\'red\';return;}if(pass!==cpass){msg.textContent=\'Passwords do not match\';msg.style.color=\'red\';return;}msg.textContent=\'Creating account...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/signup\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({firstName:first,lastName:last,email,phone,password:pass,country_interest:country,skills})});const data=await res.json();if(data.success){msg.textContent=\'Account created! Please login.\';msg.style.color=\'green\';switchTab(\'login\');}else{msg.textContent=data.error||\'Signup failed\';msg.style.color=\'red\';}}' +
-    'async function login(){const email=document.getElementById(\'loginEmail\').value.trim(),pass=document.getElementById(\'loginPassword\').value;const msg=document.getElementById(\'loginMsg\');if(!email||!pass){msg.textContent=\'Enter email and password\';msg.style.color=\'red\';return;}msg.textContent=\'Logging in...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/login\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({email,password:pass})});const data=await res.json();if(data.success){msg.textContent=\'Login successful!\';msg.style.color=\'green\';localStorage.setItem(\'jobai_user\',JSON.stringify(data.user));updateAuthUI(data.user);}else{msg.textContent=data.error||\'Login failed\';msg.style.color=\'red\';}}' +
+    'function showTab(tab){const s=document.getElementById(\'signupForm\'),l=document.getElementById(\'loginForm\'),ts=document.getElementById(\'tabSignup\'),tl=document.getElementById(\'tabLogin\');if(tab===\'signup\'){s.style.display=\'block\';l.style.display=\'none\';ts.style.background=\'#1a73e8\';ts.style.color=\'white\';tl.style.background=\'#f5f5f5\';tl.style.color=\'#333\';}else{s.style.display=\'none\';l.style.display=\'block\';tl.style.background=\'#1a73e8\';tl.style.color=\'white\';ts.style.background=\'#f5f5f5\';ts.style.color=\'#333\';}}' +
+    'function togglePass(id,btn){const i=document.getElementById(id);if(i.type===\'password\'){i.type=\'text\';btn.textContent=\'🙈\';}else{i.type=\'password\';btn.textContent=\'👁️\';}}' +
+    'async function signup(){const first=document.getElementById(\'firstName\').value.trim(),last=document.getElementById(\'lastName\').value.trim(),email=document.getElementById(\'signupEmail\').value.trim(),phone=document.getElementById(\'signupPhone\').value.trim(),pass=document.getElementById(\'signupPassword\').value,cpass=document.getElementById(\'confirmPassword\').value,country_interest=document.getElementById(\'countryInterest\').value,skills=document.getElementById(\'skills\').value.trim();const msg=document.getElementById(\'signupMsg\');if(!first||!last||!email||!pass){msg.textContent=\'Fill all required fields\';msg.style.color=\'red\';return;}if(pass.length<6){msg.textContent=\'Password must be 6+ characters\';msg.style.color=\'red\';return;}if(pass!==cpass){msg.textContent=\'Passwords do not match\';msg.style.color=\'red\';return;}msg.textContent=\'Creating account...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/signup\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({firstName:first,lastName:last,email,phone,password:pass,country_interest,skills})});const data=await res.json();if(data.success){msg.textContent=\'Account created! You can login now.\';msg.style.color=\'green\';showTab(\'login\');}else{msg.textContent=data.error||\'Signup failed\';msg.style.color=\'red\';}}' +
+    'async function login(){const email=document.getElementById(\'loginEmail\').value.trim(),pass=document.getElementById(\'loginPassword\').value;const msg=document.getElementById(\'loginMsg\');if(!email||!pass){msg.textContent=\'Enter email and password\';msg.style.color=\'red\';return;}msg.textContent=\'Logging in...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/login\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({email,password:pass})});const data=await res.json();if(data.success){msg.textContent=\'Login successful!\';msg.style.color=\'green\';localStorage.setItem(\'jobai_user\',JSON.stringify(data.user));updateAuthUI(data.user);closeMenu();}else{msg.textContent=data.error||\'Login failed\';msg.style.color=\'red\';}}' +
     'async function logout(){await fetch(\'/auth/logout\',{method:\'POST\'});localStorage.removeItem(\'jobai_user\');updateAuthUI(null);}' +
-    'function updateAuthUI(user){const logout=document.getElementById(\'logoutBtn\');const info=document.getElementById(\'userInfo\');const loginForm=document.getElementById(\'loginForm\');const signupForm=document.getElementById(\'signupForm\');const tabs=document.querySelector(\'.auth-tabs\');if(user){loginForm.style.display=\'none\';signupForm.style.display=\'none\';tabs.style.display=\'none\';logout.style.display=\'block\';info.innerHTML=\'<span class="flag-ug"></span>Logged in as \'+user.first_name+\' \'+user.last_name;}else{loginForm.style.display=\'block\';signupForm.style.display=\'none\';tabs.style.display=\'flex\';logout.style.display=\'none\';info.textContent=\'\';switchTab(\'login\');}}' +
+    'function updateAuthUI(user){const logout=document.getElementById(\'logoutBtn\');const info=document.getElementById(\'userInfo\');if(user){document.getElementById(\'signupForm\').style.display=\'none\';document.getElementById(\'loginForm\').style.display=\'none\';document.getElementById(\'tabSignup\').style.display=\'none\';document.getElementById(\'tabLogin\').style.display=\'none\';logout.style.display=\'block\';info.textContent=\'Logged in as \'+user.first_name+\' \'+user.last_name;}else{document.getElementById(\'signupForm\').style.display=\'block\';document.getElementById(\'loginForm\').style.display=\'none\';document.getElementById(\'tabSignup\').style.display=\'block\';document.getElementById(\'tabLogin\').style.display=\'block\';showTab(\'signup\');logout.style.display=\'none\';info.textContent=\'\';}}' +
     'window.addEventListener(\'load\',()=>{const user=JSON.parse(localStorage.getItem(\'jobai_user\')||\'null\');updateAuthUI(user);});' +
     'document.getElementById(\'menuBtn\').addEventListener(\'click\',openMenu);' +
     ' let allJobs = [];' +
@@ -415,6 +350,9 @@ app.get('/', (req, res) => {
     ' function renderUserAds(ads) {' +
     ' if (!ads.length) {' +
     ' document.getElementById("userAds").innerHTML = "<div class=\\"error\\">No community posts yet.</div>";' +
+    ' return;' +
+    ' }' +
+    'mmunity posts yet.</div>";' +
     ' return;' +
     ' }' +
     ' document.getElementById("userAds").innerHTML = ads.map(function(j) {' +
@@ -835,7 +773,7 @@ app.get('/jobs', async (req, res) => {
     );
 
     if (recentDays > 0 && req.query.recent!== 'all') {
-      const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
+      const cutoff = Date.now() - recentDays * 24 * 60 * 1000;
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
 
