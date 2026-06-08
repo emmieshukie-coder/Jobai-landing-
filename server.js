@@ -488,7 +488,7 @@ app.get('/', (req, res) => {
     async function loadJobs() {
       const query = document.getElementById("searchInput")?.value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager";
       const days = document.getElementById("dateFilter")?.value || "30";
-          document.getElementById("jobs").innerHTML = '<div class="loading">Loading jobs...</div>';
+      document.getElementById("jobs").innerHTML = '<div class="loading">Loading jobs...</div>';
       try {
         const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);
         allJobs = await res.json();
@@ -499,7 +499,7 @@ app.get('/', (req, res) => {
     }
 
     async function loadUserAds() {
-      try { const res = await fetch("/ads"); const ads = await res.json(); renderUserAds(ads); } 
+            try { const res = await fetch("/ads"); const ads = await res.json(); renderUserAds(ads); } 
       catch (e) { console.error("loadUserAds error:", e); }
     }
 
@@ -634,14 +634,13 @@ app.post('/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
-// Job API fetchers with fallback
+// Job API fetchers - 5 SOURCES: Adzuna, JSearch, Remotive, Jooble, Careerjet
 async function fetchAdzunaJobs(countryCode, countryName, query) {
   try {
     const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=20&content-type=application/json&max_days_old=30&what=${encodeURIComponent(query)}`;
-    console.log('Adzuna URL:', url);
-    const response = await fetch(url);
+    const response = await fetch(url, { timeout: 8000 });
     if (!response.ok) {
-      console.log(`Adzuna ${countryCode} failed:`, response.status, await response.text());
+      console.log(`Adzuna ${countryCode} failed:`, response.status);
       return [];
     }
     const data = await response.json();
@@ -669,7 +668,8 @@ async function fetchJSearchJobs(query, location) {
       headers: {
         'X-RapidAPI-Key': RAPIDAPI_KEY,
         'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
-      }
+      },
+      timeout: 8000
     });
     if (!response.ok) {
       console.log(`JSearch ${location} failed:`, response.status);
@@ -694,14 +694,14 @@ async function fetchJSearchJobs(query, location) {
 
 async function fetchRemotiveJobs(query) {
   try {
-    const response = await fetch(`https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}`);
+    const response = await fetch(`https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}`, { timeout: 8000 });
     if (!response.ok) {
       console.log('Remotive failed:', response.status);
       return [];
     }
     const data = await response.json();
     console.log('Remotive returned:', data.jobs?.length || 0);
-    return (data.jobs || []).slice(0, 10).map(j => ({
+    return (data.jobs || []).slice(0, 15).map(j => ({
       title: j.title,
       company: j.company_name,
       location: 'Remote',
@@ -716,42 +716,92 @@ async function fetchRemotiveJobs(query) {
   }
 }
 
-// Jobs route - RESTORED ADZUNA/JSEARCH/REMOTIVE
+async function fetchJoobleJobs(query, location) {
+  try {
+    const response = await fetch('https://jooble.org/api/1', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keywords: query, location: location }),
+      timeout: 8000
+    });
+    if (!response.ok) {
+      console.log(`Jooble ${location} failed:`, response.status);
+      return [];
+    }
+    const data = await response.json();
+    console.log(`Jooble ${location} returned:`, data.jobs?.length || 0);
+    return (data.jobs || []).slice(0, 10).map(j => ({
+      title: j.title,
+      company: j.company,
+      location: j.location,
+      country: location,
+      url: j.link,
+      date_posted: j.updated,
+      source: 'Jooble'
+    }));
+  } catch (err) {
+    console.log('Jooble error:', err.message);
+    return [];
+  }
+}
+
+async function fetchCareerjetJobs(query, location) {
+  try {
+    const url = `https://www.careerjet.com/search/jobs?s=${encodeURIComponent(query)}&l=${encodeURIComponent(location)}&format=json`;
+    const response = await fetch(url, { timeout: 8000 });
+    if (!response.ok) return [];
+    const data = await response.json();
+    console.log(`Careerjet ${location} returned:`, data.jobs?.length || 0);
+    return (data.jobs || []).slice(0, 10).map(j => ({
+      title: j.title,
+      company: j.company,
+      location: j.locations,
+      country: location,
+      url: j.url,
+      date_posted: j.date,
+      source: 'Careerjet'
+    }));
+  } catch (err) {
+    console.log('Careerjet error:', err.message);
+    return [];
+  }
+}
+
+// Jobs route - 5 SOURCES: Adzuna + JSearch + Remotive + Jooble + Careerjet
 app.get('/jobs', async (req, res) => {
   try {
-    const query = req.query.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR driver';
+    const query = req.query.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR driver OR accountant';
     const recentDays = req.query.recent === 'all' ? 0 : parseInt(req.query.recent) || 30;
     console.log('=== /jobs called === Query:', query, 'Recent:', recentDays);
 
     const countries = [
       { code: 'ug', name: 'Uganda' },
       { code: 'ke', name: 'Kenya' },
-      { code: 'ae', name: 'United Arab Emirates' },
+      { code: 'ae', name: 'UAE' },
       { code: 'sa', name: 'Saudi Arabia' },
-      { code: 'gb', name: 'United Kingdom' },
+      { code: 'gb', name: 'UK' },
       { code: 'in', name: 'India' },
       { code: 'tz', name: 'Tanzania' },
       { code: 'rw', name: 'Rwanda' },
       { code: 'ca', name: 'Canada' },
-      { code: 'us', name: 'United States' }
+      { code: 'us', name: 'USA' }
     ];
 
     let allJobs = [];
     const promises = [];
     
     for (let i = 0; i < countries.length; i++) {
-      promises.push(fetchAdzunaJobs(countries[i].code, countries[i].name, query));
       promises.push(fetchJSearchJobs(query, countries[i].name));
+      promises.push(fetchJoobleJobs(query, countries[i].name));
+      promises.push(fetchCareerjetJobs(query, countries[i].name));
+      promises.push(fetchAdzunaJobs(countries[i].code, countries[i].name, query));
     }
     promises.push(fetchRemotiveJobs(query));
 
     const results = await Promise.allSettled(promises);
-    results.forEach((r, idx) => {
+    results.forEach((r) => {
       if (r.status === 'fulfilled' && r.value && r.value.length > 0) {
-        console.log(`Promise ${idx} success: ${r.value.length} jobs`);
         allJobs.push(...r.value);
-      } else if (r.status === 'rejected') {
-        console.log(`Promise ${idx} failed:`, r.reason);
       }
     });
 
@@ -765,13 +815,15 @@ app.get('/jobs', async (req, res) => {
     }
 
     allJobs.sort((a, b) => new Date(b.date_posted || 0) - new Date(a.date_posted || 0));
-    console.log(`Total unique jobs: ${allJobs.length}`);
+    console.log(`Total unique jobs from all APIs: ${allJobs.length}`);
 
     if (allJobs.length === 0) {
-      return res.json({ error: 'No jobs found from APIs. Check Render logs for API errors. Your ADZUNA_APP_ID, ADZUNA_API_KEY, or RAPIDAPI_KEY may be invalid.' });
+      return res.json({ 
+        error: 'No jobs found from APIs. Check Render logs. If Adzuna=401, key expired. If all=0, try different search terms.' 
+      });
     }
 
-    res.json(allJobs.slice(0, 100));
+    res.json(allJobs.slice(0, 150));
   } catch (err) {
     console.error('/jobs fatal error:', err);
     res.json({ error: 'Server error: ' + err.message });
