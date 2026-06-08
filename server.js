@@ -483,7 +483,7 @@ app.get('/', (req, res) => {
     async function loadJobs() {
       const query = document.getElementById("searchInput")?.value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager";
       const days = document.getElementById("dateFilter")?.value || "7";
-      document.getElementById("jobs").innerHTML = '<div class="loading">Loading jobs...</div>';
+            document.getElementById("jobs").innerHTML = '<div class="loading">Loading jobs...</div>';
       try {
         const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);
         allJobs = await res.json();
@@ -503,7 +503,7 @@ app.get('/', (req, res) => {
       catch (e) { console.error("loadPaidAds error:", e); }
     }
 
-        async function submitAd() {
+    async function submitAd() {
       const data = { title: document.getElementById("adTitle").value, company: document.getElementById("adCompany").value, location: document.getElementById("adLocation").value, phone: document.getElementById("adPhone").value, url: document.getElementById("adUrl").value, description: document.getElementById("adDesc").value };
       if (!data.title || !data.company || !data.location) { document.getElementById("adMsg").textContent = "Please fill title, company and location."; document.getElementById("adMsg").style.color = "red"; return; }
       document.getElementById("adMsg").textContent = "Redirecting to payment..."; document.getElementById("adMsg").style.color = "blue";
