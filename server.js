@@ -8,7 +8,6 @@ import pkg from 'pg';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fetch from 'node-fetch';
-import sitemapRouter from './sitemap.js';
 
 const { Pool } = pkg;
 const app = express();
@@ -26,7 +25,6 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-app.use(sitemapRouter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -57,7 +55,7 @@ const storage = new CloudinaryStorage({
   params: { folder: 'jobai-ads', allowed_formats: ['jpg', 'png', 'jpeg', 'webp'], transformation: [{ width: 800, height: 600, crop: 'limit' }] }
 });
 
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 } });
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 let pendingPayments = {};
 const AD_PRICE = 500;
 const AD_DURATION_DAYS = 7;
@@ -76,74 +74,67 @@ app.get('/db-test', async (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.send(`
-<!DOCTYPE html>
+  res.send(`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Jobai - Get Connected to Jobs & Workers</title>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-app-pub-1637256996790764" crossorigin="anonymous"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }
-   .ug-flag { position: absolute; top: 16px; left: 16px; width: 48px; height: 48px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000; object-fit: cover; }
-   .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); display: flex; flex-direction: column; z-index: 9999; overflow-y: auto; }
-   .auth-overlay.hidden { display: none; }
-   .auth-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
-   .auth-box { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-width: 420px; width: 100%; margin: auto; position: relative; }
-   .auth-box h1 { margin: 0 0 8px 0; color: #1a73e8; font-size: 28px; text-align: center; }
-   .auth-box p { margin: 0 0 20px 0; color: #666; text-align: center; font-size: 14px; }
-   .auth-tabs { display: flex; gap: 10px; margin-bottom: 16px; }
-   .auth-tabs button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; }
-   .auth-tabs.active { background: #1a73e8; color: white; }
-   .auth-tabs.inactive { background: #f5f5f5; color: #333; }
-   .auth-form input,.auth-form select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
-   .auth-footer { background:#000;color:#fff;padding:20px;text-align:center;font-size:13px;width:100%;box-sizing:border-box; }
-   .auth-footer a { color:#64b5f6;text-decoration:none;margin:0 12px; }
-   .hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; position: relative; }
-   .hero h1 { font-size: 32px; margin: 0 0 8px 0; font-weight: 700; }
-   .hero p { font-size: 16px; opacity: 0.95; margin: 0; }
-   .container { max-width: 1000px; margin: 20px auto; padding: 0 16px; }
-   .controls { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
-   .controls input,.controls select { padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; background: white; }
-   .controls input { flex: 1; min-width: 200px; }
-   .section { margin-bottom: 32px; }
-   .section h2 { margin: 0 0 16px 0; font-size: 24px; color: #1a1a1a; }
-   .job-card { background: white; padding: 20px; margin-bottom: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; transition: transform 0.2s, box-shadow 0.2s; display: block; text-decoration: none; color: inherit; }
-   .job-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
-   .job-card h3 { margin: 8px 0 8px 0; color: #1a73e8; font-size: 18px; line-height: 1.4; }
-   .job-meta { margin: 0 0 14px 0; color: #666; font-size: 14px; line-height: 1.5; }
-   .job-meta span { margin-right: 8px; }
-   .country-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
-   .source-tag { display: inline-block; background: #f5f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }
-   .user-ad-tag { background: #fff3e0; color: #f57c00; }
-   .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
-   .connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; border: none; cursor: pointer; }
-   .connect-btn:hover { background: #1557b0; }
-   .call-btn { background: #34a853; }
-   .call-btn:hover { background: #2d9147; }
-   .wa-btn { background: #25D366; }
-   .wa-btn:hover { background: #1ebe5a; }
-   .free-btn { background: #9C27B0; }
-   .free-btn:hover { background: #7B1FA2; }
-   .loading { text-align: center; color: #666; padding: 30px; font-size: 16px; }
-   .error { text-align: center; color: #d32f2f; padding: 30px; }
-   .ad-form { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
-   .ad-form input,.ad-form textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; }
-   .ad-form h3 { margin-top: 0; font-size: 18px; }
-   .phone-display { color: #34a853; font-weight: 600; }
-   .img-preview { max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 10px; display: none; }
-   .card-actions { position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; }
-   .icon-btn { width: 32px; height: 32px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; }
-   .edit-btn { background: #ff9800; }
-   .delete-btn { background: #d32f2f; }
-   .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
-   .modal.active { display: flex; }
-   .modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%; }
-   .user-bar { background: #1a73e8; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: relative; }
-   .user-bar button { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-   .main-content { display: none; }
-   .main-content.show { display: block; }
+  .ug-flag { position: absolute; top: 16px; left: 16px; width: 48px; height: 48px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000; object-fit: cover; }
+  .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); display: flex; flex-direction: column; z-index: 9999; overflow-y: auto; }
+  .auth-overlay.hidden { display: none; }
+  .auth-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .auth-box { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-width: 420px; width: 100%; margin: auto; position: relative; }
+  .auth-box h1 { margin: 0 0 8px 0; color: #1a73e8; font-size: 28px; text-align: center; }
+  .auth-box p { margin: 0 0 20px 0; color: #666; text-align: center; font-size: 14px; }
+  .auth-tabs { display: flex; gap: 10px; margin-bottom: 16px; }
+  .auth-tabs button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; }
+  .auth-tabs.active { background: #1a73e8; color: white; }
+  .auth-tabs.inactive { background: #f5f5f5; color: #333; }
+  .auth-form input,.auth-form select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+  .hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; position: relative; }
+  .hero h1 { font-size: 32px; margin: 0 0 8px 0; font-weight: 700; }
+  .hero p { font-size: 16px; opacity: 0.95; margin: 0; }
+  .container { max-width: 1000px; margin: 20px auto; padding: 0 16px; }
+  .controls { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+  .controls input,.controls select { padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; background: white; }
+  .controls input { flex: 1; min-width: 200px; }
+  .section { margin-bottom: 32px; }
+  .section h2 { margin: 0 0 16px 0; font-size: 24px; color: #1a1a1a; }
+  .job-card { background: white; padding: 20px; margin-bottom: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; transition: transform 0.2s, box-shadow 0.2s; display: block; text-decoration: none; color: inherit; }
+  .job-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+  .job-card h3 { margin: 8px 0 8px 0; color: #1a73e8; font-size: 18px; line-height: 1.4; }
+  .job-meta { margin: 0 0 14px 0; color: #666; font-size: 14px; line-height: 1.5; }
+  .job-meta span { margin-right: 8px; }
+  .country-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+  .source-tag { display: inline-block; background: #f5f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }
+  .user-ad-tag { background: #fff3e0; color: #f57c00; }
+  .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+  .connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; border: none; cursor: pointer; }
+  .connect-btn:hover { background: #1557b0; }
+  .wa-btn { background: #25D366; }
+  .wa-btn:hover { background: #1ebe5a; }
+  .free-btn { background: #9C27B0; }
+  .free-btn:hover { background: #7B1FA2; }
+  .loading { text-align: center; color: #666; padding: 30px; font-size: 16px; }
+  .error { text-align: center; color: #d32f2f; padding: 30px; }
+  .ad-form { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
+  .ad-form input,.ad-form textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; }
+  .ad-form h3 { margin-top: 0; font-size: 18px; }
+  .img-preview { max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 10px; display: none; }
+  .card-actions { position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .icon-btn { width: 32px; height: 32px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; }
+  .edit-btn { background: #ff9800; }
+  .delete-btn { background: #d32f2f; }
+  .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+  .modal.active { display: flex; }
+  .modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%; }
+  .user-bar { background: #1a73e8; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: relative; }
+  .user-bar button { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+  .main-content { display: none; }
+  .main-content.show { display: block; }
   </style>
 </head>
 <body>
@@ -161,16 +152,12 @@ app.get('/', (req, res) => {
           <input type="text" id="firstName" placeholder="First Name" required>
           <input type="text" id="lastName" placeholder="Last Name" required>
           <input type="email" id="signupEmail" placeholder="Email" required>
-          <div style="display:flex;gap:6px;margin-bottom:12px;">
-            <span style="display:flex;align-items:center;padding:12px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:14px;">🇺🇬 +256</span>
-            <input type="tel" id="signupPhone" placeholder="Phone Number" style="flex:1;">
-          </div>
+          <input type="tel" id="signupPhone" placeholder="Phone Number">
           <select id="countryInterest">
             <option value="">Country Interest</option>
             <option value="Uganda">Uganda</option><option value="Kenya">Kenya</option><option value="Tanzania">Tanzania</option>
-            <option value="Rwanda">Rwanda</option><option value="Burundi">Burundi</option><option value="UAE">UAE</option>
-            <option value="Saudi Arabia">Saudi Arabia</option><option value="UK">UK</option><option value="Canada">Canada</option>
-            <option value="India">India</option>
+            <option value="Rwanda">Rwanda</option><option value="UAE">UAE</option><option value="Saudi Arabia">Saudi Arabia</option>
+            <option value="UK">UK</option><option value="Canada">Canada</option><option value="India">India</option>
           </select>
           <input type="text" id="skills" placeholder="Skills: nurse, driver, cleaner...">
           <input type="password" id="signupPassword" placeholder="Password" required>
@@ -186,12 +173,6 @@ app.get('/', (req, res) => {
         </div>
       </div>
     </div>
-    <div class="auth-footer">
-      <a href="/about">About Us</a>
-      <a href="/privacy">Privacy Policy</a>
-      <a href="/admin">Admin</a>
-      <p style="margin:12px 0 0;color:#aaa;font-size:12px;">© 2026 EmmieTech Global. All rights reserved.</p>
-    </div>
   </div>
 
   <div id="mainContent" class="main-content">
@@ -202,7 +183,7 @@ app.get('/', (req, res) => {
     </div>
     <div class="hero">
       <h1>Get Connected to Jobs & Workers</h1>
-      <p>AI-powered matching for Uganda, Kenya, Tanzania, Rwanda, Burundi, India, UAE, Saudi Arabia, UK, Canada</p>
+      <p>AI-powered matching for Uganda, Kenya, Tanzania, Rwanda, UAE, Saudi Arabia, UK, Canada, India</p>
     </div>
     <div class="container">
       <div class="controls">
@@ -342,7 +323,6 @@ app.get('/', (req, res) => {
       }
     });
 
-    let allJobs = [];
     document.getElementById("adImgFile")?.addEventListener("change", async function(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -416,9 +396,7 @@ app.get('/', (req, res) => {
           <h3>\${j.title}</h3>
           <p class="job-meta"><span>\${j.location}</span><span>•</span><span>\${j.company}</span>\${timePart}</p>
           <div class="btn-group">
-            <button class="connect-btn wa-btn" onclick="applyWhatsApp('\${j.title.replace(/'/g, "\\\\'")}','\${j.company.replace(/'/g, "\\\\'")}','\${j.location.replace(/'/g, "\\\\'")}')">
-              📱 Apply via WhatsApp
-            </button>
+            <button class="connect-btn wa-btn" onclick="applyWhatsApp('\${j.title.replace(/'/g, "\\\\'")}','\${j.company.replace(/'/g, "\\\\'")}','\${j.location.replace(/'/g, "\\\\'")}')">📱 Apply via WhatsApp</button>
             <a href="\${j.url}" target="_blank" class="connect-btn">View Original</a>
           </div>
         </div>\`;
@@ -504,8 +482,8 @@ app.get('/', (req, res) => {
       const days = document.getElementById("dateFilter")?.value || "30";
       document.getElementById("jobs").innerHTML = '<div class="loading">Loading jobs...</div>';
       try {
-                const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);
-        allJobs = await res.json();
+        const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);
+        const allJobs = await res.json();
         renderJobs(allJobs);
       } catch (e) {
         document.getElementById("jobs").innerHTML = '<div class="error">Failed to load jobs. Retrying...</div>';
@@ -514,29 +492,29 @@ app.get('/', (req, res) => {
     }
 
     async function loadUserAds() {
-      try { 
-        const res = await fetch("/ads"); 
-        const ads = await res.json(); 
-        renderUserAds(ads); 
-      } catch (e) { 
+      try {
+        const res = await fetch("/ads");
+        const ads = await res.json();
+        renderUserAds(ads);
+      } catch (e) {
         console.error("loadUserAds error:", e);
         document.getElementById("userAds").innerHTML = '<div class="error">Failed to load community posts</div>';
       }
     }
 
     async function loadPaidAds() {
-      try { 
-        const res = await fetch("/paid-ads"); 
-        const ads = await res.json(); 
-        renderPaidAds(ads); 
-      } catch (e) { 
+      try {
+        const res = await fetch("/paid-ads");
+        const ads = await res.json();
+        renderPaidAds(ads);
+      } catch (e) {
         console.error("loadPaidAds error:", e);
         document.getElementById("paidAds").innerHTML = '<div class="error">Failed to load sponsored ads</div>';
       }
     }
 
     async function submitAd() {
-      const data = { title: document.getElementById("adTitle").value, company: document.getElementById("adCompany").value, location: document.getElementById("adLocation").value, phone: document.getElementById("adPhone").value, url: document.getElementById("adUrl").value, description: document.getElementById("adDesc").value };
+          const data = { title: document.getElementById("adTitle").value, company: document.getElementById("adCompany").value, location: document.getElementById("adLocation").value, phone: document.getElementById("adPhone").value, url: document.getElementById("adUrl").value, description: document.getElementById("adDesc").value };
       if (!data.title ||!data.company ||!data.location) { document.getElementById("adMsg").textContent = "Please fill title, company and location."; document.getElementById("adMsg").style.color = "red"; return; }
       document.getElementById("adMsg").textContent = "Redirecting to payment..."; document.getElementById("adMsg").style.color = "blue";
       const res = await fetch("/ads/initiate-payment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
@@ -594,137 +572,6 @@ app.get('/', (req, res) => {
       if (e.key === "Enter") loadJobs();
     });
   </script>
-
-  <footer style="background:#000;color:#fff;padding:32px 20px;margin-top:60px;">
-    <div style="max-width:1000px;margin:0 auto;text-align:center;">
-      <h3 style="margin:0 0 12px 0;font-size:20px;font-weight:700;">EmmieTech Global Recruitment Agency</h3>
-      <p style="margin:0 0 8px 0;font-size:15px;color:#ddd;">Kampala, Uganda | WhatsApp: +256 776 686 096</p>
-      <p style="margin:0 0 20px 0;font-size:14px;color:#aaa;">Licensed by Ministry of Gender, Labour & Social Development</p>
-      <div style="display:flex;gap:24px;justify-content:center;flex-wrap:wrap;">
-        <a href="/about" style="color:#64b5f6;text-decoration:none;font-size:14px;">About Us</a>
-        <a href="/privacy" style="color:#64b5f6;text-decoration:none;font-size:14px;">Privacy Policy</a>
-        <a href="/admin" style="color:#64b5f6;text-decoration:none;font-size:14px;">Admin</a>
-      </div>
-    </div>
-    <p style="text-align:center;margin:32px 0 0 0;font-size:12px;color:#666;">© 2026 EmmieTech Global. All rights reserved.</p>
-  </footer>
-</body>
-</html>
-  `);
-});
-
-app.get('/about', (req, res) => {
-  res.send(`
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>About Us - Jobai</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }
-   .header { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 30px 20px; text-align: center; }
-   .container { max-width: 800px; margin: 40px auto; padding: 0 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-   .content { padding: 30px; line-height: 1.8; }
-    h1 { margin: 0; font-size: 32px; }
-    h2 { color: #1a73e8; margin-top: 30px; }
-   .back-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 20px; }
-  </style>
-</head>
-<body>
-  <div class="header"><h1>About EmmieTech Global</h1></div>
-  <div class="container">
-    <div class="content">
-      <h2>Who We Are</h2>
-      <p>EmmieTech Global Recruitment Agency is a licensed recruitment company based in Kampala, Uganda. We connect skilled workers across East Africa, UAE, Saudi Arabia, UK, Canada, and India with verified employers.</p>
-      
-      <h2>Our Mission</h2>
-      <p>To eliminate unemployment by using AI to match job seekers with real opportunities. We verify every employer and provide direct WhatsApp contact so you never pay agents or get scammed.</p>
-      
-      <h2>Contact Us</h2>
-      <p><strong>Location:</strong> Kampala, Uganda<br>
-      <strong>WhatsApp:</strong> +256 776 686 096<br>
-      <strong>License:</strong> Ministry of Gender, Labour & Social Development</p>
-      
-      <a href="/" class="back-btn">← Back to Jobs</a>
-    </div>
-  </div>
-</body>
-</html>
-  `);
-});
-
-app.get('/privacy', (req, res) => {
-  res.send(`
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Privacy Policy - Jobai</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }
-   .header { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 30px 20px; text-align: center; }
-   .container { max-width: 800px; margin: 40px auto; padding: 0 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-   .content { padding: 30px; line-height: 1.8; }
-    h1 { margin: 0; font-size: 32px; }
-    h2 { color: #1a73e8; margin-top: 30px; }
-   .back-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 20px; }
-  </style>
-</head>
-<body>
-  <div class="header"><h1>Privacy Policy</h1></div>
-  <div class="container">
-    <div class="content">
-      <p><strong>Last Updated: June 2026</strong></p>
-      
-      <h2>Information We Collect</h2>
-      <p>When you sign up, we collect: name, email, phone, country interest, and skills. When you post ads, we collect job details and payment info via Flutterwave.</p>
-      
-      <h2>How We Use Your Data</h2>
-      <p>We use your data to: match you with jobs, display your contact to employers, process payments, and send WhatsApp updates. We never sell your data.</p>
-      
-      <h2>Data Security</h2>
-      <p>Passwords are encrypted with bcrypt. Payments are processed securely by Flutterwave. We use PostgreSQL with SSL.</p>
-      
-      <h2>Your Rights</h2>
-      <p>You can request deletion of your account anytime via WhatsApp: +256 776 686 096</p>
-      
-      <a href="/" class="back-btn">← Back to Jobs</a>
-    </div>
-  </div>
-</body>
-</html>
-  `);
-});
-
-app.get('/admin', (req, res) => {
-  res.send(`
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin - Jobai</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }
-   .header { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 30px 20px; text-align: center; }
-   .container { max-width: 800px; margin: 40px auto; padding: 0 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-   .content { padding: 30px; text-align: center; }
-    h1 { margin: 0; font-size: 32px; }
-   .back-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 20px; }
-  </style>
-</head>
-<body>
-  <div class="header"><h1>Admin Panel</h1></div>
-  <div class="container">
-    <div class="content">
-      <h2>Coming Soon</h2>
-      <p>Admin dashboard for managing users, ads, and payments will be available here.</p>
-      <p>For now, contact WhatsApp: +256 776 686 096 for support.</p>
-      <a href="/" class="back-btn">← Back to Jobs</a>
-    </div>
-  </div>
 </body>
 </html>
   `);
@@ -1080,7 +927,7 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
     if (data.status === 'success') {
       res.json({ payment_link: data.data.link });
     } else {
-            console.error('Flutterwave ad error:', data);
+      console.error('Flutterwave ad error:', data);
       res.status(400).json({ error: data.message || 'Invalid authorization key' });
     }
   } catch (err) {
