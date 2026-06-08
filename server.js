@@ -78,8 +78,9 @@ app.get('/', (req, res) => {
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }
     .ug-flag { position: absolute; top: 16px; left: 16px; width: 48px; height: 48px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000; object-fit: cover; }
-    .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); display: flex; align-items: center; justify-content: center; z-index: 9999; overflow-y: auto; padding: 20px 0; }
+    .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); display: flex; flex-direction: column; z-index: 9999; overflow-y: auto; }
     .auth-overlay.hidden { display: none; }
+    .auth-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px 0; }
     .auth-box { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-width: 420px; width: 90%; margin: auto; position: relative; }
     .auth-box h1 { margin: 0 0 8px 0; color: #1a73e8; font-size: 28px; text-align: center; }
     .auth-box p { margin: 0 0 20px 0; color: #666; text-align: center; font-size: 14px; }
@@ -88,6 +89,8 @@ app.get('/', (req, res) => {
     .auth-tabs .active { background: #1a73e8; color: white; }
     .auth-tabs .inactive { background: #f5f5; color: #333; }
     .auth-form input, .auth-form select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+    .auth-footer { background:#000;color:#fff;padding:20px;text-align:center;font-size:13px; }
+    .auth-footer a { color:#64b5f6;text-decoration:none;margin:0 12px; }
     .hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; position: relative; }
     .hero h1 { font-size: 32px; margin: 0 0 8px 0; font-weight: 700; }
     .hero p { font-size: 16px; opacity: 0.95; margin: 0; }
@@ -135,40 +138,47 @@ app.get('/', (req, res) => {
 <body>
   <div id="authOverlay" class="auth-overlay">
     <img src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Flag_of_Uganda.svg" class="ug-flag" alt="Uganda">
-    <div class="auth-box">
-      <h1>Jobai</h1>
-      <p>Get Connected to Jobs & Workers</p>
-      <div class="auth-tabs">
-        <button id="tabSignup" class="active" onclick="showTab('signup')">Sign Up</button>
-        <button id="tabLogin" class="inactive" onclick="showTab('login')">Login</button>
-      </div>
-      <div id="signupForm" class="auth-form">
-        <input type="text" id="firstName" placeholder="First Name" required>
-        <input type="text" id="lastName" placeholder="Last Name" required>
-        <input type="email" id="signupEmail" placeholder="Email" required>
-        <div style="display:flex;gap:6px;margin-bottom:12px;">
-          <span style="display:flex;align-items:center;padding:12px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:14px;">🇺🇬 +256</span>
-          <input type="tel" id="signupPhone" placeholder="Phone Number" style="flex:1;" onfocus="if(!this.value)this.value='256';">
+    <div class="auth-container">
+      <div class="auth-box">
+        <h1>Jobai</h1>
+        <p>Get Connected to Jobs & Workers</p>
+        <div class="auth-tabs">
+          <button id="tabSignup" class="active" onclick="showTab('signup')">Sign Up</button>
+          <button id="tabLogin" class="inactive" onclick="showTab('login')">Login</button>
         </div>
-        <select id="countryInterest">
-          <option value="">Country Interest</option>
-          <option value="Uganda">Uganda</option><option value="Kenya">Kenya</option><option value="Tanzania">Tanzania</option>
-          <option value="Rwanda">Rwanda</option><option value="Burundi">Burundi</option><option value="UAE">UAE</option>
-          <option value="Saudi Arabia">Saudi Arabia</option><option value="UK">UK</option><option value="Canada">Canada</option>
-          <option value="India">India</option>
-        </select>
-        <input type="text" id="skills" placeholder="Skills: nurse, driver, cleaner...">
-        <input type="password" id="signupPassword" placeholder="Password" required>
-        <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
-        <button class="connect-btn" style="width:100%;padding:12px;" onclick="signup()">Create Account</button>
-        <p id="signupMsg" style="font-size:12px;margin-top:8px;"></p>
+        <div id="signupForm" class="auth-form">
+          <input type="text" id="firstName" placeholder="First Name" required>
+          <input type="text" id="lastName" placeholder="Last Name" required>
+          <input type="email" id="signupEmail" placeholder="Email" required>
+          <div style="display:flex;gap:6px;margin-bottom:12px;">
+            <span style="display:flex;align-items:center;padding:12px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:14px;">🇺🇬 +256</span>
+            <input type="tel" id="signupPhone" placeholder="Phone Number" style="flex:1;" onfocus="if(!this.value)this.value='256';">
+          </div>
+          <select id="countryInterest">
+            <option value="">Country Interest</option>
+            <option value="Uganda">Uganda</option><option value="Kenya">Kenya</option><option value="Tanzania">Tanzania</option>
+            <option value="Rwanda">Rwanda</option><option value="Burundi">Burundi</option><option value="UAE">UAE</option>
+            <option value="Saudi Arabia">Saudi Arabia</option><option value="UK">UK</option><option value="Canada">Canada</option>
+            <option value="India">India</option>
+          </select>
+          <input type="text" id="skills" placeholder="Skills: nurse, driver, cleaner...">
+          <input type="password" id="signupPassword" placeholder="Password" required>
+          <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+          <button class="connect-btn" style="width:100%;padding:12px;" onclick="signup()">Create Account</button>
+          <p id="signupMsg" style="font-size:12px;margin-top:8px;"></p>
+        </div>
+        <div id="loginForm" class="auth-form" style="display:none;">
+          <input type="email" id="loginEmail" placeholder="Email" required>
+          <input type="password" id="loginPassword" placeholder="Password" required>
+          <button class="connect-btn" style="width:100%;padding:12px;" onclick="login()">Login</button>
+          <p id="loginMsg" style="font-size:12px;margin-top:8px;"></p>
+        </div>
       </div>
-      <div id="loginForm" class="auth-form" style="display:none;">
-        <input type="email" id="loginEmail" placeholder="Email" required>
-        <input type="password" id="loginPassword" placeholder="Password" required>
-        <button class="connect-btn" style="width:100%;padding:12px;" onclick="login()">Login</button>
-        <p id="loginMsg" style="font-size:12px;margin-top:8px;"></p>
-      </div>
+    <div class="auth-footer">
+      <a href="/about">About Us</a>
+      <a href="/privacy">Privacy Policy</a>
+      <a href="/admin">Admin</a>
+      <p style="margin:12px 0 0;color:#aaa;font-size:12px;">© 2026 EmmieTech Global. All rights reserved.</p>
     </div>
   </div>
 
@@ -489,11 +499,11 @@ app.get('/', (req, res) => {
 
     async function loadPaidAds() {
       try { const res = await fetch("/paid-ads"); const ads = await res.json(); renderPaidAds(ads); } 
-      catch (e) { console.error("loadPaidAds error:", e); }
+            catch (e) { console.error("loadPaidAds error:", e); }
     }
 
     async function submitAd() {
-            const data = { title: document.getElementById("adTitle").value, company: document.getElementById("adCompany").value, location: document.getElementById("adLocation").value, phone: document.getElementById("adPhone").value, url: document.getElementById("adUrl").value, description: document.getElementById("adDesc").value };
+      const data = { title: document.getElementById("adTitle").value, company: document.getElementById("adCompany").value, location: document.getElementById("adLocation").value, phone: document.getElementById("adPhone").value, url: document.getElementById("adUrl").value, description: document.getElementById("adDesc").value };
       if (!data.title || !data.company || !data.location) { document.getElementById("adMsg").textContent = "Please fill title, company and location."; document.getElementById("adMsg").style.color = "red"; return; }
       document.getElementById("adMsg").textContent = "Redirecting to payment..."; document.getElementById("adMsg").style.color = "blue";
       const res = await fetch("/ads/initiate-payment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
