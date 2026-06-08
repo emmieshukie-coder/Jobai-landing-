@@ -69,7 +69,7 @@ const storage = new CloudinaryStorage({
   params: { folder: 'jobai-ads', allowed_formats: ['jpg', 'png', 'jpeg', 'webp'], transformation: [{ width: 800, height: 600, crop: 'limit' }] }
 });
 
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 } });
 let pendingPayments = {};
 const AD_PRICE = 500;
 const AD_DURATION_DAYS = 7;
@@ -338,7 +338,7 @@ app.get('/', (req, res) => {
     ' }' +
     ' function renderJobs(jobs) {' +
     ' if (!jobs.length) {' +
-    ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">No jobs found.</div>";' +
+    ' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">No jobs found. Try different keywords or check API keys in Render logs.</div>";' +
     ' return;' +
     ' }' +
     ' document.getElementById("jobs").innerHTML = jobs.map(function(j) {' +
@@ -352,13 +352,10 @@ app.get('/', (req, res) => {
     ' document.getElementById("userAds").innerHTML = "<div class=\\"error\\">No community posts yet.</div>";' +
     ' return;' +
     ' }' +
-    'mmunity posts yet.</div>";' +
-    ' return;' +
-    ' }' +
     ' document.getElementById("userAds").innerHTML = ads.map(function(j) {' +
     ' let buttons = "<div class=\\"btn-group\\">";' +
     ' if (j.url && j.url!== "#") {' +
-    ' buttons += "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"connect-btn\\" style=\\"width:auto;\\">Apply Now</a>";' +
+    ' buttons += "<a href=\\""+ j.url + "\\" target=\\"_blank\\" class=\\"connect-btn\\" style=\\"width:auto;\\">Apply Now</a>";' +
     ' }' +
     ' if (j.phone) {' +
     ' buttons += "<a href=\\"tel:" + j.phone + "\\" class=\\"connect-btn call-btn\\" style=\\"width:auto;\\">Call " + j.phone + "</a>";' +
@@ -449,25 +446,33 @@ app.get('/', (req, res) => {
     'const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant"; ' +
     'const days = document.getElementById("dateFilter").value; ' +
     'document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading jobs...</div>"; ' +
+    'console.log("Calling /jobs with:", query, days); ' +
     'try { ' +
     'const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days); ' +
+    'console.log("/jobs status:", res.status); ' +
     'allJobs = await res.json(); ' +
+    'console.log("Jobs received:", allJobs.length); ' +
     'renderJobs(allJobs); ' +
     '} catch (e) { ' +
-    'document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs.</div>"; ' +
+    'console.error("loadJobs error:", e); ' +
+    'document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs. Check console.</div>"; ' +
     '} ' +
     '} ' +
     ' ' +
     'async function loadUserAds() { ' +
+    'try {' +
     'const res = await fetch("/ads"); ' +
     'const ads = await res.json(); ' +
     'renderUserAds(ads); ' +
+    '} catch(e) { console.error("loadUserAds error:", e); }' +
     '} ' +
     ' ' +
     'async function loadPaidAds() { ' +
+    'try {' +
     'const res = await fetch("/paid-ads"); ' +
     'const ads = await res.json(); ' +
     'renderPaidAds(ads); ' +
+    '} catch(e) { console.error("loadPaidAds error:", e); }' +
     '} ' +
     ' ' +
     'async function submitAd() { ' +
@@ -636,9 +641,14 @@ app.post('/auth/logout', (req, res) => {
 async function fetchAdzunaJobs(countryCode, countryName, query) {
   try {
     const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=20&content-type=application/json&max_days_old=7&what=${encodeURIComponent(query)}`;
+    console.log('Adzuna URL:', url);
     const response = await fetch(url);
-    if (!response.ok) return [];
+    if (!response.ok) {
+      console.log(`Adzuna ${countryCode} failed:`, response.status, await response.text());
+      return [];
+    }
     const data = await response.json();
+    console.log(`Adzuna ${countryCode} returned:`, data.count || 0);
     return (data.results || []).map(j => ({
       title: j.title || 'Job Title',
       company: j.company?.display_name || 'Unknown Company',
@@ -649,6 +659,7 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
       source: 'Adzuna'
     }));
   } catch (err) {
+    console.log('Adzuna error:', err.message);
     return [];
   }
 }
@@ -663,8 +674,12 @@ async function fetchJSearchJobs(query, location) {
         'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
       }
     });
-    if (!response.ok) return [];
+    if (!response.ok) {
+      console.log(`JSearch ${location} failed:`, response.status);
+      return [];
+    }
     const data = await response.json();
+    console.log(`JSearch ${location} returned:`, data.data?.length || 0);
     return (data.data || []).map(j => ({
       title: j.job_title || 'Job Title',
       company: j.employer_name || 'Unknown Company',
@@ -675,6 +690,7 @@ async function fetchJSearchJobs(query, location) {
       source: j.job_publisher || 'JSearch'
     }));
   } catch (err) {
+    console.log('JSearch error:', err.message);
     return [];
   }
 }
@@ -692,8 +708,12 @@ async function fetchJoobleJobs(query, location) {
         resultsOnPage: 20
       })
     });
-    if (!response.ok) return [];
+    if (!response.ok) {
+      console.log(`Jooble ${location} failed:`, response.status);
+      return [];
+    }
     const data = await response.json();
+    console.log(`Jooble ${location} returned:`, data.jobs?.length || 0);
     return (data.jobs || []).map(j => ({
       title: j.title,
       company: j.company,
@@ -704,6 +724,7 @@ async function fetchJoobleJobs(query, location) {
       source: 'Jooble'
     }));
   } catch (err) {
+    console.log('Jooble error:', err.message);
     return [];
   }
 }
@@ -711,8 +732,12 @@ async function fetchJoobleJobs(query, location) {
 async function fetchRemotiveJobs(query) {
   try {
     const response = await fetch(`https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}`);
-    if (!response.ok) return [];
+    if (!response.ok) {
+      console.log('Remotive failed:', response.status);
+      return [];
+    }
     const data = await response.json();
+    console.log('Remotive returned:', data.jobs?.length || 0);
     return (data.jobs || []).map(j => ({
       title: j.title,
       company: j.company_name,
@@ -723,16 +748,18 @@ async function fetchRemotiveJobs(query) {
       source: 'Remotive'
     }));
   } catch (err) {
+    console.log('Remotive error:', err.message);
     return [];
   }
 }
 
-// Jobs route - FIXED QUERY BUG
+// Jobs route - WITH LOGGING
 app.get('/jobs', async (req, res) => {
   try {
     const query = req.query.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
     const recentDays = parseInt(req.query.recent) || 7;
-    console.log('Fetching jobs for:', query);
+    console.log('=== /jobs called ===');
+    console.log('Query:', query, 'Recent:', recentDays);
 
     const countries = [
       { code: 'ug', name: 'Uganda' },
@@ -761,10 +788,9 @@ app.get('/jobs', async (req, res) => {
     const results = await Promise.allSettled(promises);
     results.forEach((r, idx) => {
       if (r.status === 'fulfilled' && r.value) {
-        console.log(`API ${idx} returned ${r.value.length} jobs`);
         allJobs.push(...r.value);
-      } else {
-        console.log(`API ${idx} failed:`, r.reason);
+      } else if (r.status === 'rejected') {
+        console.log(`API promise ${idx} rejected:`, r.reason);
       }
     });
 
@@ -778,10 +804,10 @@ app.get('/jobs', async (req, res) => {
     }
 
     allJobs.sort((a, b) => new Date(b.date_posted) - new Date(a.date_posted));
-    console.log(`Total jobs found: ${allJobs.length}`);
+    console.log(`Total unique jobs after filter: ${allJobs.length}`);
     res.json(allJobs.slice(0, 100));
   } catch (err) {
-    console.error('Jobs fetch error:', err);
+    console.error('/jobs fatal error:', err);
     res.json([]);
   }
 });
@@ -794,6 +820,7 @@ app.get('/ads', async (req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
+    console.error('/ads error:', err);
     res.status(500).json({ error: 'Database error' });
   }
 });
@@ -805,6 +832,7 @@ app.get('/paid-ads', async (req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
+    console.error('/paid-ads error:', err);
     res.status(500).json({ error: 'Database error' });
   }
 });
@@ -963,13 +991,12 @@ app.post('/ads/delete', async (req, res) => {
 });
 
 app.post('/paid-ads/edit', async (req, res) => {
-  const { id, token, title, location, company, description } = req.body;
+  const{ id, token, business, link, text } = req.body;
   try {
     const result = await pool.query(
-      `UPDATE ads SET business = COALESCE($1, business), text = COALESCE($2, text),
-       location = COALESCE($3, location), company = COALESCE($4, company)
-       WHERE id = $5 AND token = $6 AND type = 'ad' RETURNING id`,
-      [title, description, location, company, id, token]
+      `UPDATE ads SET business = COALESCE($1, business), link = COALESCE($2, link), text = COALESCE($3, text)
+       WHERE id = $4 AND token = $5 AND type = 'ad' RETURNING id`,
+      [business, link, text, id, token]
     );
     res.json({ success: result.rowCount > 0 });
   } catch (err) {
@@ -993,5 +1020,5 @@ app.post('/paid-ads/delete', async (req, res) => {
 });
 
 app.listen(PORT, function() {
-  console.log('Server running on port ' + PORT);
+  console.log('Jobai server running on port ' + PORT);
 });
