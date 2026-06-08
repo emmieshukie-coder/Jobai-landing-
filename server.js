@@ -81,7 +81,7 @@ app.get('/', (req, res) => {
     .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); display: flex; align-items: center; justify-content: center; z-index: 9999; overflow-y: auto; padding: 20px 0; }
     .auth-overlay.hidden { display: none; }
     .auth-box { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-width: 420px; width: 90%; margin: auto; position: relative; }
-    .auth-box h1 { margin: 0 8px 0; color: #1a73e8; font-size: 28px; text-align: center; }
+    .auth-box h1 { margin: 0 0 8px 0; color: #1a73e8; font-size: 28px; text-align: center; }
     .auth-box p { margin: 0 0 20px 0; color: #666; text-align: center; font-size: 14px; }
     .auth-tabs { display: flex; gap: 10px; margin-bottom: 16px; }
     .auth-tabs button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; }
@@ -366,7 +366,7 @@ app.get('/', (req, res) => {
       const name = user.first_name ? user.first_name + ' ' + user.last_name : 'Applicant';
       const skills = user.skills || '';
       const msg = encodeURIComponent(\`Hi, I'm \${name}. I'm interested in the \${title} position at \${company} in \${location}. My skills: \${skills}. Found on Jobai. Can we talk?\`);
-      const waNumber = '256700000000'; // CHANGE TO YOUR WHATSAPP BUSINESS NUMBER
+      const waNumber = '256776686096';
       window.open(\`https://wa.me/\${waNumber}?text=\${msg}\`, '_blank');
     }
 
@@ -386,7 +386,7 @@ app.get('/', (req, res) => {
           <h3>\${j.title}</h3>
           <p class="job-meta"><span>\${j.location}</span><span>•</span><span>\${j.company}</span>\${timePart}</p>
           <div class="btn-group">
-            <button class="connect-btn wa-btn" onclick="applyWhatsApp('\${j.title.replace(/'/g, "\\'")}','\${j.company.replace(/'/g, "\\'")}','\${j.location.replace(/'/g, "\\'")}')">
+            <button class="connect-btn wa-btn" onclick="applyWhatsApp('\${j.title.replace(/'/g, "\\\\'")}','\${j.company.replace(/'/g, "\\\\'")}','\${j.location.replace(/'/g, "\\\\'")}')">
               📱 Apply via WhatsApp
             </button>
             <a href="\${j.url}" target="_blank" class="connect-btn">View Original</a>
@@ -403,7 +403,7 @@ app.get('/', (req, res) => {
       document.getElementById("userAds").innerHTML = ads.map(function(j) {
         let buttons = '<div class="btn-group">';
         if (j.phone) {
-          buttons += \`<button class="connect-btn wa-btn" onclick="applyWhatsApp('\${j.title.replace(/'/g, "\\'")}','\${j.company.replace(/'/g, "\\'")}','\${j.location.replace(/'/g, "\\'")}')">📱 WhatsApp</button>\`;
+          buttons += \`<button class="connect-btn wa-btn" onclick="applyWhatsApp('\${j.title.replace(/'/g, "\\\\'")}','\${j.company.replace(/'/g, "\\\\'")}','\${j.location.replace(/'/g, "\\\\'")}')">📱 WhatsApp</button>\`;
           buttons += \`<a href="tel:\${j.phone}" class="connect-btn call-btn" style="width:auto;">Call \${j.phone}</a>\`;
         }
         if (j.url && j.url !== "#") {
@@ -528,8 +528,7 @@ app.get('/', (req, res) => {
     document.getElementById("searchInput")?.addEventListener("keypress", function(e) {
       if (e.key === "Enter") loadJobs();
     });
-
-    </script>
+  </script>
 
   <footer style="background:#000;color:#fff;padding:32px 20px;margin-top:60px;">
     <div style="max-width:1000px;margin:0 auto;text-align:center;">
@@ -560,6 +559,7 @@ app.get('/', (req, res) => {
 </html>
   `);
 });
+
 // Upload image route
 app.post('/upload-ad-image', upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
@@ -629,7 +629,7 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
       return [];
     }
     const data = await response.json();
-        console.log(`Adzuna ${countryCode} returned:`, data.count || 0);
+    console.log(`Adzuna ${countryCode} returned:`, data.count || 0);
     return (data.results || []).map(j => ({
       title: j.title || 'Job Title',
       company: j.company?.display_name || 'Unknown Company',
@@ -704,7 +704,7 @@ async function fetchRemotiveJobs(query) {
 app.get('/jobs', async (req, res) => {
   try {
     const query = req.query.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager';
-    const recentDays = req.query.recent === 'all'? 0 : parseInt(req.query.recent) || 7;
+    const recentDays = req.query.recent === 'all' ? 0 : parseInt(req.query.recent) || 7;
     console.log('=== /jobs called === Query:', query, 'Recent:', recentDays);
 
     const countries = [
@@ -739,8 +739,8 @@ app.get('/jobs', async (req, res) => {
     );
 
     if (recentDays > 0) {
-      const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
-      allJobs = allJobs.filter(j =>!j.date_posted || new Date(j.date_posted).getTime() > cutoff);
+      const cutoff = Date.now() - recentDays * 24 * 60 * 1000;
+      allJobs = allJobs.filter(j => !j.date_posted || new Date(j.date_posted).getTime() > cutoff);
     }
 
     allJobs.sort((a, b) => new Date(b.date_posted || 0) - new Date(a.date_posted || 0));
@@ -787,7 +787,7 @@ app.get('/paid-ads', async (req, res) => {
 // Payment routes
 app.post('/ads/initiate-payment', async (req, res) => {
   const { title, company, location, phone, url, description } = req.body;
-  if (!title ||!company ||!location) {
+  if (!title || !company || !location) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   const tx_ref = 'jobai_' + Date.now();
@@ -818,7 +818,7 @@ app.post('/ads/initiate-payment', async (req, res) => {
 
 app.post('/paid-ads/initiate-payment', async (req, res) => {
   const { business, link, text, image } = req.body;
-  if (!business ||!link ||!text) {
+  if (!business || !link || !text) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   const tx_ref = 'ad_' + Date.now();
@@ -916,7 +916,7 @@ app.post('/paid-ads/edit', async (req, res) => {
   try {
     const result = await pool.query(
       `UPDATE ads SET business = COALESCE($1, business), link = COALESCE($2, link), text = COALESCE($3, text) WHERE id = $4 AND token = $5 AND type = 'ad' RETURNING id`,
-      [business][link][text][id][token]
+      [business, link, text, id, token]
     );
     res.json({ success: result.rowCount > 0 });
   } catch (err) {
@@ -928,7 +928,7 @@ app.post('/paid-ads/edit', async (req, res) => {
 app.post('/paid-ads/delete', async (req, res) => {
   const { id, token } = req.body;
   try {
-    const result = await pool.query(`DELETE FROM ads WHERE id = $1 AND token = $2 AND type = 'ad' RETURNING id`, [id][token]);
+    const result = await pool.query(`DELETE FROM ads WHERE id = $1 AND token = $2 AND type = 'ad' RETURNING id`, [id, token]);
     res.json({ success: result.rowCount > 0 });
   } catch (err) {
     console.error(err);
