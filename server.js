@@ -197,8 +197,9 @@ app.get('/', (req, res) => {
       <div class="controls">
         <input type="text" id="searchInput" placeholder="Search: cleaner, nurse, teacher, engineer..." />
         <select id="dateFilter">
-          <option value="7">Last 7 days</option>
+          <option value="30">Last 30 days</option>
           <option value="all">All time</option>
+          <option value="7">Last 7 days</option>
           <option value="3">Last 3 days</option>
           <option value="1">Last 24 hours</option>
         </select>
@@ -382,6 +383,10 @@ app.get('/', (req, res) => {
     }
 
     function renderJobs(jobs) {
+      if (jobs.error) {
+        document.getElementById("jobs").innerHTML = '<div class="error">' + jobs.error + '</div>';
+        return;
+      }
       if (!jobs.length) {
         document.getElementById("jobs").innerHTML = '<div class="error">No jobs found. Try different keywords or check API keys in Render logs.</div>';
         return;
@@ -482,8 +487,8 @@ app.get('/', (req, res) => {
 
     async function loadJobs() {
       const query = document.getElementById("searchInput")?.value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager";
-      const days = document.getElementById("dateFilter")?.value || "7";
-            document.getElementById("jobs").innerHTML = '<div class="loading">Loading jobs...</div>';
+      const days = document.getElementById("dateFilter")?.value || "30";
+          document.getElementById("jobs").innerHTML = '<div class="loading">Loading jobs...</div>';
       try {
         const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);
         allJobs = await res.json();
@@ -632,11 +637,11 @@ app.post('/auth/logout', (req, res) => {
 // Job API fetchers with fallback
 async function fetchAdzunaJobs(countryCode, countryName, query) {
   try {
-    const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=20&content-type=application/json&max_days_old=7&what=${encodeURIComponent(query)}`;
+    const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=20&content-type=application/json&max_days_old=30&what=${encodeURIComponent(query)}`;
     console.log('Adzuna URL:', url);
     const response = await fetch(url);
     if (!response.ok) {
-      console.log(`Adzuna ${countryCode} failed:`, response.status);
+      console.log(`Adzuna ${countryCode} failed:`, response.status, await response.text());
       return [];
     }
     const data = await response.json();
@@ -658,7 +663,7 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
 
 async function fetchJSearchJobs(query, location) {
   try {
-    const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1&date_posted=week`;
+    const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}&num_pages=1&date_posted=month`;
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -711,11 +716,11 @@ async function fetchRemotiveJobs(query) {
   }
 }
 
-// Jobs route - WITH FALLBACK JOBS
+// Jobs route - RESTORED ADZUNA/JSEARCH/REMOTIVE
 app.get('/jobs', async (req, res) => {
   try {
-    const query = req.query.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager';
-    const recentDays = req.query.recent === 'all' ? 0 : parseInt(req.query.recent) || 7;
+    const query = req.query.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR driver';
+    const recentDays = req.query.recent === 'all' ? 0 : parseInt(req.query.recent) || 30;
     console.log('=== /jobs called === Query:', query, 'Recent:', recentDays);
 
     const countries = [
@@ -726,7 +731,9 @@ app.get('/jobs', async (req, res) => {
       { code: 'gb', name: 'United Kingdom' },
       { code: 'in', name: 'India' },
       { code: 'tz', name: 'Tanzania' },
-      { code: 'rw', name: 'Rwanda' }
+      { code: 'rw', name: 'Rwanda' },
+      { code: 'ca', name: 'Canada' },
+      { code: 'us', name: 'United States' }
     ];
 
     let allJobs = [];
@@ -739,9 +746,12 @@ app.get('/jobs', async (req, res) => {
     promises.push(fetchRemotiveJobs(query));
 
     const results = await Promise.allSettled(promises);
-    results.forEach((r) => {
-      if (r.status === 'fulfilled' && r.value) {
+    results.forEach((r, idx) => {
+      if (r.status === 'fulfilled' && r.value && r.value.length > 0) {
+        console.log(`Promise ${idx} success: ${r.value.length} jobs`);
         allJobs.push(...r.value);
+      } else if (r.status === 'rejected') {
+        console.log(`Promise ${idx} failed:`, r.reason);
       }
     });
 
@@ -758,19 +768,13 @@ app.get('/jobs', async (req, res) => {
     console.log(`Total unique jobs: ${allJobs.length}`);
 
     if (allJobs.length === 0) {
-      console.log('No jobs from APIs - using fallback');
-      allJobs = [
-        { title: 'House Cleaner', company: 'Kampala Homes', location: 'Kampala', country: 'Uganda', url: '#', date_posted: new Date().toISOString(), source: 'Demo' },
-        { title: 'Registered Nurse', company: 'Nairobi Hospital', location: 'Nairobi', country: 'Kenya', url: '#', date_posted: new Date().toISOString(), source: 'Demo' },
-        { title: 'Shop Attendant', company: 'Dar Mall', location: 'Dar es Salaam', country: 'Tanzania', url: '#', date_posted: new Date().toISOString(), source: 'Demo' },
-        { title: 'Farm Manager', company: 'Kigali Farms', location: 'Kigali', country: 'Rwanda', url: '#', date_posted: new Date().toISOString(), source: 'Demo' }
-      ];
+      return res.json({ error: 'No jobs found from APIs. Check Render logs for API errors. Your ADZUNA_APP_ID, ADZUNA_API_KEY, or RAPIDAPI_KEY may be invalid.' });
     }
 
     res.json(allJobs.slice(0, 100));
   } catch (err) {
     console.error('/jobs fatal error:', err);
-    res.json([]);
+    res.json({ error: 'Server error: ' + err.message });
   }
 });
 
