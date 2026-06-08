@@ -65,6 +65,8 @@ pool.query(`
     email TEXT UNIQUE NOT NULL,
     phone TEXT,
     password_hash TEXT NOT NULL,
+    country_interest TEXT,
+    skills TEXT,
     created_at TIMESTAMP DEFAULT NOW()
   )
 `).catch(console.error);
@@ -110,9 +112,19 @@ app.get('/', (req, res) => {
     '.hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; }' +
     '.hero h1 { font-size: 32px; margin: 0 0 8px 0; font-weight: 700; }' +
     '.hero p { font-size: 16px; opacity: 0.95; margin: 0 0 20px 0; }' +
-    '.login-box { background: white; max-width: 400px; margin: 0 auto; padding: 20px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); }' +
-    '.login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }' +
-    '.login-box h3 { color: #1a73e8; margin: 0 0 12px 0; font-size: 18px; }' +
+    '.auth-container { background: white; max-width: 420px; margin: 0 auto; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); overflow: hidden; }' +
+    '.auth-tabs { display: flex; border-bottom: 1px solid #eee; }' +
+    '.auth-tab { flex: 1; padding: 14px; text-align: center; cursor: pointer; font-weight: 600; color: #666; background: #f9f9f9; }' +
+    '.auth-tab.active { color: #1a73e8; background: white; border-bottom: 3px solid #1a73e8; }' +
+    '.auth-content { padding: 20px; }' +
+    '.form-group { margin-bottom: 14px; }' +
+    '.form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; color: #333; }' +
+    '.form-group input,.form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }' +
+    '.phone-group { display: flex; gap: 8px; }' +
+    '.phone-code { display: flex; align-items: center; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background: #f5f5f5; min-width: 80px; gap: 4px; }' +
+    '.password-field { position: relative; }' +
+    '.password-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px; color: #666; }' +
+    '.hint { font-size: 12px; color: #666; margin-top: 4px; }' +
     '.container { max-width: 1000px; margin: 20px auto; padding: 0 16px; }' +
     '.controls { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }' +
     '.controls input,.controls select { padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; background: white; }' +
@@ -128,7 +140,7 @@ app.get('/', (req, res) => {
     '.source-tag { display: inline-block; background: #f5f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }' +
     '.user-ad-tag { background: #fff3e0; color: #f57c00; }' +
     '.btn-group { display: flex; gap: 10px; flex-wrap: wrap; }' +
-    '.connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; border: none; cursor: pointer; width: 100%; }' +
+    '.connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; border: none; cursor: pointer; width: 100%; }' +
     '.connect-btn:hover { background: #1557b0; }' +
     '.call-btn { background: #34a853; }' +
     '.call-btn:hover { background: #2d9147; }' +
@@ -150,11 +162,10 @@ app.get('/', (req, res) => {
     '.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }' +
     '.modal.active { display: flex; }' +
     '.modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%; }' +
-    '.auth-toggle { text-align:center;margin-top:10px;font-size:13px;color:#1a73e8;cursor:pointer; font-weight: 600; }' +
-    '.logout-btn { display:none; width:100%; margin-top:10px; background:#d32f2f; }' +
-    '.flag-ug { width:18px; height:12px; display:inline-block; vertical-align:middle; margin-right:6px; border-radius:2px; background: linear-gradient(to bottom, #000 0 33.33%, #FCDC04 33.33% 66.66%, #D90000 66.66% 100%); position:relative; }' +
+    '.flag-ug { width:18px; height:12px; display:inline-block; vertical-align:middle; margin-right:4px; border-radius:2px; background: linear-gradient(to bottom, #000 0 33.33%, #FCDC04 33.33% 66.66%, #D90000 66.66% 100%); position:relative; }' +
     '.flag-ug::after { content:""; position:absolute; left:50%; top:50%; width:6px; height:6px; background:#fff; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 0 1px #000; }' +
     '#userInfo { color: #1a73e8; font-weight: 600; text-align: center; margin-top: 10px; }' +
+    '.logout-btn { display:none; width:100%; margin-top:10px; background:#d32f2f; }' +
     ' </style>' +
     '</head>' +
     '<body>' +
@@ -178,27 +189,86 @@ app.get('/', (req, res) => {
     ' <div class="hero">' +
     ' <h1>Get Connected to Jobs & Workers</h1>' +
     ' <p>AI-powered matching for Uganda, Kenya, Tanzania, Rwanda, Burundi, India, UAE, Saudi Arabia, France, UK, Canada, China, Taiwan, Thailand</p>' +
-    ' <div class="login-box" id="authSection">' +
-    ' <h3 id="authTitle"><span class="flag-ug"></span>Login to Uganda Jobs</h3>' +
-    ' <div id="signupForm" style="display:none;">' +
-    ' <input type="text" id="firstName" placeholder="First Name" required>' +
-    ' <input type="text" id="lastName" placeholder="Last Name" required>' +
-    ' <input type="email" id="signupEmail" placeholder="Email" required>' +
-    ' <input type="tel" id="signupPhone" placeholder="Phone Number">' +
-    ' <input type="password" id="signupPassword" placeholder="Password" required>' +
-    ' <input type="password" id="confirmPassword" placeholder="Confirm Password" required>' +
+    ' <div class="auth-container" id="authSection">' +
+    ' <div class="auth-tabs">' +
+    ' <div class="auth-tab" id="loginTab" onclick="switchTab(\'login\')">Login</div>' +
+    ' <div class="auth-tab active" id="registerTab" onclick="switchTab(\'register\')">Register</div>' +
+    ' </div>' +
+    ' <div class="auth-content">' +
+    ' <div id="signupForm">' +
+    ' <div class="form-group">' +
+    ' <label>First Name</label>' +
+    ' <input type="text" id="firstName" required>' +
+    ' </div>' +
+    ' <div class="form-group">' +
+    ' <label>Last Name</label>' +
+    ' <input type="text" id="lastName" required>' +
+    ' </div>' +
+    ' <div class="form-group">' +
+    ' <label>Email</label>' +
+    ' <input type="email" id="signupEmail" required>' +
+    ' </div>' +
+    ' <div class="form-group">' +
+    ' <label>WhatsApp Number</label>' +
+    ' <div class="phone-group">' +
+    ' <div class="phone-code"><span class="flag-ug"></span>+256</div>' +
+    ' <input type="tel" id="signupPhone" placeholder="776686096">' +
+    ' </div>' +
+    ' </div>' +
+    ' <div class="form-group">' +
+    ' <label>Password</label>' +
+    ' <div class="password-field">' +
+    ' <input type="password" id="signupPassword" required>' +
+    ' <span class="password-toggle" onclick="togglePassword(\'signupPassword\')">👁️</span>' +
+    ' </div>' +
+    ' <div class="hint">Minimum 6 characters</div>' +
+    ' </div>' +
+    ' <div class="form-group">' +
+    ' <label>Confirm Password</label>' +
+    ' <div class="password-field">' +
+    ' <input type="password" id="confirmPassword" required>' +
+    ' <span class="password-toggle" onclick="togglePassword(\'confirmPassword\')">👁️</span>' +
+    ' </div>' +
+    ' </div>' +
+    ' <div class="form-group">' +
+    ' <label>Country Interest</label>' +
+    ' <select id="countryInterest">' +
+    ' <option value="">Select Country</option>' +
+    ' <option value="Uganda">Uganda</option>' +
+    ' <option value="Kenya">Kenya</option>' +
+    ' <option value="Tanzania">Tanzania</option>' +
+    ' <option value="Rwanda">Rwanda</option>' +
+    ' <option value="UAE">UAE</option>' +
+    ' <option value="Saudi Arabia">Saudi Arabia</option>' +
+    ' <option value="UK">UK</option>' +
+    ' <option value="Canada">Canada</option>' +
+    ' </select>' +
+    ' </div>' +
+    ' <div class="form-group">' +
+    ' <label>Skills</label>' +
+    ' <input type="text" id="skills" placeholder="e.g. Driving, Teaching, Nursing">' +
+    ' </div>' +
     ' <button class="connect-btn" onclick="signup()"><span class="flag-ug"></span>Create Uganda Account</button>' +
     ' <p id="signupMsg" style="font-size:12px;margin-top:8px;"></p>' +
     ' </div>' +
-    ' <div id="loginForm">' +
-    ' <input type="email" id="loginEmail" placeholder="Email" required>' +
-    ' <input type="password" id="loginPassword" placeholder="Password" required>' +
+    ' <div id="loginForm" style="display:none;">' +
+    ' <div class="form-group">' +
+    ' <label>Email</label>' +
+    ' <input type="email" id="loginEmail" required>' +
+    ' </div>' +
+    ' <div class="form-group">' +
+    ' <label>Password</label>' +
+    ' <div class="password-field">' +
+    ' <input type="password" id="loginPassword" required>' +
+    ' <span class="password-toggle" onclick="togglePassword(\'loginPassword\')">👁️</span>' +
+    ' </div>' +
+    ' </div>' +
     ' <button class="connect-btn" onclick="login()"><span class="flag-ug"></span>Login with Uganda</button>' +
     ' <p id="loginMsg" style="font-size:12px;margin-top:8px;"></p>' +
     ' </div>' +
-    ' <div class="auth-toggle" onclick="toggleAuth()">New user? <b>Create Account</b></div>' +
     ' <button id="logoutBtn" class="connect-btn logout-btn" onclick="logout()">Logout</button>' +
     ' <p id="userInfo"></p>' +
+    ' </div>' +
     ' </div>' +
     ' </div>' +
     ' <div class="ad-unit">' +
@@ -279,11 +349,12 @@ app.get('/', (req, res) => {
     'function showFavorites(){closeMenu();const fav=JSON.parse(localStorage.getItem(\'jobai_fav\')||\'[]\');if(!fav.length){alert(\'No favorites yet. Click "Connect & Apply" then save the job link.\');return;}renderJobs(fav);document.querySelector(\'.section h2\').textContent=\'Favorites\';}' +
     'function showSalaries(){closeMenu();alert(\'Salaries coming next. We will wire this to Adzuna Salary API.\');}' +
     'function showSubscriptions(){closeMenu();alert(\'Job Alerts coming next. Enter email + keywords and get notified.\');}' +
-    'function toggleAuth(){const s=document.getElementById(\'signupForm\'),l=document.getElementById(\'loginForm\'),t=document.getElementById(\'authTitle\');if(s.style.display===\'none\'){s.style.display=\'block\';l.style.display=\'none\';t.innerHTML=\'<span class="flag-ug"></span>Create Uganda Account\';}else{s.style.display=\'none\';l.style.display=\'block\';t.innerHTML=\'<span class="flag-ug"></span>Login to Uganda Jobs\';}}' +
-    'async function signup(){const first=document.getElementById(\'firstName\').value.trim(),last=document.getElementById(\'lastName\').value.trim(),email=document.getElementById(\'signupEmail\').value.trim(),phone=document.getElementById(\'signupPhone\').value.trim(),pass=document.getElementById(\'signupPassword\').value,cpass=document.getElementById(\'confirmPassword\').value;const msg=document.getElementById(\'signupMsg\');if(!first||!last||!email||!pass){msg.textContent=\'Fill all required fields\';msg.style.color=\'red\';return;}if(pass!==cpass){msg.textContent=\'Passwords do not match\';msg.style.color=\'red\';return;}msg.textContent=\'Creating account...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/signup\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({firstName:first,lastName:last,email,phone,password:pass})});const data=await res.json();if(data.success){msg.textContent=\'Account created! You can login now.\';msg.style.color=\'green\';toggleAuth();}else{msg.textContent=data.error||\'Signup failed\';msg.style.color=\'red\';}}' +
+    'function switchTab(tab){const loginTab=document.getElementById(\'loginTab\'),registerTab=document.getElementById(\'registerTab\'),loginForm=document.getElementById(\'loginForm\'),signupForm=document.getElementById(\'signupForm\');if(tab===\'login\'){loginTab.classList.add(\'active\');registerTab.classList.remove(\'active\');loginForm.style.display=\'block\';signupForm.style.display=\'none\';}else{registerTab.classList.add(\'active\');loginTab.classList.remove(\'active\');signupForm.style.display=\'block\';loginForm.style.display=\'none\';}}' +
+    'function togglePassword(id){const input=document.getElementById(id);input.type=input.type===\'password\'?\'text\':\'password\';}' +
+    'async function signup(){const first=document.getElementById(\'firstName\').value.trim(),last=document.getElementById(\'lastName\').value.trim(),email=document.getElementById(\'signupEmail\').value.trim(),phone=\'+256\'+document.getElementById(\'signupPhone\').value.trim(),pass=document.getElementById(\'signupPassword\').value,cpass=document.getElementById(\'confirmPassword\').value,country=document.getElementById(\'countryInterest\').value,skills=document.getElementById(\'skills\').value.trim();const msg=document.getElementById(\'signupMsg\');if(!first||!last||!email||!pass){msg.textContent=\'Fill all required fields\';msg.style.color=\'red\';return;}if(pass.length<6){msg.textContent=\'Password must be 6+ characters\';msg.style.color=\'red\';return;}if(pass!==cpass){msg.textContent=\'Passwords do not match\';msg.style.color=\'red\';return;}msg.textContent=\'Creating account...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/signup\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({firstName:first,lastName:last,email,phone,password:pass,country_interest:country,skills})});const data=await res.json();if(data.success){msg.textContent=\'Account created! Please login.\';msg.style.color=\'green\';switchTab(\'login\');}else{msg.textContent=data.error||\'Signup failed\';msg.style.color=\'red\';}}' +
     'async function login(){const email=document.getElementById(\'loginEmail\').value.trim(),pass=document.getElementById(\'loginPassword\').value;const msg=document.getElementById(\'loginMsg\');if(!email||!pass){msg.textContent=\'Enter email and password\';msg.style.color=\'red\';return;}msg.textContent=\'Logging in...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/login\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({email,password:pass})});const data=await res.json();if(data.success){msg.textContent=\'Login successful!\';msg.style.color=\'green\';localStorage.setItem(\'jobai_user\',JSON.stringify(data.user));updateAuthUI(data.user);}else{msg.textContent=data.error||\'Login failed\';msg.style.color=\'red\';}}' +
     'async function logout(){await fetch(\'/auth/logout\',{method:\'POST\'});localStorage.removeItem(\'jobai_user\');updateAuthUI(null);}' +
-    'function updateAuthUI(user){const logout=document.getElementById(\'logoutBtn\');const info=document.getElementById(\'userInfo\');const loginForm=document.getElementById(\'loginForm\');const signupForm=document.getElementById(\'signupForm\');const title=document.getElementById(\'authTitle\');if(user){loginForm.style.display=\'none\';signupForm.style.display=\'none\';logout.style.display=\'block\';info.innerHTML=\'<span class="flag-ug"></span>Logged in as \'+user.first_name+\' \'+user.last_name;title.innerHTML=\'<span class="flag-ug"></span>Welcome\';}else{loginForm.style.display=\'block\';signupForm.style.display=\'none\';logout.style.display=\'none\';info.textContent=\'\';title.innerHTML=\'<span class="flag-ug"></span>Login to Uganda Jobs\';}}' +
+    'function updateAuthUI(user){const logout=document.getElementById(\'logoutBtn\');const info=document.getElementById(\'userInfo\');const loginForm=document.getElementById(\'loginForm\');const signupForm=document.getElementById(\'signupForm\');const tabs=document.querySelector(\'.auth-tabs\');if(user){loginForm.style.display=\'none\';signupForm.style.display=\'none\';tabs.style.display=\'none\';logout.style.display=\'block\';info.innerHTML=\'<span class="flag-ug"></span>Logged in as \'+user.first_name+\' \'+user.last_name;}else{loginForm.style.display=\'block\';signupForm.style.display=\'none\';tabs.style.display=\'flex\';logout.style.display=\'none\';info.textContent=\'\';switchTab(\'login\');}}' +
     'window.addEventListener(\'load\',()=>{const user=JSON.parse(localStorage.getItem(\'jobai_user\')||\'null\');updateAuthUI(user);});' +
     'document.getElementById(\'menuBtn\').addEventListener(\'click\',openMenu);' +
     ' let allJobs = [];' +
@@ -318,7 +389,7 @@ app.get('/', (req, res) => {
     ' if (isNaN(date.getTime())) return "";' +
     ' const now = new Date();' +
     ' const diffMs = now - date;' +
-    ' const diffDay = Math.floor(diffMs / (1000*60*24));' +
+    ' const diffDay = Math.floor(diffMs / (1000*60*60*24));' +
     ' if (diffDay > 2) return "";' +
     ' if (diffMs < 0) return "";' +
     ' const diffSec = Math.floor(diffMs/1000);' +
@@ -370,7 +441,7 @@ app.get('/', (req, res) => {
     ' return;' +
     ' }' +
     ' document.getElementById("paidAds").innerHTML = ads.map(function(ad) {' +
-    ' let img = ad.image? \'<img src= ad.image + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
+    ' let img = ad.image? \'<img src="\' + ad.image + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
     ' let actions = "<div class=\\"card-actions\\">";' +
     ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">✏️</button>";' +
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">🗑️</button>";' +
@@ -571,17 +642,20 @@ app.post('/upload-ad-image', upload.single('image'), (req, res) => {
   res.json({ url: req.file.path });
 });
 
-// Auth routes
+// Auth routes - UPDATED WITH NEW FIELDS
 app.post('/auth/signup', async (req, res) => {
-  const { firstName, lastName, email, phone, password } = req.body;
+  const { firstName, lastName, email, phone, password, country_interest, skills } = req.body;
   if (!firstName ||!lastName ||!email ||!password) {
     return res.status(400).json({ success: false, error: 'Missing required fields' });
+  }
+  if (password.length < 6) {
+    return res.status(400).json({ success: false, error: 'Password must be 6+ characters' });
   }
   try {
     const hash = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      `INSERT INTO users (first_name, last_name, email, phone, password_hash) VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, email`,
-      [firstName, lastName, email, phone, hash]
+      `INSERT INTO users (first_name, last_name, email, phone, password_hash, country_interest, skills) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, first_name, last_name, email`,
+      [firstName, lastName, email, phone, hash, country_interest, skills]
     );
     res.json({ success: true, user: result.rows[0] });
   } catch (err) {
@@ -761,7 +835,7 @@ app.get('/jobs', async (req, res) => {
     );
 
     if (recentDays > 0 && req.query.recent!== 'all') {
-      const cutoff = Date.now() - recentDays * 24 * 60 * 1000;
+      const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
 
