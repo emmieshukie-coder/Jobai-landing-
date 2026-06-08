@@ -528,28 +528,38 @@ app.get('/', (req, res) => {
     document.getElementById("searchInput")?.addEventListener("keypress", function(e) {
       if (e.key === "Enter") loadJobs();
     });
-  </script>
 
-  <footer style="text-align:center; padding:24px 10px; font-size:13px; color:#888; margin-top:60px; border-top:1px solid #eee;">
-    Sponsored by <strong style="color:#333;">EmmieTechUg</strong> | Contact: emmieshukie at gmail dot com
-    <div style="margin:40px 0;padding:20px;background:#f8f9fa;border-radius:10px;">
-      <h3 style="text-align:center;margin-bottom:15px;">🔥 Other Top Products</h3>
+    </script>
+
+  <footer style="background:#000;color:#fff;padding:32px 20px;margin-top:60px;">
+    <div style="max-width:1000px;margin:0 auto;text-align:center;">
+      <h3 style="margin:0 0 12px 0;font-size:20px;font-weight:700;">EmmieTech Global Recruitment Agency</h3>
+      <p style="margin:0 0 8px 0;font-size:15px;color:#ddd;">Kampala, Uganda | WhatsApp: +256 776 686 096</p>
+      <p style="margin:0 0 20px 0;font-size:14px;color:#aaa;">Licensed by Ministry of Gender, Labour & Social Development</p>
+      <div style="display:flex;gap:24px;justify-content:center;flex-wrap:wrap;">
+        <a href="/about" style="color:#64b5f6;text-decoration:none;font-size:14px;">About Us</a>
+        <a href="/privacy" style="color:#64b5f6;text-decoration:none;font-size:14px;">Privacy Policy</a>
+        <a href="/admin" style="color:#64b5f6;text-decoration:none;font-size:14px;">Admin</a>
+      </div>
+    </div>
+    <div style="margin:40px auto 0;max-width:1000px;padding:20px;background:#f8f9fa;border-radius:10px;">
+      <h3 style="text-align:center;margin-bottom:15px;color:#333;">🔥 Other Top Products</h3>
       <a href="https://bloodsugarblaster.com/index-vsl-ds24#aff=emmieshukiee042" target='_blank' style='display:block;padding:15px;background:#FF9800;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;'>🩺 Support Healthy Blood Sugar →</a>
       <a href="https://jointpainhack.com/digi/add-to-cart/#aff=emmieshukiee042" target='_blank' style='display:block;padding:15px;background:#9C27B0;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;'>🦴 Joint Pain Relief Formula →</a>
       <a href="https://www.advancedbionutritionals.com/DS24/Advanced-Amino/Muscle-Mass-Loss/HD.htm#aff=emmieshukiee042" target='_blank' style='display:block;padding:15px;background:#25D366;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;'>💪 Boost Energy & Recovery → Click Here</a>
       <a href="https://myketosana.com/ketosana-pdp-fe#aff=emmieshukiee042" target='_blank' style='display:block;padding:15px;background:#FF5722;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;font-size:16px;'>🔥 Burn Fat Fast - KetoSana →</a>
     </div>
-    <div style="margin:40px 0;padding:20px;background:#000;border-radius:10px;border:2px solid #FFD700;">
+    <div style="margin:40px auto 0;max-width:1000px;padding:20px;background:#000;border-radius:10px;border:2px solid #FFD700;">
       <h3 style="text-align:center;color:#FFD700;margin-bottom:15px;">💰 AI Cash System 2026</h3>
       <a href="https://ai-cash-page-system-dd.24-7-ai-cash-system.academy/#aff=emmieshukiee042" target="_blank" style="display:block;padding:15px;background:#FFD700;color:#000;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;font-size:16px;">🚀 Make Money With AI - Copy & Paste System →</a>
       <p style="text-align:center;color:#aaa;font-size:12px;margin:5px 0 0;">$74.21 per sale | Video courses included</p>
     </div>
+    <p style="text-align:center;margin:32px 0 0 0;font-size:12px;color:#666;">© 2026 EmmieTech Global. All rights reserved.</p>
   </footer>
 </body>
 </html>
   `);
 });
-
 // Upload image route
 app.post('/upload-ad-image', upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
