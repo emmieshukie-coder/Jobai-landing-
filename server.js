@@ -57,7 +57,7 @@ const storage = new CloudinaryStorage({
   params: { folder: 'jobai-ads', allowed_formats: ['jpg', 'png', 'jpeg', 'webp'], transformation: [{ width: 800, height: 600, crop: 'limit' }] }
 });
 
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 } });
 let pendingPayments = {};
 const AD_PRICE = 500;
 const AD_DURATION_DAYS = 7;
@@ -86,62 +86,64 @@ app.get('/', (req, res) => {
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-app-pub-1637256996790764" crossorigin="anonymous"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }
-   .ug-flag { position: absolute; top: 16px; left: 16px; width: 48px; height: 48px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000; object-fit: cover; }
-   .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); display: flex; flex-direction: column; z-index: 9999; overflow-y: auto; }
-   .auth-overlay.hidden { display: none; }
-   .auth-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
-   .auth-box { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-width: 420px; width: 100%; margin: auto; position: relative; }
-   .auth-box h1 { margin: 0 0 8px 0; color: #1a73e8; font-size: 28px; text-align: center; }
-   .auth-box p { margin: 0 0 20px 0; color: #666; text-align: center; font-size: 14px; }
-   .auth-tabs { display: flex; gap: 10px; margin-bottom: 16px; }
-   .auth-tabs button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; }
-   .auth-tabs.active { background: #1a73e8; color: white; }
-   .auth-tabs.inactive { background: #f5f5; color: #333; }
-   .auth-form input,.auth-form select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
-   .auth-footer { background:#000;color:#fff;padding:20px;text-align:center;font-size:13px;width:100%;box-sizing:border-box; }
-   .auth-footer a { color:#64b5f6;text-decoration:none;margin:0 12px; }
-   .hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; position: relative; }
-   .hero h1 { font-size: 32px; margin: 0 0 8px 0; font-weight: 700; }
-   .hero p { font-size: 16px; opacity: 0.95; margin: 0; }
-   .container { max-width: 1000px; margin: 20px auto; padding: 0 16px; }
-   .controls { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
-   .controls input,.controls select { padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; background: white; }
-   .controls input { flex: 1; min-width: 200px; }
-   .section { margin-bottom: 32px; }
-   .section h2 { margin: 0 0 16px 0; font-size: 24px; color: #1a1a1a; }
-   .job-card { background: white; padding: 20px; margin-bottom: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; transition: transform 0.2s, box-shadow 0.2s; display: block; text-decoration: none; color: inherit; }
-   .job-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
-   .job-card h3 { margin: 8px 0 8px 0; color: #1a73e8; font-size: 18px; line-height: 1.4; }
-   .job-meta { margin: 0 0 14px 0; color: #666; font-size: 14px; line-height: 1.5; }
-   .job-meta span { margin-right: 8px; }
-   .country-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
-   .source-tag { display: inline-block; background: #f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }
-   .user-ad-tag { background: #fff3e0; color: #f57c00; }
-   .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
-   .connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; border: none; cursor: pointer; }
-   .connect-btn:hover { background: #1557b0; }
-   .call-btn { background: #34a853; }
-   .call-btn:hover { background: #2d9147; }
-   .wa-btn { background: #25D366; }
-   .wa-btn:hover { background: #1ebe5a; }
-   .loading { text-align: center; color: #666; padding: 30px; font-size: 16px; }
-   .error { text-align: center; color: #d32f2f; padding: 30px; }
-   .ad-form { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
-   .ad-form input,.ad-form textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; }
-   .ad-form h3 { margin-top: 0; font-size: 18px; }
-   .phone-display { color: #34a853; font-weight: 600; }
-   .img-preview { max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 10px; display: none; }
-   .card-actions { position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; }
-   .icon-btn { width: 32px; height: 32px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; }
-   .edit-btn { background: #ff9800; }
-   .delete-btn { background: #d32f2f; }
-   .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
-   .modal.active { display: flex; }
-   .modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%; }
-   .user-bar { background: #1a73e8; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: relative; }
-   .user-bar button { background: rgba(255,255,0.2); border: none; color: white; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-   .main-content { display: none; }
-   .main-content.show { display: block; }
+  .ug-flag { position: absolute; top: 16px; left: 16px; width: 48px; height: 48px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000; object-fit: cover; }
+  .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); display: flex; flex-direction: column; z-index: 9999; overflow-y: auto; }
+  .auth-overlay.hidden { display: none; }
+  .auth-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .auth-box { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-width: 420px; width: 100%; margin: auto; position: relative; }
+  .auth-box h1 { margin: 0 0 8px 0; color: #1a73e8; font-size: 28px; text-align: center; }
+  .auth-box p { margin: 0 0 20px 0; color: #666; text-align: center; font-size: 14px; }
+  .auth-tabs { display: flex; gap: 10px; margin-bottom: 16px; }
+  .auth-tabs button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; }
+  .auth-tabs.active { background: #1a73e8; color: white; }
+  .auth-tabs.inactive { background: #f5f5f5; color: #333; }
+  .auth-form input,.auth-form select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+  .auth-footer { background:#000;color:#fff;padding:20px;text-align:center;font-size:13px;width:100%;box-sizing:border-box; }
+  .auth-footer a { color:#64b5f6;text-decoration:none;margin:0 12px; }
+  .hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; position: relative; }
+  .hero h1 { font-size: 32px; margin: 0 0 8px 0; font-weight: 700; }
+  .hero p { font-size: 16px; opacity: 0.95; margin: 0; }
+  .container { max-width: 1000px; margin: 20px auto; padding: 0 16px; }
+  .controls { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+  .controls input,.controls select { padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; background: white; }
+  .controls input { flex: 1; min-width: 200px; }
+  .section { margin-bottom: 32px; }
+  .section h2 { margin: 0 0 16px 0; font-size: 24px; color: #1a1a1a; }
+  .job-card { background: white; padding: 20px; margin-bottom: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; transition: transform 0.2s, box-shadow 0.2s; display: block; text-decoration: none; color: inherit; }
+  .job-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+  .job-card h3 { margin: 8px 0 8px 0; color: #1a73e8; font-size: 18px; line-height: 1.4; }
+  .job-meta { margin: 0 0 14px 0; color: #666; font-size: 14px; line-height: 1.5; }
+  .job-meta span { margin-right: 8px; }
+  .country-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+  .source-tag { display: inline-block; background: #f5f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }
+  .user-ad-tag { background: #fff3e0; color: #f57c00; }
+  .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+  .connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; border: none; cursor: pointer; }
+  .connect-btn:hover { background: #1557b0; }
+  .call-btn { background: #34a853; }
+  .call-btn:hover { background: #2d9147; }
+  .wa-btn { background: #25D366; }
+  .wa-btn:hover { background: #1ebe5a; }
+  .free-btn { background: #9C27B0; }
+  .free-btn:hover { background: #7B1FA2; }
+  .loading { text-align: center; color: #666; padding: 30px; font-size: 16px; }
+  .error { text-align: center; color: #d32f2f; padding: 30px; }
+  .ad-form { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
+  .ad-form input,.ad-form textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; }
+  .ad-form h3 { margin-top: 0; font-size: 18px; }
+  .phone-display { color: #34a853; font-weight: 600; }
+  .img-preview { max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 10px; display: none; }
+  .card-actions { position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .icon-btn { width: 32px; height: 32px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; }
+  .edit-btn { background: #ff9800; }
+  .delete-btn { background: #d32f2f; }
+  .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+  .modal.active { display: flex; }
+  .modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%; }
+  .user-bar { background: #1a73e8; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: relative; }
+  .user-bar button { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+  .main-content { display: none; }
+  .main-content.show { display: block; }
   </style>
 </head>
 <body>
@@ -221,14 +223,17 @@ app.get('/', (req, res) => {
       <div class="section">
         <h2>Post a Job</h2>
         <div class="ad-form" id="adForm">
-          <h3>Advertise your job for 200 KES</h3>
+          <h3>Advertise your job - Pay 200 KES or Post Free</h3>
           <input type="text" id="adTitle" placeholder="Job title" required>
           <input type="text" id="adCompany" placeholder="Company name" required>
           <input type="text" id="adLocation" placeholder="Location" required>
           <input type="tel" id="adPhone" placeholder="Phone number for applicants">
           <input type="url" id="adUrl" placeholder="Apply link (optional)">
           <textarea id="adDesc" placeholder="Short description" rows="3"></textarea>
-          <button class="connect-btn" onclick="submitAd()">Pay 200 KES & Post Job</button>
+          <div class="btn-group">
+            <button class="connect-btn" onclick="submitAd()">Pay 200 KES & Post Job</button>
+            <button class="connect-btn free-btn" onclick="submitAdFree()">Post Free (Testing)</button>
+          </div>
           <p id="adMsg" style="margin-top:10px; font-size:14px;"></p>
         </div>
         <h2>Community Job Posts</h2>
@@ -499,7 +504,7 @@ app.get('/', (req, res) => {
       const days = document.getElementById("dateFilter")?.value || "30";
       document.getElementById("jobs").innerHTML = '<div class="loading">Loading jobs...</div>';
       try {
-        const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);
+                const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);
         allJobs = await res.json();
         renderJobs(allJobs);
       } catch (e) {
@@ -508,7 +513,7 @@ app.get('/', (req, res) => {
       }
     }
 
-        async function loadUserAds() {
+    async function loadUserAds() {
       try { 
         const res = await fetch("/ads"); 
         const ads = await res.json(); 
@@ -537,7 +542,29 @@ app.get('/', (req, res) => {
       const res = await fetch("/ads/initiate-payment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       const result = await res.json();
       if (result.payment_link) { window.location.href = result.payment_link; } 
-      else { document.getElementById("adMsg").textContent = "Payment failed. Try again."; document.getElementById("adMsg").style.color = "red"; }
+      else { document.getElementById("adMsg").textContent = result.error || "Payment failed. Try again."; document.getElementById("adMsg").style.color = "red"; }
+    }
+
+    async function submitAdFree() {
+      const data = { title: document.getElementById("adTitle").value, company: document.getElementById("adCompany").value, location: document.getElementById("adLocation").value, phone: document.getElementById("adPhone").value, url: document.getElementById("adUrl").value, description: document.getElementById("adDesc").value };
+      if (!data.title || !data.company || !data.location) { document.getElementById("adMsg").textContent = "Please fill title, company and location."; document.getElementById("adMsg").style.color = "red"; return; }
+      document.getElementById("adMsg").textContent = "Posting for free..."; document.getElementById("adMsg").style.color = "blue";
+      const res = await fetch("/ads/post-free", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+      const result = await res.json();
+      if (result.success) { 
+        document.getElementById("adMsg").textContent = "Posted successfully!"; 
+        document.getElementById("adMsg").style.color = "green";
+        document.getElementById("adTitle").value = '';
+        document.getElementById("adCompany").value = '';
+        document.getElementById("adLocation").value = '';
+        document.getElementById("adPhone").value = '';
+        document.getElementById("adUrl").value = '';
+        document.getElementById("adDesc").value = '';
+        loadUserAds(); 
+      } else { 
+        document.getElementById("adMsg").textContent = "Post failed. Try again."; 
+        document.getElementById("adMsg").style.color = "red"; 
+      }
     }
 
     async function submitPaidAd() {
@@ -547,7 +574,7 @@ app.get('/', (req, res) => {
       const res = await fetch("/paid-ads/initiate-payment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       const result = await res.json();
       if (result.payment_link) { window.location.href = result.payment_link; } 
-      else { document.getElementById("adPayMsg").textContent = "Payment failed. Try again."; document.getElementById("adPayMsg").style.color = "red"; }
+      else { document.getElementById("adPayMsg").textContent = result.error || "Payment failed. Try again."; document.getElementById("adPayMsg").style.color = "red"; }
     }
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -1068,29 +1095,49 @@ app.post('/ads/initiate-payment', async (req, res) => {
   try {
     const response = await fetch('https://api.flutterwave.com/v3/payments', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${FLW_SECRET_KEY}`, 'Content-Type': 'application/json' },
+            headers: { 'Authorization': `Bearer ${FLW_SECRET_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         tx_ref, amount: 200, currency: 'KES',
-        redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
+        redirect_url: `https://${req.get('host')}/payment-callback`,
         customer: { email: 'customer@jobai.com', phonenumber: phone || '0700000', name: company },
         customizations: { title: 'Job Post Payment', description: 'Pay 200 KES to post job on Jobai' }
       })
     });
     const data = await response.json();
+    console.log('Flutterwave response:', JSON.stringify(data));
     if (data.status === 'success') {
       res.json({ payment_link: data.data.link });
     } else {
-      res.status(400).json({ error: 'Failed to create payment' });
+      res.status(400).json({ error: data.message || 'Failed to create payment' });
     }
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Payment error' });
+    console.error('Payment error:', err);
+    res.status(500).json({ error: 'Payment error: ' + err.message });
+  }
+});
+
+app.post('/ads/post-free', async (req, res) => {
+  const { title, company, location, phone, url, description } = req.body;
+  if (!title ||!company ||!location) {
+    return res.status(400).json({ success: false, error: 'Missing required fields' });
+  }
+  try {
+    const id = Date.now() + Math.floor(Math.random() * 1000);
+    const token = crypto.randomBytes(16).toString('hex');
+    await pool.query(
+      `INSERT INTO ads (id, token, type, status, title, company, location, phone, url, description, paymentref, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+      [id, token, 'job', 'approved', title, company, location, phone, url, description, 'FREE']
+    );
+    res.json({ success: true, id, token });
+  } catch (err) {
+    console.error('Free post error:', err);
+    res.status(500).json({ success: false, error: 'Failed to post' });
   }
 });
 
 app.post('/paid-ads/initiate-payment', async (req, res) => {
   const { business, link, text, image } = req.body;
-  if (!business || !link || !text) {
+  if (!business ||!link ||!text) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   const tx_ref = 'ad_' + Date.now();
@@ -1102,20 +1149,21 @@ app.post('/paid-ads/initiate-payment', async (req, res) => {
       headers: { 'Authorization': `Bearer ${FLW_SECRET_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         tx_ref, amount: AD_PRICE, currency: 'KES',
-        redirect_url: `https://jobai-landing.onrender.com/payment-callback`,
+        redirect_url: `https://${req.get('host')}/payment-callback`,
         customer: { email: 'advertiser@jobai.com', name: business },
         customizations: { title: 'Sponsored Ad Payment', description: 'Pay ' + AD_PRICE + ' KES for 7 days ad' }
       })
     });
     const data = await response.json();
+    console.log('Flutterwave ad response:', JSON.stringify(data));
     if (data.status === 'success') {
       res.json({ payment_link: data.data.link });
     } else {
-            res.status(400).json({ error: 'Failed to create payment' });
+      res.status(400).json({ error: data.message || 'Failed to create payment' });
     }
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Payment error' });
+    res.status(500).json({ error: 'Payment error: ' + err.message });
   }
 });
 
@@ -1157,7 +1205,6 @@ app.get('/payment-callback', async (req, res) => {
   }
 });
 
-// Edit/Delete routes
 app.post('/ads/edit', async (req, res) => {
   const { id, token, title, location, company, description } = req.body;
   try {
@@ -1188,7 +1235,7 @@ app.post('/paid-ads/edit', async (req, res) => {
   try {
     const result = await pool.query(
       `UPDATE ads SET business = COALESCE($1, business), link = COALESCE($2, link), text = COALESCE($3, text) WHERE id = $4 AND token = $5 AND type = 'ad' RETURNING id`,
-      [business, link, text, id, token]
+      [business][link][text][id][token]
     );
     res.json({ success: result.rowCount > 0 });
   } catch (err) {
@@ -1200,7 +1247,7 @@ app.post('/paid-ads/edit', async (req, res) => {
 app.post('/paid-ads/delete', async (req, res) => {
   const { id, token } = req.body;
   try {
-    const result = await pool.query(`DELETE FROM ads WHERE id = $1 AND token = $2 AND type = 'ad' RETURNING id`, [id, token]);
+    const result = await pool.query(`DELETE FROM ads WHERE id = $1 AND token = $2 AND type = 'ad' RETURNING id`, [id][token]);
     res.json({ success: result.rowCount > 0 });
   } catch (err) {
     console.error(err);
@@ -1211,3 +1258,4 @@ app.post('/paid-ads/delete', async (req, res) => {
 app.listen(PORT, function() {
   console.log('Jobai server running on port ' + PORT);
 });
+     
