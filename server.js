@@ -498,12 +498,7 @@ app.get('/', (req, res) => {
       }
     }
 
-    async function loadUserAds() {
-            try { const res = await fetch("/ads"); const ads = await res.json(); renderUserAds(ads); } 
-      catch (e) { console.error("loadUserAds error:", e); }
-    }
-
-    async function loadPaidAds() {
+        async function loadPaidAds() {
       try { const res = await fetch("/paid-ads"); const ads = await res.json(); renderPaidAds(ads); } 
       catch (e) { console.error("loadPaidAds error:", e); }
     }
@@ -767,7 +762,7 @@ async function fetchCareerjetJobs(query, location) {
   }
 }
 
-// Jobs route - 5 SOURCES: Adzuna + JSearch + Remotive + Jooble + Careerjet
+// Jobs route - 5 SOURCES + FALLBACK DEMO JOBS
 app.get('/jobs', async (req, res) => {
   try {
     const query = req.query.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR driver OR accountant';
@@ -817,10 +812,83 @@ app.get('/jobs', async (req, res) => {
     allJobs.sort((a, b) => new Date(b.date_posted || 0) - new Date(a.date_posted || 0));
     console.log(`Total unique jobs from all APIs: ${allJobs.length}`);
 
+    // FALLBACK: If no API jobs, show demo jobs so site isn't empty
     if (allJobs.length === 0) {
-      return res.json({ 
-        error: 'No jobs found from APIs. Check Render logs. If Adzuna=401, key expired. If all=0, try different search terms.' 
-      });
+      console.log('All APIs failed. Showing fallback demo jobs.');
+      allJobs = [
+        {
+          title: 'House Cleaner',
+          company: 'Kampala Homes',
+          location: 'Kampala, Uganda',
+          country: 'Uganda',
+          url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20House%20Cleaner',
+          date_posted: new Date().toISOString(),
+          source: 'Demo'
+        },
+        {
+          title: 'Nurse',
+          company: 'Nairobi Hospital',
+          location: 'Nairobi, Kenya',
+          country: 'Kenya',
+          url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Nurse',
+          date_posted: new Date(Date.now() - 86400000).toISOString(),
+          source: 'Demo'
+        },
+        {
+          title: 'Primary School Teacher',
+          company: 'Dar es Salaam Academy',
+          location: 'Dar es Salaam, Tanzania',
+          country: 'Tanzania',
+          url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Teacher',
+          date_posted: new Date(Date.now() - 172800000).toISOString(),
+          source: 'Demo'
+        },
+        {
+          title: 'Construction Helper',
+          company: 'Dubai Builders',
+          location: 'Dubai, UAE',
+          country: 'UAE',
+          url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Construction%20Helper',
+          date_posted: new Date(Date.now() - 259200000).toISOString(),
+          source: 'Demo'
+        },
+        {
+          title: 'Farm Worker',
+          company: 'Kigali Farms Ltd',
+          location: 'Kigali, Rwanda',
+          country: 'Rwanda',
+          url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Farm%20Worker',
+          date_posted: new Date(Date.now() - 345600000).toISOString(),
+          source: 'Demo'
+        },
+        {
+          title: 'Security Guard',
+          company: 'London Security Services',
+          location: 'London, UK',
+          country: 'UK',
+          url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Security%20Guard',
+          date_posted: new Date(Date.now() - 432000000).toISOString(),
+          source: 'Demo'
+        },
+        {
+          title: 'Hotel Receptionist',
+          company: 'Mumbai Grand Hotel',
+          location: 'Mumbai, India',
+          country: 'India',
+          url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Receptionist',
+          date_posted: new Date(Date.now() - 518400000).toISOString(),
+          source: 'Demo'
+        },
+        {
+          title: 'Truck Driver',
+          company: 'Saudi Logistics Co',
+          location: 'Riyadh, Saudi Arabia',
+          country: 'Saudi Arabia',
+          url: 'https://wa.me/256776686096?text=Hi%2C%20interested%20in%20Truck%20Driver',
+          date_posted: new Date(Date.now() - 604800000).toISOString(),
+          source: 'Demo'
+        }
+      ];
     }
 
     res.json(allJobs.slice(0, 150));
