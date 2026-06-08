@@ -77,17 +77,18 @@ app.get('/', (req, res) => {
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-app-pub-1637256996790764" crossorigin="anonymous"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }
+    .ug-flag { position: absolute; top: 16px; left: 16px; width: 48px; height: 48px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10000; object-fit: cover; }
     .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); display: flex; align-items: center; justify-content: center; z-index: 9999; overflow-y: auto; padding: 20px 0; }
     .auth-overlay.hidden { display: none; }
-    .auth-box { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-width: 420px; width: 90%; margin: auto; }
+    .auth-box { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-width: 420px; width: 90%; margin: auto; position: relative; }
     .auth-box h1 { margin: 0 0 8px 0; color: #1a73e8; font-size: 28px; text-align: center; }
     .auth-box p { margin: 0 0 20px 0; color: #666; text-align: center; font-size: 14px; }
     .auth-tabs { display: flex; gap: 10px; margin-bottom: 16px; }
     .auth-tabs button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; }
     .auth-tabs .active { background: #1a73e8; color: white; }
-    .auth-tabs .inactive { background: #f5f5f5; color: #333; }
+    .auth-tabs .inactive { background: #f5f5; color: #333; }
     .auth-form input, .auth-form select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
-    .hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; }
+    .hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; position: relative; }
     .hero h1 { font-size: 32px; margin: 0 0 8px 0; font-weight: 700; }
     .hero p { font-size: 16px; opacity: 0.95; margin: 0; }
     .container { max-width: 1000px; margin: 20px auto; padding: 0 16px; }
@@ -102,7 +103,7 @@ app.get('/', (req, res) => {
     .job-meta { margin: 0 0 14px 0; color: #666; font-size: 14px; line-height: 1.5; }
     .job-meta span { margin-right: 8px; }
     .country-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
-    .source-tag { display: inline-block; background: #f5f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }
+    .source-tag { display: inline-block; background: #f5f5; color: #666; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 8px; margin-left: 6px; }
     .user-ad-tag { background: #fff3e0; color: #f57c00; }
     .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
     .connect-btn { display: inline-block; background: #1a73e8; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s; border: none; cursor: pointer; }
@@ -123,7 +124,7 @@ app.get('/', (req, res) => {
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
     .modal.active { display: flex; }
     .modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%; }
-    .user-bar { background: #1a73e8; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .user-bar { background: #1a73e8; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: relative; }
     .user-bar button { background: rgba(255,255,0.2); border: none; color: white; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
     .main-content { display: none; }
     .main-content.show { display: block; }
@@ -131,6 +132,7 @@ app.get('/', (req, res) => {
 </head>
 <body>
   <div id="authOverlay" class="auth-overlay">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Flag_of_Uganda.svg" class="ug-flag" alt="Uganda">
     <div class="auth-box">
       <h1>Jobai</h1>
       <p>Get Connected to Jobs & Workers</p>
@@ -170,7 +172,8 @@ app.get('/', (req, res) => {
 
   <div id="mainContent" class="main-content">
     <div class="user-bar">
-      <span id="userWelcome"></span>
+      <img src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Flag_of_Uganda.svg" class="ug-flag" alt="Uganda">
+      <span id="userWelcome" style="margin-left:60px;"></span>
       <button onclick="logout()">Logout</button>
     </div>
     <div class="hero">
@@ -485,14 +488,15 @@ app.get('/', (req, res) => {
     }
 
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get("payment") === "success") {
+       if (urlParams.get("payment") === "success") {
       document.getElementById("adMsg").textContent = "Payment successful! Job posted.";
       document.getElementById("adMsg").style.color = "green";
       loadUserAds(); loadPaidAds();
     }
     if (urlParams.get("payment") === "failed") {
       document.getElementById("adMsg").textContent = "Payment failed or cancelled.";
-      document.getElementById("adMsg").style.color = "red";    }
+      document.getElementById("adMsg").style.color = "red";
+    }
 
     document.getElementById("searchBtn")?.addEventListener("click", loadJobs);
     document.getElementById("dateFilter")?.addEventListener("change", loadJobs);
@@ -700,7 +704,7 @@ app.get('/jobs', async (req, res) => {
     );
 
     if (recentDays > 0) {
-      const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
+      const cutoff = Date.now() - recentDays * 24 * 60 * 1000;
       allJobs = allJobs.filter(j => !j.date_posted || new Date(j.date_posted).getTime() > cutoff);
     }
 
