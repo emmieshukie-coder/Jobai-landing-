@@ -16,7 +16,6 @@ const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// API KEYS - Move these to Render Environment Variables ASAP
 const ADZUNA_APP_ID = process.env.ADZUNA_APP_ID || 'cd82aca8';
 const ADZUNA_API_KEY = process.env.ADZUNA_API_KEY || '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
@@ -32,7 +31,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// Tables
 pool.query(`
   CREATE TABLE IF NOT EXISTS ads (
     id BIGINT PRIMARY KEY, token TEXT, type TEXT, status TEXT,
@@ -64,12 +62,10 @@ let pendingPayments = {};
 const AD_PRICE = 500;
 const AD_DURATION_DAYS = 7;
 
-// Google site verification
 app.get('/google765cda11c517c492.html', (req, res) => {
   res.send('google-site-verification: google765cda11c517c492.html');
 });
 
-// Main UI - WITH PASSWORD FORM ON FRONT PAGE
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -81,17 +77,20 @@ app.get('/', (req, res) => {
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-app-pub-1637256996790764" crossorigin="anonymous"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }
+    .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); display: flex; align-items: center; justify-content: center; z-index: 9999; overflow-y: auto; padding: 20px 0; }
+    .auth-overlay.hidden { display: none; }
+    .auth-box { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-width: 420px; width: 90%; margin: auto; }
+    .auth-box h1 { margin: 0 0 8px 0; color: #1a73e8; font-size: 28px; text-align: center; }
+    .auth-box p { margin: 0 0 20px 0; color: #666; text-align: center; font-size: 14px; }
+    .auth-tabs { display: flex; gap: 10px; margin-bottom: 16px; }
+    .auth-tabs button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; }
+    .auth-tabs .active { background: #1a73e8; color: white; }
+    .auth-tabs .inactive { background: #f5f5f5; color: #333; }
+    .auth-form input, .auth-form select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
     .hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; }
     .hero h1 { font-size: 32px; margin: 0 0 8px 0; font-weight: 700; }
     .hero p { font-size: 16px; opacity: 0.95; margin: 0; }
     .container { max-width: 1000px; margin: 20px auto; padding: 0 16px; }
-    .auth-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
-    .auth-box h3 { margin: 0 0 16px 0; color: #1a73e8; }
-    .auth-tabs { display: flex; gap: 10px; margin-bottom: 16px; }
-    .auth-tabs button { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
-    .auth-tabs .active { background: #1a73e8; color: white; }
-    .auth-tabs .inactive { background: #f5f5f5; color: #333; }
-    .auth-form input, .auth-form select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
     .controls { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
     .controls input, .controls select { padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; background: white; }
     .controls input { flex: 1; min-width: 200px; }
@@ -124,19 +123,17 @@ app.get('/', (req, res) => {
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
     .modal.active { display: flex; }
     .modal-content { background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%; }
-    #userInfo { font-size: 13px; margin-top: 8px; color: #1a73e8; }
+    .user-bar { background: #1a73e8; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .user-bar button { background: rgba(255,255,0.2); border: none; color: white; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .main-content { display: none; }
+    .main-content.show { display: block; }
   </style>
 </head>
 <body>
-  <div class="hero">
-    <h1>Get Connected to Jobs & Workers</h1>
-    <p>AI-powered matching for Uganda, Kenya, Tanzania, Rwanda, Burundi, India, UAE, Saudi Arabia, UK, Canada</p>
-  </div>
-
-  <div class="container">
-    <!-- AUTH BOX ON FRONT PAGE -->
-    <div class="auth-box" id="authBox">
-      <h3 id="authTitle">Sign Up / Login</h3>
+  <div id="authOverlay" class="auth-overlay">
+    <div class="auth-box">
+      <h1>Jobai</h1>
+      <p>Get Connected to Jobs & Workers</p>
       <div class="auth-tabs">
         <button id="tabSignup" class="active" onclick="showTab('signup')">Sign Up</button>
         <button id="tabLogin" class="inactive" onclick="showTab('login')">Login</button>
@@ -145,8 +142,8 @@ app.get('/', (req, res) => {
         <input type="text" id="firstName" placeholder="First Name" required>
         <input type="text" id="lastName" placeholder="Last Name" required>
         <input type="email" id="signupEmail" placeholder="Email" required>
-        <div style="display:flex;gap:6px;margin-bottom:10px;">
-          <span style="display:flex;align-items:center;padding:10px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:14px;">🇺🇬 +256</span>
+        <div style="display:flex;gap:6px;margin-bottom:12px;">
+          <span style="display:flex;align-items:center;padding:12px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:14px;">🇺🇬 +256</span>
           <input type="tel" id="signupPhone" placeholder="Phone Number" style="flex:1;" onfocus="if(!this.value)this.value='256';">
         </div>
         <select id="countryInterest">
@@ -159,66 +156,73 @@ app.get('/', (req, res) => {
         <input type="text" id="skills" placeholder="Skills: nurse, driver, cleaner...">
         <input type="password" id="signupPassword" placeholder="Password" required>
         <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
-        <button class="connect-btn" style="width:100%;" onclick="signup()">Create Account</button>
+        <button class="connect-btn" style="width:100%;padding:12px;" onclick="signup()">Create Account</button>
         <p id="signupMsg" style="font-size:12px;margin-top:8px;"></p>
       </div>
       <div id="loginForm" class="auth-form" style="display:none;">
         <input type="email" id="loginEmail" placeholder="Email" required>
         <input type="password" id="loginPassword" placeholder="Password" required>
-        <button class="connect-btn" style="width:100%;" onclick="login()">Login</button>
+        <button class="connect-btn" style="width:100%;padding:12px;" onclick="login()">Login</button>
         <p id="loginMsg" style="font-size:12px;margin-top:8px;"></p>
       </div>
-      <button id="logoutBtn" class="connect-btn" style="display:none;width:100%;margin-top:10px;background:#d32f2f;" onclick="logout()">Logout</button>
-      <p id="userInfo"></p>
     </div>
+  </div>
 
-    <div class="controls">
-      <input type="text" id="searchInput" placeholder="Search: cleaner, nurse, teacher, engineer..." />
-      <select id="dateFilter">
-        <option value="7">Last 7 days</option>
-        <option value="all">All time</option>
-        <option value="3">Last 3 days</option>
-        <option value="1">Last 24 hours</option>
-      </select>
-      <button class="connect-btn" id="searchBtn">Search</button>
+  <div id="mainContent" class="main-content">
+    <div class="user-bar">
+      <span id="userWelcome"></span>
+      <button onclick="logout()">Logout</button>
     </div>
-
-    <div class="section">
-      <h2>Trending Jobs</h2>
-      <div id="jobs" class="loading">Loading jobs...</div>
+    <div class="hero">
+      <h1>Get Connected to Jobs & Workers</h1>
+      <p>AI-powered matching for Uganda, Kenya, Tanzania, Rwanda, Burundi, India, UAE, Saudi Arabia, UK, Canada</p>
     </div>
-
-    <div class="section">
-      <h2>Post a Job</h2>
-      <div class="ad-form" id="adForm">
-        <h3>Advertise your job for 200 KES</h3>
-        <input type="text" id="adTitle" placeholder="Job title" required>
-        <input type="text" id="adCompany" placeholder="Company name" required>
-        <input type="text" id="adLocation" placeholder="Location" required>
-        <input type="tel" id="adPhone" placeholder="Phone number for applicants">
-        <input type="url" id="adUrl" placeholder="Apply link (optional)">
-        <textarea id="adDesc" placeholder="Short description" rows="3"></textarea>
-        <button class="connect-btn" onclick="submitAd()">Pay 200 KES & Post Job</button>
-        <p id="adMsg" style="margin-top:10px; font-size:14px;"></p>
+    <div class="container">
+      <div class="controls">
+        <input type="text" id="searchInput" placeholder="Search: cleaner, nurse, teacher, engineer..." />
+        <select id="dateFilter">
+          <option value="7">Last 7 days</option>
+          <option value="all">All time</option>
+          <option value="3">Last 3 days</option>
+          <option value="1">Last 24 hours</option>
+        </select>
+        <button class="connect-btn" id="searchBtn">Search</button>
       </div>
-      <h2>Community Job Posts</h2>
-      <div id="userAds" class="loading">Loading...</div>
-    </div>
-
-    <div class="section">
-      <h2>Sponsored Ads</h2>
-      <div class="ad-form">
-        <h3>Advertise here for ${AD_PRICE} KES for 7 days</h3>
-        <input type="text" id="adBizName" placeholder="Business name" required>
-        <input type="url" id="adLink" placeholder="Website or WhatsApp link" required>
-        <input type="text" id="adText" placeholder="Short ad text" required>
-        <input type="file" id="adImgFile" accept="image/*" capture="environment">
-        <img id="imgPreview" class="img-preview" />
-        <input type="hidden" id="adImgUrl">
-        <button class="connect-btn" style="background:#f57c00;" onclick="submitPaidAd()">Pay ${AD_PRICE} KES & Run Ad</button>
-        <p id="adPayMsg" style="margin-top:10px; font-size:14px;"></p>
+      <div class="section">
+        <h2>Trending Jobs</h2>
+        <div id="jobs" class="loading">Loading jobs...</div>
       </div>
-      <div id="paidAds" class="loading">Loading ads...</div>
+      <div class="section">
+        <h2>Post a Job</h2>
+        <div class="ad-form" id="adForm">
+          <h3>Advertise your job for 200 KES</h3>
+          <input type="text" id="adTitle" placeholder="Job title" required>
+          <input type="text" id="adCompany" placeholder="Company name" required>
+          <input type="text" id="adLocation" placeholder="Location" required>
+          <input type="tel" id="adPhone" placeholder="Phone number for applicants">
+          <input type="url" id="adUrl" placeholder="Apply link (optional)">
+          <textarea id="adDesc" placeholder="Short description" rows="3"></textarea>
+          <button class="connect-btn" onclick="submitAd()">Pay 200 KES & Post Job</button>
+          <p id="adMsg" style="margin-top:10px; font-size:14px;"></p>
+        </div>
+        <h2>Community Job Posts</h2>
+        <div id="userAds" class="loading">Loading...</div>
+      </div>
+      <div class="section">
+        <h2>Sponsored Ads</h2>
+        <div class="ad-form">
+          <h3>Advertise here for ${AD_PRICE} KES for 7 days</h3>
+          <input type="text" id="adBizName" placeholder="Business name" required>
+          <input type="url" id="adLink" placeholder="Website or WhatsApp link" required>
+          <input type="text" id="adText" placeholder="Short ad text" required>
+          <input type="file" id="adImgFile" accept="image/*" capture="environment">
+          <img id="imgPreview" class="img-preview" />
+          <input type="hidden" id="adImgUrl">
+          <button class="connect-btn" style="background:#f57c00;" onclick="submitPaidAd()">Pay ${AD_PRICE} KES & Run Ad</button>
+          <p id="adPayMsg" style="margin-top:10px; font-size:14px;"></p>
+        </div>
+        <div id="paidAds" class="loading">Loading ads...</div>
+      </div>
     </div>
   </div>
 
@@ -264,8 +268,11 @@ app.get('/', (req, res) => {
       msg.textContent = 'Creating account...'; msg.style.color = 'blue';
       const res = await fetch('/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ firstName: first, lastName: last, email, phone, password: pass, country_interest, skills }) });
       const data = await res.json();
-      if (data.success) { msg.textContent = 'Account created! You can login now.'; msg.style.color = 'green'; showTab('login'); }
-      else { msg.textContent = data.error || 'Signup failed'; msg.style.color = 'red'; }
+      if (data.success) { 
+        msg.textContent = 'Account created! Logging you in...'; msg.style.color = 'green';
+        localStorage.setItem('jobai_user', JSON.stringify(data.user));
+        setTimeout(() => unlockSite(data.user), 500);
+      } else { msg.textContent = data.error || 'Signup failed'; msg.style.color = 'red'; }
     }
 
     async function login() {
@@ -275,38 +282,37 @@ app.get('/', (req, res) => {
       msg.textContent = 'Logging in...'; msg.style.color = 'blue';
       const res = await fetch('/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: pass }) });
       const data = await res.json();
-      if (data.success) { msg.textContent = 'Login successful!'; msg.style.color = 'green'; localStorage.setItem('jobai_user', JSON.stringify(data.user)); updateAuthUI(data.user); }
-      else { msg.textContent = data.error || 'Login failed'; msg.style.color = 'red'; }
+      if (data.success) { 
+        msg.textContent = 'Login successful!'; msg.style.color = 'green';
+        localStorage.setItem('jobai_user', JSON.stringify(data.user));
+        setTimeout(() => unlockSite(data.user), 500);
+      } else { msg.textContent = data.error || 'Login failed'; msg.style.color = 'red'; }
+    }
+
+    function unlockSite(user) {
+      document.getElementById('authOverlay').classList.add('hidden');
+      document.getElementById('mainContent').classList.add('show');
+      document.getElementById('userWelcome').textContent = 'Welcome, ' + user.first_name + ' ' + user.last_name;
+      loadJobs();
+      loadUserAds();
+      loadPaidAds();
     }
 
     async function logout() {
       await fetch('/auth/logout', { method: 'POST' });
       localStorage.removeItem('jobai_user');
-      updateAuthUI(null);
-    }
-
-    function updateAuthUI(user) {
-      const logout = document.getElementById('logoutBtn'), info = document.getElementById('userInfo');
-      const signupForm = document.getElementById('signupForm'), loginForm = document.getElementById('loginForm');
-      const tabs = document.querySelector('.auth-tabs');
-      if (user) {
-        signupForm.style.display = 'none'; loginForm.style.display = 'none'; tabs.style.display = 'none';
-        logout.style.display = 'block'; info.textContent = 'Logged in as ' + user.first_name + ' ' + user.last_name;
-        document.getElementById('authTitle').textContent = 'Welcome back!';
-      } else {
-        signupForm.style.display = 'block'; loginForm.style.display = 'none'; tabs.style.display = 'flex';
-        showTab('signup'); logout.style.display = 'none'; info.textContent = '';
-        document.getElementById('authTitle').textContent = 'Sign Up / Login';
-      }
+      location.reload();
     }
 
     window.addEventListener('load', () => {
       const user = JSON.parse(localStorage.getItem('jobai_user') || 'null');
-      updateAuthUI(user);
+      if (user) {
+        unlockSite(user);
+      }
     });
 
     let allJobs = [];
-    document.getElementById("adImgFile").addEventListener("change", async function(e) {
+    document.getElementById("adImgFile")?.addEventListener("change", async function(e) {
       const file = e.target.files[0];
       if (!file) return;
       const formData = new FormData();
@@ -338,11 +344,11 @@ app.get('/', (req, res) => {
       if (isNaN(date.getTime())) return "";
       const now = new Date();
       const diffMs = now - date;
-      const diffDay = Math.floor(diffMs / (1000 * 60 * 60 * 24));
       if (diffMs < 0) return "";
       const diffSec = Math.floor(diffMs / 1000);
       const diffMin = Math.floor(diffSec / 60);
       const diffHr = Math.floor(diffMin / 60);
+      const diffDay = Math.floor(diffHr / 24);
       if (diffSec < 60) return "just now";
       if (diffMin < 60) return diffMin + "m ago";
       if (diffHr < 24) return diffHr + "h ago";
@@ -436,8 +442,8 @@ app.get('/', (req, res) => {
     }
 
     async function loadJobs() {
-      const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager";
-      const days = document.getElementById("dateFilter").value;
+      const query = document.getElementById("searchInput")?.value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager";
+      const days = document.getElementById("dateFilter")?.value || "7";
       document.getElementById("jobs").innerHTML = '<div class="loading">Loading jobs...</div>';
       try {
         const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);
@@ -485,19 +491,14 @@ app.get('/', (req, res) => {
       loadUserAds(); loadPaidAds();
     }
     if (urlParams.get("payment") === "failed") {
-      document.getElementById("adMsg").textContent ="Payment failed or cancelled.";
-      document.getElementById("adMsg").style.color = "red";
-    }
+      document.getElementById("adMsg").textContent = "Payment failed or cancelled.";
+      document.getElementById("adMsg").style.color = "red";    }
 
-    document.getElementById("searchBtn").addEventListener("click", loadJobs);
-    document.getElementById("dateFilter").addEventListener("change", loadJobs);
-    document.getElementById("searchInput").addEventListener("keypress", function(e) {
+    document.getElementById("searchBtn")?.addEventListener("click", loadJobs);
+    document.getElementById("dateFilter")?.addEventListener("change", loadJobs);
+    document.getElementById("searchInput")?.addEventListener("keypress", function(e) {
       if (e.key === "Enter") loadJobs();
     });
-
-    loadJobs();
-    loadUserAds();
-    loadPaidAds();
   </script>
 
   <footer style="text-align:center; padding:24px 10px; font-size:13px; color:#888; margin-top:60px; border-top:1px solid #eee;">
@@ -694,12 +695,10 @@ app.get('/jobs', async (req, res) => {
       }
     });
 
-    // Remove duplicates
     allJobs = allJobs.filter((job, index, self) =>
       index === self.findIndex(j => j.url === job.url && j.title === job.title)
     );
 
-    // Filter by date if needed
     if (recentDays > 0) {
       const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
       allJobs = allJobs.filter(j => !j.date_posted || new Date(j.date_posted).getTime() > cutoff);
@@ -708,7 +707,6 @@ app.get('/jobs', async (req, res) => {
     allJobs.sort((a, b) => new Date(b.date_posted || 0) - new Date(a.date_posted || 0));
     console.log(`Total unique jobs: ${allJobs.length}`);
 
-    // FALLBACK: If no jobs from APIs, show demo jobs so page doesn't look broken
     if (allJobs.length === 0) {
       console.log('No jobs from APIs - using fallback');
       allJobs = [
