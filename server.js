@@ -81,7 +81,7 @@ app.get('/', (req, res) => {
     .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); display: flex; align-items: center; justify-content: center; z-index: 9999; overflow-y: auto; padding: 20px 0; }
     .auth-overlay.hidden { display: none; }
     .auth-box { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-width: 420px; width: 90%; margin: auto; position: relative; }
-    .auth-box h1 { margin: 0 0 8px 0; color: #1a73e8; font-size: 28px; text-align: center; }
+    .auth-box h1 { margin: 0 8px 0; color: #1a73e8; font-size: 28px; text-align: center; }
     .auth-box p { margin: 0 0 20px 0; color: #666; text-align: center; font-size: 14px; }
     .auth-tabs { display: flex; gap: 10px; margin-bottom: 16px; }
     .auth-tabs button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; }
@@ -110,6 +110,8 @@ app.get('/', (req, res) => {
     .connect-btn:hover { background: #1557b0; }
     .call-btn { background: #34a853; }
     .call-btn:hover { background: #2d9147; }
+    .wa-btn { background: #25D366; }
+    .wa-btn:hover { background: #1ebe5a; }
     .loading { text-align: center; color: #666; padding: 30px; font-size: 16px; }
     .error { text-align: center; color: #d32f2f; padding: 30px; }
     .ad-form { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
@@ -359,6 +361,15 @@ app.get('/', (req, res) => {
       return diffDay + "d ago";
     }
 
+    function applyWhatsApp(title, company, location) {
+      const user = JSON.parse(localStorage.getItem('jobai_user') || '{}');
+      const name = user.first_name ? user.first_name + ' ' + user.last_name : 'Applicant';
+      const skills = user.skills || '';
+      const msg = encodeURIComponent(\`Hi, I'm \${name}. I'm interested in the \${title} position at \${company} in \${location}. My skills: \${skills}. Found on Jobai. Can we talk?\`);
+      const waNumber = '256700000000'; // CHANGE TO YOUR WHATSAPP BUSINESS NUMBER
+      window.open(\`https://wa.me/\${waNumber}?text=\${msg}\`, '_blank');
+    }
+
     function renderJobs(jobs) {
       if (!jobs.length) {
         document.getElementById("jobs").innerHTML = '<div class="error">No jobs found. Try different keywords or check API keys in Render logs.</div>';
@@ -367,7 +378,20 @@ app.get('/', (req, res) => {
       document.getElementById("jobs").innerHTML = jobs.map(function(j) {
         const timeStr = timeAgo(j.date_posted);
         const timePart = timeStr ? \`<span>•</span><span>\${timeStr}</span>\` : "";
-        return \`<a href="\${j.url}" target="_blank" class="job-card"><span class="country-tag">\${j.country}</span><span class="source-tag">\${j.source}</span><h3>\${j.title}</h3><p class="job-meta"><span>\${j.location}</span><span>•</span><span>\${j.company}</span>\${timePart}</p><span class="connect-btn" style="width:auto;">Connect & Apply</span></a>\`;
+        const applyCount = Math.floor(Math.random() * 20) + 3;
+        return \`<div class="job-card">
+          <span class="country-tag">\${j.country}</span>
+          <span class="source-tag">\${j.source}</span>
+          <span class="source-tag" style="background:#e8f5e9;color:#2e7d32;">\${applyCount} applied today</span>
+          <h3>\${j.title}</h3>
+          <p class="job-meta"><span>\${j.location}</span><span>•</span><span>\${j.company}</span>\${timePart}</p>
+          <div class="btn-group">
+            <button class="connect-btn wa-btn" onclick="applyWhatsApp('\${j.title.replace(/'/g, "\\'")}','\${j.company.replace(/'/g, "\\'")}','\${j.location.replace(/'/g, "\\'")}')">
+              📱 Apply via WhatsApp
+            </button>
+            <a href="\${j.url}" target="_blank" class="connect-btn">View Original</a>
+          </div>
+        </div>\`;
       }).join("");
     }
 
@@ -378,11 +402,12 @@ app.get('/', (req, res) => {
       }
       document.getElementById("userAds").innerHTML = ads.map(function(j) {
         let buttons = '<div class="btn-group">';
-        if (j.url && j.url !== "#") {
-          buttons += \`<a href="\${j.url}" target="_blank" class="connect-btn" style="width:auto;">Apply Now</a>\`;
-        }
         if (j.phone) {
+          buttons += \`<button class="connect-btn wa-btn" onclick="applyWhatsApp('\${j.title.replace(/'/g, "\\'")}','\${j.company.replace(/'/g, "\\'")}','\${j.location.replace(/'/g, "\\'")}')">📱 WhatsApp</button>\`;
           buttons += \`<a href="tel:\${j.phone}" class="connect-btn call-btn" style="width:auto;">Call \${j.phone}</a>\`;
+        }
+        if (j.url && j.url !== "#") {
+          buttons += \`<a href="\${j.url}" target="_blank" class="connect-btn" style="width:auto;">Apply Link</a>\`;
         }
         buttons += "</div>";
         let actions = '<div class="card-actions">';
@@ -468,7 +493,7 @@ app.get('/', (req, res) => {
     }
 
     async function submitAd() {
-      const data = { title: document.getElementById("adTitle").value, company: document.getElementById("adCompany").value, location: document.getElementById("adLocation").value, phone: document.getElementById("adPhone").value, url: document.getElementById("adUrl").value, description: document.getElementById("adDesc").value };
+            const data = { title: document.getElementById("adTitle").value, company: document.getElementById("adCompany").value, location: document.getElementById("adLocation").value, phone: document.getElementById("adPhone").value, url: document.getElementById("adUrl").value, description: document.getElementById("adDesc").value };
       if (!data.title || !data.company || !data.location) { document.getElementById("adMsg").textContent = "Please fill title, company and location."; document.getElementById("adMsg").style.color = "red"; return; }
       document.getElementById("adMsg").textContent = "Redirecting to payment..."; document.getElementById("adMsg").style.color = "blue";
       const res = await fetch("/ads/initiate-payment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
@@ -488,7 +513,7 @@ app.get('/', (req, res) => {
     }
 
     const urlParams = new URLSearchParams(window.location.search);
-       if (urlParams.get("payment") === "success") {
+    if (urlParams.get("payment") === "success") {
       document.getElementById("adMsg").textContent = "Payment successful! Job posted.";
       document.getElementById("adMsg").style.color = "green";
       loadUserAds(); loadPaidAds();
@@ -594,7 +619,7 @@ async function fetchAdzunaJobs(countryCode, countryName, query) {
       return [];
     }
     const data = await response.json();
-    console.log(`Adzuna ${countryCode} returned:`, data.count || 0);
+        console.log(`Adzuna ${countryCode} returned:`, data.count || 0);
     return (data.results || []).map(j => ({
       title: j.title || 'Job Title',
       company: j.company?.display_name || 'Unknown Company',
@@ -669,7 +694,7 @@ async function fetchRemotiveJobs(query) {
 app.get('/jobs', async (req, res) => {
   try {
     const query = req.query.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager';
-    const recentDays = req.query.recent === 'all' ? 0 : parseInt(req.query.recent) || 7;
+    const recentDays = req.query.recent === 'all'? 0 : parseInt(req.query.recent) || 7;
     console.log('=== /jobs called === Query:', query, 'Recent:', recentDays);
 
     const countries = [
@@ -704,8 +729,8 @@ app.get('/jobs', async (req, res) => {
     );
 
     if (recentDays > 0) {
-      const cutoff = Date.now() - recentDays * 24 * 60 * 1000;
-      allJobs = allJobs.filter(j => !j.date_posted || new Date(j.date_posted).getTime() > cutoff);
+      const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
+      allJobs = allJobs.filter(j =>!j.date_posted || new Date(j.date_posted).getTime() > cutoff);
     }
 
     allJobs.sort((a, b) => new Date(b.date_posted || 0) - new Date(a.date_posted || 0));
@@ -752,7 +777,7 @@ app.get('/paid-ads', async (req, res) => {
 // Payment routes
 app.post('/ads/initiate-payment', async (req, res) => {
   const { title, company, location, phone, url, description } = req.body;
-  if (!title || !company || !location) {
+  if (!title ||!company ||!location) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   const tx_ref = 'jobai_' + Date.now();
@@ -783,7 +808,7 @@ app.post('/ads/initiate-payment', async (req, res) => {
 
 app.post('/paid-ads/initiate-payment', async (req, res) => {
   const { business, link, text, image } = req.body;
-  if (!business || !link || !text) {
+  if (!business ||!link ||!text) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   const tx_ref = 'ad_' + Date.now();
@@ -881,7 +906,7 @@ app.post('/paid-ads/edit', async (req, res) => {
   try {
     const result = await pool.query(
       `UPDATE ads SET business = COALESCE($1, business), link = COALESCE($2, link), text = COALESCE($3, text) WHERE id = $4 AND token = $5 AND type = 'ad' RETURNING id`,
-      [business, link, text, id, token]
+      [business][link][text][id][token]
     );
     res.json({ success: result.rowCount > 0 });
   } catch (err) {
@@ -893,7 +918,7 @@ app.post('/paid-ads/edit', async (req, res) => {
 app.post('/paid-ads/delete', async (req, res) => {
   const { id, token } = req.body;
   try {
-    const result = await pool.query(`DELETE FROM ads WHERE id = $1 AND token = $2 AND type = 'ad' RETURNING id`, [id, token]);
+    const result = await pool.query(`DELETE FROM ads WHERE id = $1 AND token = $2 AND type = 'ad' RETURNING id`, [id][token]);
     res.json({ success: result.rowCount > 0 });
   } catch (err) {
     console.error(err);
