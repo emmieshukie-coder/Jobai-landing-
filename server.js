@@ -363,12 +363,12 @@ app.get('/', (req, res) => {
     ' function renderUserAds(ads) {' +
     ' if (!ads.length) {' +
     ' document.getElementById("userAds").innerHTML = "<div class=\\"error\\">No community posts yet.</div>";' +
-    '  return;' +
- ' }' +
- ' document.getElementById("userAds").innerHTML = ads.map(function(j) {' +
- ' let buttons = "<div class=\\"btn-group\\">";' +
- ' if (j.url && j.url!== "#") {' +
- ' buttons += "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"connect-btn\\">Apply Now</a>";' +
+    ' return;' +
+    ' }' +
+    ' document.getElementById("userAds").innerHTML = ads.map(function(j) {' +
+    ' let buttons = "<div class=\\"btn-group\\">";' +
+    ' if (j.url && j.url!== "#") {' +
+    ' buttons += "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"connect-btn\\">Apply Now</a>";' +
  ' }' +
  ' if (j.phone) {' +
  ' buttons += "<a href=\\"tel:" + j.phone + "\\" class=\\"connect-btn call-btn\\">Call " + j.phone + "</a>";' +
@@ -637,7 +637,7 @@ app.post('/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
-// Job API fetchers
+// Job API fetchers - ALL YOUR SITES INCLUDED
 async function fetchAdzunaJobs(countryCode, countryName, query) {
   try {
     const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=20&content-type=application/json&max_days_old=7&what=${encodeURIComponent(query)}`;
