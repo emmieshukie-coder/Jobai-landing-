@@ -291,6 +291,7 @@ app.get('/', (req, res) => {
     ' <button class="connect-btn" style="background:#666;" onclick="closeEdit()">Cancel</button>' +
     ' </div>' +
     ' </div>' +
+    ' </div>' +
     ' <script>' +
     'function showTab(tab){const s=document.getElementById(\'signupForm\'),l=document.getElementById(\'loginForm\'),ts=document.getElementById(\'tabSignup\'),tl=document.getElementById(\'tabLogin\');if(tab===\'signup\'){s.style.display=\'block\';l.style.display=\'none\';ts.className=\'active\';tl.className=\'\';}else{s.style.display=\'none\';l.style.display=\'block\';tl.className=\'active\';ts.className=\'\';}}' +
     'async function signup(){const first=document.getElementById(\'firstName\').value.trim(),last=document.getElementById(\'lastName\').value.trim(),email=document.getElementById(\'signupEmail\').value.trim(),phone=document.getElementById(\'signupPhone\').value.trim(),pass=document.getElementById(\'signupPassword\').value,cpass=document.getElementById(\'confirmPassword\').value;const msg=document.getElementById(\'signupMsg\');if(!first||!last||!email||!pass){msg.textContent=\'Fill all required fields\';msg.style.color=\'red\';return;}if(pass!==cpass){msg.textContent=\'Passwords do not match\';msg.style.color=\'red\';return;}msg.textContent=\'Creating account...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/signup\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({firstName:first,lastName:last,email,phone,password:pass})});const data=await res.json();if(data.success){msg.textContent=\'Account created! Logging you in...\';msg.style.color=\'green\';localStorage.setItem(\'jobai_user\',JSON.stringify(data.user));setTimeout(()=>unlockSite(data.user),500);}else{msg.textContent=data.error||\'Signup failed\';msg.style.color=\'red\';}}' +
@@ -337,7 +338,7 @@ app.get('/', (req, res) => {
     ' if (isNaN(date.getTime())) return "";' +
     ' const now = new Date();' +
     ' const diffMs = now - date;' +
-    ' const diffDay = Math.floor(diffMs / (1000*60*24));' +
+    ' const diffDay = Math.floor(diffMs / (1000*60*60*24));' +
     ' if (diffDay > 2) return "";' +
     ' if (diffMs < 0) return "";' +
     ' const diffSec = Math.floor(diffMs/1000);' +
@@ -357,7 +358,7 @@ app.get('/', (req, res) => {
     ' document.getElementById("jobs").innerHTML = jobs.map(function(j) {' +
     ' const timeStr = timeAgo(j.date_posted);' +
     ' const timePart = timeStr? `<span>•</span><span>${timeStr}</span>` : "";' +
-    ' return "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"job-card\\"><span class=\\"country-tag\\">" + j.country + "</span><span class=\\"source-tag\\">" + j.source + "</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span>" + timePart + "</p><span class=\\"connect-btn\\">Connect & Apply</span></a>";' +
+    ' return "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"job-card\\"><span class=\\"country-tag\\">" + j.country + "</span><span class=\\"source-tag\\">" + j.source + "</span><h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span>" + timePart + "</p><div class=\\"btn-group\\"><span class=\\"connect-btn\\">Connect & Apply</span></div></a>";' +
     ' }).join("");' +
     ' }' +
     ' function renderUserAds(ads) {' +
@@ -414,170 +415,164 @@ app.get('/', (req, res) => {
 ' document.getElementById("editModal").classList.add("active");' +
 ' }' +
 ' function closeEdit() {' +
-' document.getElementById("editModal").classList.remove("active"); ' +
-'} ' +
-'' +
-'async function saveEdit() { ' +
-'const type = document.getElementById("editType").value; ' +
-'const id = document.getElementById("editId").value; ' +
-'const token = document.getElementById("editToken").value; ' +
-'const data = { ' +
-'id, token, ' +
-'title: document.getElementById("editTitle").value, ' +
-'location: document.getElementById("editLocation").value, ' +
-'company: document.getElementById("editCompany").value, ' +
-'description: document.getElementById("editDesc").value ' +
-'}; ' +
-'const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit"; ' +
-'const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)}); ' +
-'const result = await res.json(); ' +
-'if (result.success) { ' +
-'closeEdit(); ' +
-'loadUserAds(); ' +
-'loadPaidAds(); ' +
-'alert("Updated successfully"); ' +
-'} else { ' +
-'alert("Update failed"); ' +
-'} ' +
-'} ' +
-'' +
-'async function deleteAd(type, id, token) { ' +
-'if (!confirm("Delete this ad?")) return; ' +
-'const endpoint = type === "paid"? "/paid-ads/delete" : "/ads/delete"; ' +
-'const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, token})}); ' +
-'const result = await res.json(); ' +
-'if (result.success) { ' +
-'loadUserAds(); ' +
-'loadPaidAds(); ' +
-'alert("Deleted successfully"); ' +
-'} else { ' +
-'alert("Delete failed"); ' +
-'} ' +
-'} ' +
-'' +
-'async function loadJobs() { ' +
-'const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant"; ' +
-'const days = document.getElementById("dateFilter").value; ' +
-'document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading jobs...</div>"; ' +
-'try { ' +
-'const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days); ' +
-'allJobs = await res.json(); ' +
-'renderJobs(allJobs); ' +
-'} catch (e) { ' +
-'document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs.</div>"; ' +
-'} ' +
-'} ' +
-'' +
-'async function loadUserAds() { ' +
-'const res = await fetch("/ads"); ' +
-'const ads = await res.json(); ' +
-'renderUserAds(ads); ' +
-'} ' +
-'' +
-'async function loadPaidAds() { ' +
-'const res = await fetch("/paid-ads"); ' +
-'const ads = await res.json(); ' +
-'renderPaidAds(ads); ' +
-'} ' +
-'' +
-'async function submitAd() { ' +
-'const data = { ' +
-'title: document.getElementById("adTitle").value, ' +
-'company: document.getElementById("adCompany").value, ' +
-'location: document.getElementById("adLocation").value, ' +
-'phone: document.getElementById("adPhone").value, ' +
-'url: document.getElementById("adUrl").value, ' +
-'description: document.getElementById("adDesc").value ' +
-'}; ' +
-'if (!data.title ||!data.company ||!data.location) { ' +
-'document.getElementById("adMsg").textContent = "Please fill title, company and location."; ' +
-'document.getElementById("adMsg").style.color = "red"; ' +
-'return; ' +
-'} ' +
-'document.getElementById("adMsg").textContent = "Redirecting to payment..."; ' +
-'document.getElementById("adMsg").style.color = "blue"; ' +
-'const res = await fetch("/ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)}); ' +
-'const result = await res.json(); ' +
-'if (result.payment_link) { ' +
-'window.location.href = result.payment_link; ' +
-'} else { ' +
-'document.getElementById("adMsg").textContent = "Payment failed. Try again."; ' +
-'document.getElementById("adMsg").style.color = "red"; ' +
-'} ' +
-'} ' +
-'' +
-'async function submitPaidAd() { ' +
-'const data = { ' +
-'business: document.getElementById("adBizName").value, ' +
-'link: document.getElementById("adLink").value, ' +
-'text: document.getElementById("adText").value, ' +
-'image: document.getElementById("adImgUrl").value ' +
-'}; ' +
-'if (!data.business ||!data.link ||!data.text) { ' +
-'document.getElementById("adPayMsg").textContent = "Fill business, link and text."; ' +
-'document.getElementById("adPayMsg").style.color = "red"; ' +
-'return; ' +
-'} ' +
-'document.getElementById("adPayMsg").textContent = "Redirecting to payment..."; ' +
-'document.getElementById("adPayMsg").style.color = "blue"; ' +
-'const res = await fetch("/paid-ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)}); ' +
-'const result = await res.json(); ' +
-'if (result.payment_link) { ' +
-'window.location.href = result.payment_link; ' +
-'} else { ' +
-'document.getElementById("adPayMsg").textContent = "Payment failed. Try again."; ' +
-'document.getElementById("adPayMsg").style.color = "red"; ' +
-'} ' +
-'' +
-'const urlParams = new URLSearchParams(window.location.search); ' +
-'if (urlParams.get("payment") === "success") { ' +
-'document.getElementById("adMsg").textContent = "Payment successful! Job posted."; ' +
-'document.getElementById("adMsg").style.color = "green"; ' +
-'loadUserAds(); ' +
-'loadPaidAds(); ' +
-'} ' +
-'if (urlParams.get("payment") === "failed") { ' +
-'document.getElementById("adMsg").textContent = "Payment failed or cancelled."; ' +
-'document.getElementById("adMsg").style.color = "red"; ' +
-'} ' +
-'' +
-'document.getElementById("searchBtn").addEventListener("click", loadJobs); ' +
-'document.getElementById("dateFilter").addEventListener("change", loadJobs); ' +
-'document.getElementById("searchInput").addEventListener("keypress", function(e) { ' +
-'if (e.key === "Enter") loadJobs(); ' +
-'}); ' +
-'' +
-'loadJobs(); ' +
-'loadUserAds(); ' +
-'loadPaidAds(); ' +
-'</script> ' +
-'<footer style="text-align:center; padding:24px 10px; font-size:13px; color:#888; margin-top:60px; border-top:1px solid #eee;">' +
-'Sponsored by <strong style="color:#333;">EmmieTechUg</strong> | Contact: emmieshukie at gmail dot com' +
-'<div style="margin:40px 0;padding:20px;background:#f8f9fa;border-radius:10px;">' +
-'<h3 style="text-align:center;margin-bottom:15px;">🔥 Other Top Products</h3>' +
-'<a href="https://bloodsugarblaster.com/index-vsl-ds24#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#FF9800;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;\'>' +
-'🩺 Support Healthy Blood Sugar →' +
-'</a>' +
-'<a href="https://jointpainhack.com/digi/add-to-cart/#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#9C27B0;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;\'>' +
-'🦴 Joint Pain Relief Formula →' +
-'</a>' +
-'<a href="https://www.advancedbionutritionals.com/DS24/Advanced-Amino/Muscle-Mass-Loss/HD.htm#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#25D366;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;\'>' +
-'💪 Boost Energy & Recovery → Click Here' +
-'</a>' +
-'<a href="https://myketosana.com/ketosana-pdp-fe#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#FF5722;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;font-size:16px;\'>' +
-'🔥 Burn Fat Fast - KetoSana →' +
-'</a>' +
-'</div>' +
-'<div style="margin:40px 0;padding:20px;background:#000;border-radius:10px;border:2px solid #FFD700;">' +
-'<h3 style="text-align:center;color:#FFD700;margin-bottom:15px;">💰 AI Cash System 2026</h3>' +
-'<a href="https://ai-cash-page-system-dd.24-7-ai-cash-system.academy/#aff=emmieshukiee042" target="_blank" style="display:block;padding:15px;background:#FFD700;color:#000;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;font-size:16px;">' +
-'🚀 Make Money With AI - Copy & Paste System →' +
-'</a>' +
-'<p style="text-align:center;color:#aaa;font-size:12px;margin:5px 0 0;">$74.21 per sale | Video courses included</p>' +
-'</div>' +
-'</footer>' +
-'</body> ' +
-'</html>'
+' document.getElementById("editModal").classList.remove("active");' +
+' }' +
+' async function saveEdit() {' +
+' const type = document.getElementById("editType").value;' +
+' const id = document.getElementById("editId").value;' +
+' const token = document.getElementById("editToken").value;' +
+' const data = {' +
+' id, token,' +
+' title: document.getElementById("editTitle").value,' +
+' location: document.getElementById("editLocation").value,' +
+' company: document.getElementById("editCompany").value,' +
+' description: document.getElementById("editDesc").value' +
+' };' +
+' const endpoint = type === "paid"? "/paid-ads/edit" : "/ads/edit";' +
+' const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
+' const result = await res.json();' +
+' if (result.success) {' +
+' closeEdit();' +
+' loadUserAds();' +
+' loadPaidAds();' +
+' alert("Updated successfully");' +
+' } else {' +
+' alert("Update failed");' +
+' }' +
+' }' +
+' async function deleteAd(type, id, token) {' +
+' if (!confirm("Delete this ad?")) return;' +
+' const endpoint = type === "paid"? "/paid-ads/delete" : "/ads/delete";' +
+' const res = await fetch(endpoint, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({id, token})});' +
+' const result = await res.json();' +
+' if (result.success) {' +
+' loadUserAds();' +
+' loadPaidAds();' +
+' alert("Deleted successfully");' +
+' } else {' +
+' alert("Delete failed");' +
+' }' +
+' }' +
+' async function loadJobs() {' +
+' const query = document.getElementById("searchInput").value || "cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant";' +
+' const days = document.getElementById("dateFilter").value;' +
+' document.getElementById("jobs").innerHTML = "<div class=\\"loading\\">Loading jobs...</div>";' +
+' try {' +
+' const res = await fetch("/jobs?query=" + encodeURIComponent(query) + "&recent=" + days);' +
+' allJobs = await res.json();' +
+' renderJobs(allJobs);' +
+' } catch (e) {' +
+' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs.</div>";' +
+' }' +
+' }' +
+' async function loadUserAds() {' +
+' const res = await fetch("/ads");' +
+' const ads = await res.json();' +
+' renderUserAds(ads);' +
+' }' +
+' async function loadPaidAds() {' +
+' const res = await fetch("/paid-ads");' +
+' const ads = await res.json();' +
+' renderPaidAds(ads);' +
+' }' +
+' async function submitAd() {' +
+' const data = {' +
+' title: document.getElementById("adTitle").value,' +
+' company: document.getElementById("adCompany").value,' +
+' location: document.getElementById("adLocation").value,' +
+' phone: document.getElementById("adPhone").value,' +
+' url: document.getElementById("adUrl").value,' +
+' description: document.getElementById("adDesc").value' +
+' };' +
+' if (!data.title ||!data.company ||!data.location) {' +
+' document.getElementById("adMsg").textContent = "Please fill title, company and location.";' +
+' document.getElementById("adMsg").style.color = "red";' +
+' return;' +
+' }' +
+' document.getElementById("adMsg").textContent = "Redirecting to payment...";' +
+' document.getElementById("adMsg").style.color = "blue";' +
+' const res = await fetch("/ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
+' const result = await res.json();' +
+' if (result.payment_link) {' +
+' window.location.href = result.payment_link;' +
+' } else {' +
+' document.getElementById("adMsg").textContent = "Payment failed. Try again.";' +
+' document.getElementById("adMsg").style.color = "red";' +
+' }' +
+' }' +
+' async function submitPaidAd() {' +
+' const data = {' +
+' business: document.getElementById("adBizName").value,' +
+' link: document.getElementById("adLink").value,' +
+' text: document.getElementById("adText").value,' +
+' image: document.getElementById("adImgUrl").value' +
+' };' +
+' if (!data.business ||!data.link ||!data.text) {' +
+' document.getElementById("adPayMsg").textContent = "Fill business, link and text.";' +
+' document.getElementById("adPayMsg").style.color = "red";' +
+' return;' +
+' }' +
+' document.getElementById("adPayMsg").textContent = "Redirecting to payment...";' +
+' document.getElementById("adPayMsg").style.color = "blue";' +
+' const res = await fetch("/paid-ads/initiate-payment", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});' +
+' const result = await res.json();' +
+' if (result.payment_link) {' +
+' window.location.href = result.payment_link;' +
+' } else {' +
+' document.getElementById("adPayMsg").textContent = "Payment failed. Try again.";' +
+' document.getElementById("adPayMsg").style.color = "red";' +
+' }' +
+' }' +
+' const urlParams = new URLSearchParams(window.location.search);' +
+' if (urlParams.get("payment") === "success") {' +
+' document.getElementById("adMsg").textContent = "Payment successful! Job posted.";' +
+' document.getElementById("adMsg").style.color = "green";' +
+' loadUserAds();' +
+' loadPaidAds();' +
+' }' +
+' if (urlParams.get("payment") === "failed") {' +
+' document.getElementById("adMsg").textContent = "Payment failed or cancelled.";' +
+' document.getElementById("adMsg").style.color = "red";' +
+' }' +
+' document.getElementById("searchBtn").addEventListener("click", loadJobs);' +
+' document.getElementById("dateFilter").addEventListener("change", loadJobs);' +
+' document.getElementById("searchInput").addEventListener("keypress", function(e) {' +
+' if (e.key === "Enter") loadJobs();' +
+' });' +
+' loadJobs();' +
+' loadUserAds();' +
+' loadPaidAds();' +
+' </script>' +
+' </div>' +
+' </div>' +
+' </div>' +
+' <footer style="text-align:center; padding:24px 10px; font-size:13px; color:#888; margin-top:60px; border-top:1px solid #eee;">' +
+' Sponsored by <strong style="color:#333;">EmmieTechUg</strong> | Contact: emmieshukie at gmail dot com' +
+' <div style="margin:40px 0;padding:20px;background:#f8f9fa;border-radius:10px;">' +
+' <h3 style="text-align:center;margin-bottom:15px;">🔥 Other Top Products</h3>' +
+' <a href="https://bloodsugarblaster.com/index-vsl-ds24#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#FF9800;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;\'>' +
+' 🩺 Support Healthy Blood Sugar →' +
+' </a>' +
+' <a href="https://jointpainhack.com/digi/add-to-cart/#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#9C27B0;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;\'>' +
+' 🦴 Joint Pain Relief Formula →' +
+' </a>' +
+' <a href="https://www.advancedbionutritionals.com/DS24/Advanced-Amino/Muscle-Mass-Loss/HD.htm#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#25D366;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;\'>' +
+' 💪 Boost Energy & Recovery → Click Here' +
+' </a>' +
+' <a href="https://myketosana.com/ketosana-pdp-fe#aff=emmieshukiee042" target=\'_blank\' style=\'display:block;padding:15px;background:#FF5722;color:white;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;font-size:16px;\'>' +
+' 🔥 Burn Fat Fast - KetoSana →' +
+' </a>' +
+' </div>' +
+' <div style="margin:40px 0;padding:20px;background:#000;border-radius:10px;border:2px solid #FFD700;">' +
+' <h3 style="text-align:center;color:#FFD700;margin-bottom:15px;">💰 AI Cash System 2026</h3>' +
+' <a href="https://ai-cash-page-system-dd.24-7-ai-cash-system.academy/#aff=emmieshukiee042" target="_blank" style="display:block;padding:15px;background:#FFD700;color:#000;text-align:center;text-decoration:none;font-weight:bold;border-radius:8px;margin:10px 0;font-size:16px;">' +
+' 🚀 Make Money With AI - Copy & Paste System →' +
+' </a>' +
+' <p style="text-align:center;color:#aaa;font-size:12px;margin:5px 0 0;">$74.21 per sale | Video courses included</p>' +
+' </div>' +
+' </footer>' +
+' </body>' +
+' </html>'
   );
 });
 
@@ -636,7 +631,7 @@ app.post('/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
-// Job API fetchers - ALL YOUR SITES INCLUDED
+// Job API fetchers
 async function fetchAdzunaJobs(countryCode, countryName, query) {
   try {
     const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY}&results_per_page=20&content-type=application/json&max_days_old=7&what=${encodeURIComponent(query)}`;
@@ -731,7 +726,7 @@ async function fetchRemotiveJobs(query) {
   }
 }
 
-// Jobs route - FIXED
+// Jobs route
 app.get('/jobs', async (req, res) => {
   try {
     const query = req.query.query || 'cleaner OR helper OR maid OR nurse OR teacher OR engineer OR farmer OR manager OR shop attendant';
@@ -753,13 +748,13 @@ app.get('/jobs', async (req, res) => {
     let allJobs = [];
     const promises = [];
     for (let i = 0; i < countries.length; i++) {
-      promises.push(fetchAdzunaJobs(countries[i].code, countries[i].name, query).catch(() => []));
-      promises.push(fetchJSearchJobs(query, countries[i].name).catch(() => []));
+      promises.push(fetchAdzunaJobs(countries[i].code, countries[i].name, query));
+      promises.push(fetchJSearchJobs(query, countries[i].name));
       if (JOOBLE_API_KEY!== 'YOUR_JOOBLE_KEY') {
-        promises.push(fetchJoobleJobs(query, countries[i].name).catch(() => []));
+        promises.push(fetchJoobleJobs(query, countries[i].name));
       }
     }
-    promises.push(fetchRemotiveJobs(query).catch(() => []));
+    promises.push(fetchRemotiveJobs(query));
     const results = await Promise.allSettled(promises);
     results.forEach(r => {
       if (r.status === 'fulfilled' && r.value) {
