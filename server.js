@@ -8,7 +8,6 @@ import pkg from 'pg';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fetch from 'node-fetch';
-// Sitemap router
 import sitemapRouter from './sitemap.js';
 
 const { Pool } = pkg;
@@ -28,10 +27,8 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Use sitemap router
 app.use(sitemapRouter);
 
-// Tables
 pool.query(`
   CREATE TABLE IF NOT EXISTS ads (
     id BIGINT PRIMARY KEY,
@@ -91,12 +88,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// Google site verification
 app.get('/google765cda11c517c492.html', (req, res) => {
   res.send('google-site-verification: google765cda11c517c492.html');
 });
 
-// Main UI
 app.get('/', (req, res) => {
   res.send(
     '<!DOCTYPE html>' +
@@ -298,7 +293,6 @@ app.get('/', (req, res) => {
     'async function login(){const email=document.getElementById(\'loginEmail\').value.trim(),pass=document.getElementById(\'loginPassword\').value;const msg=document.getElementById(\'loginMsg\');if(!email||!pass){msg.textContent=\'Enter email and password\';msg.style.color=\'red\';return;}msg.textContent=\'Logging in...\';msg.style.color=\'blue\';const res=await fetch(\'/auth/login\',{method:\'POST\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({email,password:pass})});const data=await res.json();if(data.success){msg.textContent=\'Login successful!\';msg.style.color=\'green\';localStorage.setItem(\'jobai_user\',JSON.stringify(data.user));setTimeout(()=>unlockSite(data.user),500);}else{msg.textContent=data.error||\'Login failed\';msg.style.color=\'red\';}}' +
     'function unlockSite(user){document.getElementById(\'authOverlay\').classList.add(\'hidden\');document.getElementById(\'mainContent\').classList.add(\'show\');document.getElementById(\'userWelcome\').textContent=\'Welcome, \'+user.first_name+\' \'+user.last_name;document.querySelector(\'#userInfo p\').textContent=\'Logged in as \'+user.first_name+\' \'+user.last_name;loadJobs();loadUserAds();loadPaidAds();}' +
     'async function logout(){await fetch(\'/auth/logout\',{method:\'POST\'});localStorage.removeItem(\'jobai_user\');location.reload();}' +
-    'window.addEventListener(\'load\',()=>{const user=JSON.parse(localStorage.getItem(\'jobai_user\')||\'null\');if(user){unlockSite(user);}});' +
     'function openMenu(){document.getElementById(\'sideMenu\').style.left=\'0\';document.getElementById(\'overlay\').style.display=\'block\';document.getElementById(\'sideMenu\').setAttribute(\'aria-hidden\',\'false\');}' +
     'function closeMenu(){document.getElementById(\'sideMenu\').style.left=\'-320px\';document.getElementById(\'overlay\').style.display=\'none\';document.getElementById(\'sideMenu\').setAttribute(\'aria-hidden\',\'true\');}' +
     'function scrollToId(id){closeMenu();const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:\'smooth\',block:\'start\'});}' +
@@ -334,21 +328,22 @@ app.get('/', (req, res) => {
     ' });' +
     ' function timeAgo(dateStr) {' +
     ' if (!dateStr) return "";' +
+    ' try {' +
     ' const date = new Date(dateStr);' +
     ' if (isNaN(date.getTime())) return "";' +
     ' const now = new Date();' +
     ' const diffMs = now - date;' +
-    ' const diffDay = Math.floor(diffMs / (1000*60*60*24));' +
-    ' if (diffDay > 2) return "";' +
     ' if (diffMs < 0) return "";' +
     ' const diffSec = Math.floor(diffMs/1000);' +
     ' const diffMin = Math.floor(diffSec/60);' +
     ' const diffHr = Math.floor(diffMin/60);' +
+    ' const diffDay = Math.floor(diffHr/24);' +
     ' if (diffSec < 60) return "just now";' +
     ' if (diffMin < 60) return diffMin + "m ago";' +
     ' if (diffHr < 24) return diffHr + "h ago";' +
-    ' if (diffDay === 1) return "1d ago";' +
-    ' return diffDay + "d ago";' +
+    ' if (diffDay < 3) return diffDay + "d ago";' +
+    ' return "";' +
+    ' } catch(e) { return ""; }' +
     ' }' +
     ' function renderJobs(jobs) {' +
     ' if (!jobs.length) {' +
@@ -364,29 +359,32 @@ app.get('/', (req, res) => {
     ' function renderUserAds(ads) {' +
     ' if (!ads.length) {' +
     ' document.getElementById("userAds").innerHTML = "<div class=\\"error\\">No community posts yet.</div>";' +
-' return;' +
-' }' +
-' document.getElementById("userAds").innerHTML = ads.map(function(j) {' +
-' let buttons = "<div class=\\"btn-group\\">";' +
-' if (j.url && j.url!== "#") {' +
-' buttons += "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"connect-btn\\">Apply Now</a>";' +
-' }' +
-' if (j.phone) {' +
-' buttons += "<a href=\\"tel:" + j.phone + "\\" class=\\"connect-btn call-btn\\">Call " + j.phone + "</a>";' +
-' }' +
-' buttons += "</div>";' +
-' let actions = "<div class=\\"card-actions\\">";' +
-' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">✏️</button>";' +
-' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">🗑️</button>";' +
-' actions += "</div>";' +
-' const timeStr = timeAgo(j.created_at);' +
-' const timeHtml = timeStr? `<span class="source-tag">${timeStr}</span>` : "";' +
-' return "<div class=\\"job-card\\" style=\\"position:relative\\">"+actions+"<span class=\\"country-tag user-ad-tag\\">Community</span>"+timeHtml+"<h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
-' }).join("");' +
-' }' +
-' function renderPaidAds(ads) {' +
-' if (!ads.length) {' +
-' document.getElementById("paidAds").innerHTML = "<div class=\\"error\\">No sponsors yet.</div>";' +
+    ' return;' +
+    ' }' +
+    ' document.getElementById("userAds").innerHTML = ads.map(function(j) {' +
+    ' let buttons = "<div class=\\"btn-group\\">";' +
+    ' if (j.url && j.url!== "#") {' +
+    ' buttons += "<a href=\\"" + j.url + "\\" target=\\"_blank\\" class=\\"connect-btn\\">Apply Now</a>";' +
+    ' }' +
+    ' if (j.phone) {' +
+    ' buttons += "<a href=\\"tel:" + j.phone + "\\" class=\\"connect-btn call-btn\\">Call " + j.phone + "</a>";' +
+    ' }' +
+    ' buttons += "</div>";' +
+    ' let actions = "<div class=\\"card-actions\\">";' +
+    ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">✏️</button>";' +
+    ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'user\',\'" + j.id + "\',\'" + j.token + "\')\\">🗑️</button>";' +
+    ' actions += "</div>";' +
+    ' const timeStr = timeAgo(j.created_at);' +
+    ' const timeHtml = timeStr? `<span class="source-tag">${timeStr}</span>` : "";' +
+    ' return "<div class=\\"job-card\\" style=\\"position:relative\\">"+actions+"<span class=\\"country-tag user-ad-tag\\">Community</span>"+timeHtml+"<h3>" + j.title + "</h3><p class=\\"job-meta\\"><span>" + j.location + "</span><span>•</span><span>" + j.company + "</span></p><p>" + (j.description || "") + "</p><p class=\\"phone-display\\">" + (j.phone? "Phone: " + j.phone : "") + "</p>" + buttons + "</div>";' +
+    ' }).join("");' +
+    ' }' +
+    ' function renderPaidAds(ads) {' +
+    ' if (!ads.length) {' +
+    ' document.getElementById("paidAds").innerHTML = "<div class=\\"error\\">No sponsors yet.</div>";' +
+    ' return;' +
+    ' }' +
+    'document.getElementById("paidAds").innerHTML = "<div class=\\"error\\">No sponsors yet.</div>";' +
 ' return;' +
 ' }' +
 ' document.getElementById("paidAds").innerHTML = ads.map(function(ad) {' +
@@ -462,7 +460,7 @@ app.get('/', (req, res) => {
 ' allJobs = await res.json();' +
 ' renderJobs(allJobs);' +
 ' } catch (e) {' +
-' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs.</div>";' +
+' document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs. " + e.message + "</div>";' +
 ' }' +
 ' }' +
 ' async function loadUserAds() {' +
@@ -539,9 +537,12 @@ app.get('/', (req, res) => {
 ' document.getElementById("searchInput").addEventListener("keypress", function(e) {' +
 ' if (e.key === "Enter") loadJobs();' +
 ' });' +
-' loadJobs();' +
-' loadUserAds();' +
-' loadPaidAds();' +
+' const savedUser = localStorage.getItem("jobai_user");' +
+' if (savedUser) {' +
+' unlockSite(JSON.parse(savedUser));' +
+' } else {' +
+' document.getElementById("authOverlay").classList.remove("hidden");' +
+' }' +
 ' </script>' +
 ' </div>' +
 ' </div>' +
