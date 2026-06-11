@@ -363,7 +363,7 @@ app.get('/', (req, res) => {
     ' document.getElementById("paidAds").innerHTML = "<div class=\\"error\\">No sponsors yet.</div>";' +
     ' return;' +
     ' }' +
-    ' document.getElementById("paidAds").innerHTML = ads.map(function(ad) {' +
+        ' document.getElementById("paidAds").innerHTML = ads.map(function(ad) {' +
     ' let img = ad.image? \'<img src="\' + ad.image + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
     ' let actions = "<div class=\\"card-actions\\">";' +
     ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">✏️</button>";' +
@@ -389,7 +389,7 @@ app.get('/', (req, res) => {
     ' document.getElementById("editModal").classList.add("active");' +
     ' }' +
     ' function closeEdit() {' +
-    '     document.getElementById("editModal").classList.remove("active");' +
+    ' document.getElementById("editModal").classList.remove("active");' +
     ' }' +
     '' +
     'async function saveEdit() { ' +
@@ -413,6 +413,7 @@ app.get('/', (req, res) => {
     'alert("Updated successfully"); ' +
     '} else { ' +
     'alert("Update failed"); ' +
+    '} ' +
     '} ' +
     '' +
     'async function deleteAd(type, id, token) { ' +
@@ -439,6 +440,7 @@ app.get('/', (req, res) => {
     'renderJobs(allJobs); ' +
     '} catch (e) { ' +
     'document.getElementById("jobs").innerHTML = "<div class=\\"error\\">Failed to load jobs.</div>"; ' +
+    '} ' +
     '} ' +
     '' +
     'async function loadUserAds() { ' +
@@ -477,6 +479,7 @@ app.get('/', (req, res) => {
     'document.getElementById("adMsg").textContent = "Payment failed. Try again."; ' +
     'document.getElementById("adMsg").style.color = "red"; ' +
     '} ' +
+    '} ' +
     '' +
     'async function submitPaidAd() { ' +
     'const data = { ' +
@@ -500,7 +503,7 @@ app.get('/', (req, res) => {
     'document.getElementById("adPayMsg").textContent = "Payment failed. Try again."; ' +
     'document.getElementById("adPayMsg").style.color = "red"; ' +
     '} ' +
-    '} ' + // <-- THIS IS THE MISSING } THAT FIXES ALL YOUR BUTTONS
+    '} ' + // <-- THIS MISSING } WAS BREAKING ALL YOUR BUTTONS
     '' +
     'const urlParams = new URLSearchParams(window.location.search); ' +
     'if (urlParams.get("payment") === "success") { ' +
@@ -743,7 +746,7 @@ app.get('/jobs', async (req, res) => {
       index === self.findIndex(j => j.url === job.url)
     );
     if (recentDays > 0 && recentDays!== 'all') {
-      const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
+      const cutoff = Date.now() - recentDays * 24 * 60 * 1000;
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
     allJobs.sort((a, b) => new Date(b.date_posted) - new Date(a.date_posted));
