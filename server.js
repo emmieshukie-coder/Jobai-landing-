@@ -22,7 +22,7 @@ const __dirname = path.dirname(__filename);
 const ADZUNA_APP_ID = 'cd82aca8';
 const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
 const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
-const JOOBLE_API_KEY = 'YOUR_JOOBLE_KEY';
+const JOOBLE_API_KEY = '8eba6d18-9673-4e0e-9c02-79d2662df27d';
 const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X';
 
 const pool = new Pool({
@@ -363,9 +363,9 @@ app.get('/', (req, res) => {
     ' document.getElementById("paidAds").innerHTML = "<div class=\\"error\\">No sponsors yet.</div>";' +
     ' return;' +
     ' }' +
-        ' document.getElementById("paidAds").innerHTML = ads.map(function(ad) {' +
+    ' document.getElementById("paidAds").innerHTML = ads.map(function(ad) {' +
     ' let img = ad.image? \'<img src="\' + ad.image + \'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:10px;">\' : \'\';' +
-    ' let actions = "<div class=\\"card-actions\\">";' +
+        ' let actions = "<div class=\\"card-actions\\">";' +
     ' actions += "<button class=\\"icon-btn edit-btn\\" onclick=\\"openEdit(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">✏️</button>";' +
     ' actions += "<button class=\\"icon-btn delete-btn\\" onclick=\\"deleteAd(\'paid\',\'" + ad.id + "\',\'" + ad.token + "\')\\">🗑️</button>";' +
     ' actions += "</div>";' +
@@ -503,7 +503,7 @@ app.get('/', (req, res) => {
     'document.getElementById("adPayMsg").textContent = "Payment failed. Try again."; ' +
     'document.getElementById("adPayMsg").style.color = "red"; ' +
     '} ' +
-    '} ' + // <-- THIS MISSING } WAS BREAKING ALL YOUR BUTTONS
+    '} ' +
     '' +
     'const urlParams = new URLSearchParams(window.location.search); ' +
     'if (urlParams.get("payment") === "success") { ' +
@@ -746,7 +746,7 @@ app.get('/jobs', async (req, res) => {
       index === self.findIndex(j => j.url === job.url)
     );
     if (recentDays > 0 && recentDays!== 'all') {
-      const cutoff = Date.now() - recentDays * 24 * 60 * 1000;
+      const cutoff = Date.now() - recentDays * 24 * 60 * 60 * 1000;
       allJobs = allJobs.filter(j => j.date_posted && new Date(j.date_posted).getTime() > cutoff);
     }
     allJobs.sort((a, b) => new Date(b.date_posted) - new Date(a.date_posted));
