@@ -25,6 +25,8 @@ const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
 const JOOBLE_API_KEY = '8eba6d18-9673-4e0e-9c02-79d2662df27d';
 const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X';
 
+   const GA_MEASUREMENT_ID = process.env.GA_MEASUREMENT_ID || 'G-XYC2LZV607';
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
@@ -105,6 +107,17 @@ app.get('/', (req, res) => {
     ' <title>Jobai - Get Connected to Jobs & Workers</title>' +
     ' <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-app-pub-1637256996790764" crossorigin="anonymous"></script>' +
     ' <style>' +
+    
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '${GA_MEASUREMENT_ID}');
+</script>
+
+    
     ' body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }' +
     '.hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; }' +
     '.hero h1 { font-size: 32px; margin: 0 0 8px 0; font-weight: 700; }' +
