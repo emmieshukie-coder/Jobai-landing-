@@ -117,6 +117,8 @@ app.get('/', (req, res) => {
   gtag('config', '${GA_MEASUREMENT_ID}');
 </script>
 
+   <link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1a73e8">
     
     ' body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; background: #f5f7fa; color: #333; }' +
     '.hero { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 40px 20px 30px; text-align: center; }' +
