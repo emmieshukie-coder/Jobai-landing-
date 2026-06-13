@@ -569,6 +569,28 @@ app.get('/', (req, res) => {
     '</div>' +
     '</footer>' +
     '</body> ' +
+
+'<script>' +
+'let deferredPrompt;' +
+'window.addEventListener("beforeinstallprompt", (e) => {' +
+'  e.preventDefault();' +
+'  deferredPrompt = e;' +
+'  const btn = document.createElement("button");' +
+'  btn.textContent = "Install Jobai App";' +
+'  btn.style = "position:fixed;bottom:20px;right:20px;padding:12px 20px;background:#1a73e8;color:white;border:none;border-radius:8px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.3)";' +
+'  btn.onclick = async () => {' +
+'    btn.style.display = "none";' +
+'    deferredPrompt.prompt();' +
+'    await deferredPrompt.userChoice;' +
+'    deferredPrompt = null;' +
+'  };' +
+'  document.body.appendChild(btn);' +
+'});' +
+'</script>' +
+' </body>' +
+' </html>' +
+`);
+       
     '</html>'
   );
 });
