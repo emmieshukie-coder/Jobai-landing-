@@ -570,14 +570,16 @@ app.get('/', (req, res) => {
     '</footer>' +
     '</body> ' +
 
-'<script>' +
+       '<script>' +
 'let deferredPrompt;' +
 'window.addEventListener("beforeinstallprompt", (e) => {' +
 '  e.preventDefault();' +
 '  deferredPrompt = e;' +
 '  const btn = document.createElement("button");' +
-'  btn.textContent = "Install Jobai App";' +
-'  btn.style = "position:fixed;bottom:20px;right:20px;padding:12px 20px;background:#1a73e8;color:white;border:none;border-radius:8px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.3)";' +
+'  btn.innerHTML = "📲 Install Jobai App";' +
+'  btn.style = "position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:14px 28px;background:#1a73e8;color:white;border:none;border-radius:50px;font-weight:600;font-size:15px;z-index:9999;box-shadow:0 6px 20px rgba(26,115,232,0.4);animation:slideUp 0.4s ease";' +
+'  btn.onmouseenter = () => btn.style.background = "#1557b0";' +
+'  btn.onmouseleave = () => btn.style.background = "#1a73e8";' +
 '  btn.onclick = async () => {' +
 '    btn.style.display = "none";' +
 '    deferredPrompt.prompt();' +
@@ -585,11 +587,14 @@ app.get('/', (req, res) => {
 '    deferredPrompt = null;' +
 '  };' +
 '  document.body.appendChild(btn);' +
+'  setTimeout(() => btn.remove(), 15000); // auto-hide after 15s' +
 '});' +
+'const style = document.createElement("style");' +
+'style.textContent = "@keyframes slideUp{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}";' +
+'document.head.appendChild(style);' +
 '</script>' +
 ' </body>' +
-' </html>' +
-`);
+
        
     '</html>'
   );
