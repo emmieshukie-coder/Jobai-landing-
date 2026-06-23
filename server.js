@@ -20,10 +20,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const ADZUNA_APP_ID = 'cd82aca8';
-const ADZUNA_API_KEY = '39952eab2d2de243ff1ceffc7dc36478';
-const RAPIDAPI_KEY = '96a9c08353msh17930481ae22721p150e24jsn49eed442acdc';
-const JOOBLE_API_KEY = '8eba6d18-9673-4e0e-9c02-79d2662df27d';
-const FLW_SECRET_KEY = 'FLWSECK_TEST-db21f2fde386569639177dd0b2786d06-X';
+const ADZUNA_API_KEY
+const RAPIDAPI_KEY
+const JOOBLE_API_KEY
+const FLW_SECRET_KEY
 
    const GA_MEASUREMENT_ID = process.env.GA_MEASUREMENT_ID || 'G-XYC2LZV607';
 
